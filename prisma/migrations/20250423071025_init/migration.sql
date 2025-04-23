@@ -1,0 +1,28 @@
+-- CreateTable
+CREATE TABLE "batches" (
+    "_id" TEXT NOT NULL PRIMARY KEY,
+    "assessor" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "type" TEXT NOT NULL,
+    "status" TEXT NOT NULL,
+    "noOfCandidates" INTEGER NOT NULL,
+    "durationInMin" INTEGER NOT NULL,
+    "no" TEXT NOT NULL,
+    "startDate" DATETIME NOT NULL,
+    "endDate" DATETIME NOT NULL,
+    "theoryQuestionBank" TEXT NOT NULL,
+    "practicalQuestionBank" TEXT NOT NULL,
+    "vivaQuestionBank" TEXT NOT NULL,
+    "isAssessorReached" BOOLEAN NOT NULL,
+    "isCandidateVideoRequired" BOOLEAN NOT NULL,
+    "isCandidatePhotosRequired" BOOLEAN NOT NULL,
+    "isCandidateLocationRequired" BOOLEAN NOT NULL,
+    "isCandidateAdharRequired" BOOLEAN NOT NULL,
+    "isCandidateSelfieRequired" BOOLEAN NOT NULL,
+    "isPracticalVisibleToCandidate" BOOLEAN NOT NULL,
+    "isSuspiciousActivityDetectionRequired" BOOLEAN NOT NULL,
+    "isAssessorEvidenceRequired" BOOLEAN NOT NULL,
+    "assessorReachedAt" DATETIME NOT NULL,
+    "assessorCoordinates" TEXT NOT NULL,
+    "assessorGroupPhoto" TEXT NOT NULL
+);
