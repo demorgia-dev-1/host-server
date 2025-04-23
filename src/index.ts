@@ -4,6 +4,7 @@ import qr from "qrcode-terminal";
 import dotenv from "dotenv";
 import authRoutes from "./routes/auth.routes";
 import assessorRoutes from "./routes/assessor.routes";
+import candidateRoutes from "./routes/candidate.routes";
 import { errorHandler } from "./middlewares/error.middleware";
 dotenv.config();
 const app = express();
@@ -11,6 +12,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/auth", authRoutes);
 app.use("/assessor", assessorRoutes);
+app.use("/candidate", candidateRoutes);
 app.use(errorHandler);
 
 const server = app.listen(9090, () => {

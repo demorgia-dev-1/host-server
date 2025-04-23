@@ -3,6 +3,8 @@ import axios from "axios";
 import { AppError } from "../utils/AppError";
 import { LoginCandidate } from "../schemas/candidate.schema";
 import { PrismaClient } from "../../generated/prisma";
+import { PrismaClientKnownRequestError } from "../../generated/prisma/runtime/library";
+import jwt from "jsonwebtoken";
 const prisma = new PrismaClient();
 export const loginAssessor = async (data: LoginAssessor): Promise<string> => {
   try {
@@ -25,10 +27,27 @@ export const loginCandidate = async (data: LoginCandidate) => {
     const candidate = await prisma.candidate.findFirst({
       where: {
         OR: [{ id: data._id }, { enrollmentNo: data._id }],
+        password: data.password,
       },
     });
     if (!candidate) {
       throw new AppError("invalid  credentials", 401, true);
     }
-  } catch (error) {}
+    const token = jwt.sign({ _id: candidate.id }, process.env.JWT_SECRET!, {
+      expiresIn: "1d",
+    });
+    return token;
+  } catch (error) {
+    console.log("error", error);
+    if (error instanceof AppError) {
+      throw error;
+    }
+    if (error instanceof PrismaClientKnownRequestError) {
+      if (error.code === "P2002") {
+        throw new AppError("invalid  credentials", 401, true);
+      }
+    }
+    throw new AppError("internal server error", 500);
+  }
 };
+export default { loginAssessor, loginCandidate };

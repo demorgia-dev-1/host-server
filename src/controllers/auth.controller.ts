@@ -1,13 +1,13 @@
 import { Request, Response, NextFunction } from "express";
 import { LoginAssessor } from "../schemas/assessor.schema";
-import { loginAssessor as loginAsAssessor } from "../services/auth.service";
+import authService from "../services/auth.service";
 export const loginAssessor = async (
   req: Request<{}, {}, LoginAssessor>,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const token = await loginAsAssessor(req.body);
+    const token = await authService.loginAssessor(req.body);
     res.status(200).json({
       token,
     });
@@ -23,13 +23,14 @@ export const loginCandidate = async (
   next: NextFunction
 ) => {
   try {
-    const token = await loginAsAssessor(req.body);
+    const token = await authService.loginCandidate(req.body);
     res.status(200).json({
       token,
     });
-    return;
   } catch (error) {
-    console.log("controller error", error);
-    return next(error);
+    next(error);
+    return;
   }
 };
+
+export default { loginAssessor, loginCandidate };
