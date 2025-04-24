@@ -23,5 +23,26 @@ const isAuthenticatedCandidate = async (
     next(error);
   }
 };
-
-export default { isAuthenticatedCandidate };
+const isAuthenticatedAssessor = async (
+  req: Request,
+  _: Response,
+  next: NextFunction
+) => {
+  try {
+    const localToken = req.headers?.authorization?.split(" ")[1];
+    if (!localToken) {
+      throw new AppError("Unauthorized", 401, true);
+    }
+    const decoded = jwt.verify(localToken, process.env.JWT_SECRET!) as {
+      _id: string;
+    };
+    if (!decoded || !decoded._id) {
+      throw new AppError("Unauthorized", 401, true);
+    }
+    req.headers["x-assessor-id"] = decoded._id;
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
+export default { isAuthenticatedCandidate, isAuthenticatedAssessor };

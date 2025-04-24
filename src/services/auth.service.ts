@@ -6,13 +6,22 @@ import { PrismaClient } from "../../generated/prisma";
 import { PrismaClientKnownRequestError } from "../../generated/prisma/runtime/library";
 import jwt from "jsonwebtoken";
 const prisma = new PrismaClient();
-export const loginAssessor = async (data: LoginAssessor): Promise<string> => {
+export const loginAssessor = async (
+  data: LoginAssessor
+): Promise<{ localToken: string; serverToken: string }> => {
   try {
     const response = await axios.post(
       process.env.MAIN_SERVER_URL + "/assessor/login",
       data
     );
-    return response.data.data.token;
+    const localToken = jwt.sign(
+      { _id: response.data.data.assessor._id },
+      process.env.JWT_SECRET!
+    );
+    return {
+      localToken,
+      serverToken: response.data.data.token,
+    };
   } catch (error) {
     if (axios.isAxiosError(error)) {
       if (error.response?.status === 401) {

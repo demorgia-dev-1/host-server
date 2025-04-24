@@ -7,10 +7,8 @@ export const loginAssessor = async (
   next: NextFunction
 ) => {
   try {
-    const token = await authService.loginAssessor(req.body);
-    res.status(200).json({
-      token,
-    });
+    const data = await authService.loginAssessor(req.body);
+    res.status(200).json(data);
     return;
   } catch (error) {
     return next(error);
@@ -32,7 +30,5 @@ export const loginCandidate = async (
     return;
   }
 };
-
-
 
 export default { loginAssessor, loginCandidate };

@@ -128,26 +128,52 @@ const saveBatchOffline = async (token: string, batchId: string) => {
     throw new AppError("internal server error", 500);
   }
 };
-const getLoadedBatches = async () => {
+const getLoadedBatches = async (assessorId: string) => {
   try {
-    const batches = await prisma.batch.findMany({});
+    console.log("assessorId", assessorId);
+    const batches = await prisma.batch.findMany({
+      where: { assessor: assessorId },
+    });
     return batches;
   } catch (error) {
     throw new AppError("internal server error", 500);
   }
 };
-const getCandidateList = async (batchId: string) => {
+const getCandidateList = async (batchId: string, assessorId: string) => {
+  const batch = await prisma.batch.findFirst({
+    where: { id: batchId, assessor: assessorId },
+  });
+  if (!batch) {
+    throw new AppError("Batch not found", 404);
+  }
+  if (!batch.isAssessorReached) {
+    throw new AppError("mark yourself as reached", 400);
+  }
   return await prisma.candidate.findMany({
     where: {
       batchId: batchId,
     },
   });
 };
-const markAttendanceInTheory = async (candidates: string[]) => {
+const markAttendanceInTheory = async (
+  candidates: string[],
+  batchId: string,
+  assessorId: string
+) => {
   try {
+    const batch = await prisma.batch.findFirst({
+      where: { id: batchId, assessor: assessorId },
+    });
+    if (!batch) {
+      throw new AppError("Batch not found", 404);
+    }
+    if (!batch.isAssessorReached) {
+      throw new AppError("mark yourself as reached", 400);
+    }
     const updatedCandidates = await prisma.candidate.updateMany({
       where: {
         id: { in: candidates },
+        batchId: batchId,
       },
       data: {
         isPresentInTheory: true,
@@ -158,10 +184,24 @@ const markAttendanceInTheory = async (candidates: string[]) => {
     throw new AppError("internal server error", 500);
   }
 };
-const resetCandidates = async (candidateIds: string[]) => {
+const resetCandidates = async (
+  candidateIds: string[],
+  batchId: string,
+  assessorId: string
+) => {
+  const batch = await prisma.batch.findFirst({
+    where: { id: batchId, assessor: assessorId },
+  });
+  if (!batch) {
+    throw new AppError("Batch not found", 404);
+  }
+  if (!batch.isAssessorReached) {
+    throw new AppError("mark yourself as reached", 400);
+  }
   await prisma.candidate.updateMany({
     where: {
       id: { in: candidateIds },
+      batchId: batchId,
     },
     data: {
       isPresentInTheory: false,
@@ -176,12 +216,14 @@ const resetCandidates = async (candidateIds: string[]) => {
 };
 const markAssessorAsReached = async (
   batchId: string,
+  assessorId: string,
   picture?: UploadedFile,
   location?: { lat: number; long: number }
 ) => {
   const batch = await prisma.batch.findFirst({
     where: {
       id: batchId,
+      assessor: assessorId,
     },
     select: {
       isAssessorEvidenceRequired: true,

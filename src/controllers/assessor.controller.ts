@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { AppError } from "../utils/AppError";
 import assessorService from "../services/assessor.service";
+// will fetch the batches from main server
 export const getOfflineBatches = async (
   req: Request,
   res: Response,
@@ -55,13 +56,17 @@ export const saveBatchOffline = async (
     next(error);
   }
 };
+// will fetch the batches from local db
 export const getLoadedBatches = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const batches = await assessorService.getLoadedBatches();
+    const assessorId = req.headers["x-assessor-id"];
+    const batches = await assessorService.getLoadedBatches(
+      assessorId as string
+    );
     res.status(200).json(batches);
   } catch (error) {
     next(error);
@@ -74,7 +79,8 @@ export const candidateList = async (
 ) => {
   try {
     const candidates = await assessorService.getCandidateList(
-      req.params.batchId
+      req.params.batchId,
+      req.headers["x-assessor-id"] as string
     );
     res.status(200).json(candidates);
   } catch (error) {
@@ -88,7 +94,11 @@ export const resetCandidates = async (
 ) => {
   try {
     const candidateIds = req.body.candidates;
-    await assessorService.resetCandidates(candidateIds);
+    await assessorService.resetCandidates(
+      candidateIds,
+      req.params.batchId,
+      req.headers["x-assessor-id"] as string
+    );
     res.status(200).json({});
   } catch (error) {
     next(error);
@@ -100,7 +110,11 @@ export const markAttendanceInTheory = async (
   next: NextFunction
 ) => {
   try {
-    await assessorService.markAttendanceInTheory(req.body.candidates);
+    await assessorService.markAttendanceInTheory(
+      req.body.candidates,
+      req.params.batchId,
+      req.headers["x-assessor-id"] as string
+    );
     res.status(200).json({});
   } catch (error) {
     next(error);
@@ -114,6 +128,7 @@ export const markAsReached = async (
   try {
     await assessorService.markAssessorAsReached(
       req.params.batchId,
+      req.headers["x-assessor-id"] as string,
       // @ts-ignore
       req?.files?.picture,
       req.body.location
