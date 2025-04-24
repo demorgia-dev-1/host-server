@@ -39,6 +39,9 @@ router
     assessorController.markAttendanceInTheory
   );
 router
+  .route("/offline-batches/:batchId/start-batch")
+  .post(authMiddleware.isAuthenticatedAssessor, assessorController.startBatch);
+router
   .route("/loaded-batches")
   .get(
     authMiddleware.isAuthenticatedAssessor,

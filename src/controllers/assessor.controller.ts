@@ -139,6 +139,21 @@ export const markAsReached = async (
     next(error);
   }
 };
+export const startBatch = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const batchId = req.params.batchId;
+    const assessorId = req.headers["x-assessor-id"] as string;
+    await assessorService.startBatch(batchId, assessorId);
+    res.status(200).json({});
+  } catch (error) {
+    console.log("error", error);
+    next(error);
+  }
+};
 export default {
   getOfflineBatches,
   saveBatchOffline,
@@ -147,4 +162,5 @@ export default {
   candidateList,
   resetCandidates,
   markAsReached,
+  startBatch,
 };

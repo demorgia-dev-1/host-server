@@ -290,7 +290,32 @@ const markAssessorAsReached = async (
     },
   });
 };
-
+const startBatch = async (batchId: string, assessorId: string) => {
+  const batch = await prisma.batch.findFirst({
+    where: {
+      id: batchId,
+      assessor: assessorId,
+    },
+    select: {
+      isAssessorEvidenceRequired: true,
+      isAssessorReached: true,
+    },
+  });
+  if (!batch) {
+    throw new AppError("Batch not found", 404);
+  }
+  if (!batch.isAssessorReached) {
+    throw new AppError("mark yourself as reached", 400);
+  }
+  await prisma.batch.update({
+    where: {
+      id: batchId,
+    },
+    data: {
+      status: "started",
+    },
+  });
+};
 export default {
   getAssignedBatches,
   saveBatchOffline,
@@ -299,4 +324,5 @@ export default {
   getCandidateList,
   resetCandidates,
   markAssessorAsReached,
+  startBatch,
 };
