@@ -37,7 +37,8 @@ model Batch {
   assessorReachedAt                     DateTime?  
   assessorCoordinates                   String?
   assessorGroupPhoto                    String?
-  candidates                           Candidate[]
+  candidates                            Candidate[]
+  theoryResponses                       TheoryExamResponse[]
   @@map("batches") 
 }
 
@@ -67,7 +68,28 @@ model Candidate {
   faceHiddenCount              Int
   tabSwitchCount               Int
   exitFullScreenCount          Int
+  theoryStartedAt              DateTime?
+  theorySubmittedAt            DateTime?
+  candidateSelfieCoordinates   String?
+  candidateSelfieTakenAt       DateTime?
+  candidateSelfie              String?
+  adharPicture                 String?
+  resetedAt                    DateTime?
   batch                        Batch    @relation(fields: [batchId], references: [id])    
+  theroryExamResponse         TheoryExamResponse[]
   @@map("candidates") // optional: name of the table in DB
+}
+
+model TheoryExamResponse{
+  id                     Int      @id @default(autoincrement())
+  candidateId            String
+  batchId                String
+  questionId             String
+  answerId               String
+  startedAt              DateTime
+  endedAt                DateTime
+  candidate             Candidate @relation(fields: [candidateId], references: [id])
+  batch                 Batch     @relation(fields: [batchId], references: [id])
+  @@map("theory_exam_response") // optional: name of the table in DB
 }
 

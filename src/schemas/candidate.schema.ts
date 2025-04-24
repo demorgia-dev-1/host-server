@@ -5,4 +5,16 @@ export const loginCandidateSchema = z.object({
     password: z.string(),
   }),
 });
+export const submitTheoryResponsesSchema = z.object({
+  responses: z.array(
+    z.object({
+      questionId: z.string(),
+      answerId: z.string(),
+      batchId: z.string(),
+      startedAt: z.string(),
+      endedAt: z.string(),
+    })
+  ),
+});
+export type SubmitTheoryResponses = z.infer<typeof submitTheoryResponsesSchema>;
 export type LoginCandidate = z.infer<typeof loginCandidateSchema>["body"];

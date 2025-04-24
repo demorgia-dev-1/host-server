@@ -1,7 +1,9 @@
 import axios from "axios";
+import path from "path";
 import { AppError } from "../utils/AppError";
 import { PrismaClient } from "../../generated/prisma";
 import { PrismaClientKnownRequestError } from "../../generated/prisma/runtime/library";
+import { UploadedFile } from "express-fileupload";
 const prisma = new PrismaClient();
 const getAssignedBatches = async (token: string): Promise<any> => {
   try {
@@ -126,7 +128,6 @@ const saveBatchOffline = async (token: string, batchId: string) => {
     throw new AppError("internal server error", 500);
   }
 };
-
 const getLoadedBatches = async () => {
   try {
     const batches = await prisma.batch.findMany({});
@@ -135,9 +136,125 @@ const getLoadedBatches = async () => {
     throw new AppError("internal server error", 500);
   }
 };
+const getCandidateList = async (batchId: string) => {
+  return await prisma.candidate.findMany({
+    where: {
+      batchId: batchId,
+    },
+  });
+};
+const markAttendanceInTheory = async (candidates: string[]) => {
+  try {
+    const updatedCandidates = await prisma.candidate.updateMany({
+      where: {
+        id: { in: candidates },
+      },
+      data: {
+        isPresentInTheory: true,
+      },
+    });
+    return updatedCandidates;
+  } catch (error) {
+    throw new AppError("internal server error", 500);
+  }
+};
+const resetCandidates = async (candidateIds: string[]) => {
+  await prisma.candidate.updateMany({
+    where: {
+      id: { in: candidateIds },
+    },
+    data: {
+      isPresentInTheory: false,
+      isPresentInPractical: false,
+      isPresentInViva: false,
+      isTheorySubmitted: false,
+      theoryExamStatus: "notStarted",
+      practicalExamStatus: "notStarted",
+      vivaExamStatus: "notStarted",
+    },
+  });
+};
+const markAssessorAsReached = async (
+  batchId: string,
+  picture?: UploadedFile,
+  location?: { lat: number; long: number }
+) => {
+  const batch = await prisma.batch.findFirst({
+    where: {
+      id: batchId,
+    },
+    select: {
+      isAssessorEvidenceRequired: true,
+      isAssessorReached: true,
+    },
+  });
+  if (!batch) {
+    throw new AppError("Batch not found", 404);
+  }
+  if (batch.isAssessorReached) {
+    throw new AppError("Assessor already reached", 400);
+  }
+  if (!batch.isAssessorEvidenceRequired) {
+    await prisma.batch.update({
+      where: {
+        id: batchId,
+      },
+      data: {
+        isAssessorReached: true,
+        assessorReachedAt: new Date(),
+        assessorCoordinates: null,
+        assessorGroupPhoto: null,
+      },
+    });
+    return;
+  }
+  if (!picture) {
+    throw new AppError("Assessor evidence is required", 400);
+  }
+  if (!location) {
+    throw new AppError("Assessor location is required", 400);
+  }
+  if (!picture.mimetype.startsWith("image/")) {
+    throw new AppError("Invalid file type", 400);
+  }
+  if (picture.size > 2 * 1024 * 1024) {
+    throw new AppError("File size exceeds 2MB", 400);
+  }
+  const uploadPath = path.join(
+    __dirname,
+    "..",
+    "..",
+    "uploads",
+    `${Date.now()}_${picture.name}`
+  );
+  const p = await new Promise((resolve, reject) => {
+    picture.mv(uploadPath, (err) => {
+      if (err) {
+        reject(new AppError("Error uploading file", 500));
+      } else {
+        resolve(uploadPath);
+      }
+    });
+  });
+  await prisma.batch.update({
+    where: {
+      id: batchId,
+    },
+    data: {
+      isAssessorReached: true,
+      assessorReachedAt: new Date(),
+      assessorCoordinates: JSON.stringify(location),
+      assessorGroupPhoto: p as string,
+    },
+  });
+};
 
 export default {
   getAssignedBatches,
   saveBatchOffline,
   getLoadedBatches,
+  markAttendanceInTheory,
+  getCandidateList,
+  resetCandidates,
+  markAssessorAsReached,
 };

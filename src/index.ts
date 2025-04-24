@@ -2,12 +2,20 @@ import express from "express";
 import ip from "ip";
 import qr from "qrcode-terminal";
 import dotenv from "dotenv";
+import fileUpload from "express-fileupload";
 import authRoutes from "./routes/auth.routes";
 import assessorRoutes from "./routes/assessor.routes";
 import candidateRoutes from "./routes/candidate.routes";
 import { errorHandler } from "./middlewares/error.middleware";
+
 dotenv.config();
 const app = express();
+app.use(
+  fileUpload({
+    useTempFiles: false,
+    createParentPath: true,
+  })
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/auth", authRoutes);

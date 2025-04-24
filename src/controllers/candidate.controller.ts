@@ -13,4 +13,22 @@ const getMyTheoryTest = async (
     next(error);
   }
 };
-export default { getMyTheoryTest };
+const submitTheoryResponses = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const candidateId = req.headers["x-candidate-id"] as string;
+    const batchId = req.headers["x-batch-id"] as string;
+    await candidateService.submitTheoryResponses(
+      req.body,
+      candidateId,
+      batchId
+    );
+    res.status(200).json({});
+  } catch (error) {
+    next(error);
+  }
+};
+export default { getMyTheoryTest, submitTheoryResponses };

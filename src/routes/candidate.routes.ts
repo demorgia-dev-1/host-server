@@ -9,5 +9,10 @@ router
     authMiddleware.isAuthenticatedCandidate,
     candidateController.getMyTheoryTest
   );
-
+router
+  .route("/submit-theory-responses")
+  .post(
+    authMiddleware.isAuthenticatedCandidate,
+    candidateController.submitTheoryResponses
+  );
 export default router;

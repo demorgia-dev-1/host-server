@@ -67,4 +67,69 @@ export const getLoadedBatches = async (
     next(error);
   }
 };
-export default { getOfflineBatches, saveBatchOffline, getLoadedBatches };
+export const candidateList = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const candidates = await assessorService.getCandidateList(
+      req.params.batchId
+    );
+    res.status(200).json(candidates);
+  } catch (error) {
+    return next(error);
+  }
+};
+export const resetCandidates = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const candidateIds = req.body.candidates;
+    await assessorService.resetCandidates(candidateIds);
+    res.status(200).json({});
+  } catch (error) {
+    next(error);
+  }
+};
+export const markAttendanceInTheory = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    await assessorService.markAttendanceInTheory(req.body.candidates);
+    res.status(200).json({});
+  } catch (error) {
+    next(error);
+  }
+};
+export const markAsReached = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    await assessorService.markAssessorAsReached(
+      req.params.batchId,
+      // @ts-ignore
+      req?.files?.picture,
+      req.body.location
+    );
+    res.status(200).json({});
+  } catch (error) {
+    console.log("error", error);
+    next(error);
+  }
+};
+export default {
+  getOfflineBatches,
+  saveBatchOffline,
+  getLoadedBatches,
+  markAttendanceInTheory,
+  candidateList,
+  resetCandidates,
+  markAsReached,
+};
