@@ -16,7 +16,23 @@ export const markAssessorAsReachedSchema = z.object({
       .optional(),
   }),
 });
+export const markCandidateAttendanceSchema = z.object({
+  body: z.object({
+    candidates: z.array(z.string()),
+  }),
+});
+export const resetCandidateTheoryTestSchema = z.object({
+  body: z.object({
+    candidates: z.array(z.string()),
+  }),
+});
 export type LoginAssessor = z.infer<typeof loginAssessorSchema>["body"];
 export type MarkAssessorAsReached = z.infer<
   typeof markAssessorAsReachedSchema
+>["body"];
+export type MarkCandidateAttendance = z.infer<
+  typeof markCandidateAttendanceSchema
+>["body"];
+export type ResetCandidateTheoryTest = z.infer<
+  typeof resetCandidateTheoryTestSchema
 >["body"];

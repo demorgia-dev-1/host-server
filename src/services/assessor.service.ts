@@ -167,9 +167,16 @@ const markAttendanceInTheory = async (
     if (!batch) {
       throw new AppError("Batch not found", 404);
     }
+    if (batch.status === "assigned") {
+      throw new AppError("Batch is not started yet", 400);
+    }
+    if (batch.status === "completed") {
+      throw new AppError("Batch is already completed", 400);
+    }
     if (!batch.isAssessorReached) {
       throw new AppError("mark yourself as reached", 400);
     }
+
     const updatedCandidates = await prisma.candidate.updateMany({
       where: {
         id: { in: candidates },
@@ -181,6 +188,9 @@ const markAttendanceInTheory = async (
     });
     return updatedCandidates;
   } catch (error) {
+    if (error instanceof AppError) {
+      throw error;
+    }
     throw new AppError("internal server error", 500);
   }
 };
@@ -197,6 +207,9 @@ const resetCandidates = async (
   }
   if (!batch.isAssessorReached) {
     throw new AppError("mark yourself as reached", 400);
+  }
+  if (batch.status !== "ongoing") {
+    throw new AppError("Batch is not ongoing", 400);
   }
   await prisma.candidate.updateMany({
     where: {
@@ -312,7 +325,7 @@ const startBatch = async (batchId: string, assessorId: string) => {
       id: batchId,
     },
     data: {
-      status: "started",
+      status: "ongoing",
     },
   });
 };

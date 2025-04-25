@@ -2,7 +2,11 @@ import express from "express";
 const router = express.Router();
 import assessorController from "../controllers/assessor.controller";
 import validateRequest from "../middlewares/validateRequest";
-import { markAssessorAsReachedSchema } from "../schemas/assessor.schema";
+import {
+  markAssessorAsReachedSchema,
+  markCandidateAttendanceSchema,
+  resetCandidateTheoryTestSchema,
+} from "../schemas/assessor.schema";
 import authMiddleware from "../middlewares/auth.middleware";
 router.route("/offline-batches").get(assessorController.getOfflineBatches);
 router
@@ -29,12 +33,14 @@ router
 router
   .route("/offline-batches/:batchId/reset-candidates")
   .post(
+    validateRequest(resetCandidateTheoryTestSchema),
     authMiddleware.isAuthenticatedAssessor,
     assessorController.resetCandidates
   );
 router
   .route("/offline-batches/:batchId/mark-theory-attendance")
   .post(
+    validateRequest(markCandidateAttendanceSchema),
     authMiddleware.isAuthenticatedAssessor,
     assessorController.markAttendanceInTheory
   );

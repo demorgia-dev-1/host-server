@@ -6,15 +6,18 @@ export const loginCandidateSchema = z.object({
   }),
 });
 export const submitTheoryResponsesSchema = z.object({
-  responses: z.array(
-    z.object({
-      questionId: z.string(),
-      answerId: z.string(),
-      batchId: z.string(),
-      startedAt: z.string(),
-      endedAt: z.string(),
-    })
-  ),
+  body: z.object({
+    responses: z.array(
+      z.object({
+        questionId: z.string(),
+        answerId: z.string(),
+        startedAt: z.string(),
+        endedAt: z.string(),
+      })
+    ),
+  }),
 });
-export type SubmitTheoryResponses = z.infer<typeof submitTheoryResponsesSchema>;
+export type SubmitTheoryResponses = z.infer<
+  typeof submitTheoryResponsesSchema
+>["body"];
 export type LoginCandidate = z.infer<typeof loginCandidateSchema>["body"];

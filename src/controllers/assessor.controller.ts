@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { AppError } from "../utils/AppError";
 import assessorService from "../services/assessor.service";
+import { MarkCandidateAttendance } from "../schemas/assessor.schema";
 // will fetch the batches from main server
 export const getOfflineBatches = async (
   req: Request,
@@ -154,6 +155,7 @@ export const startBatch = async (
     next(error);
   }
 };
+
 export default {
   getOfflineBatches,
   saveBatchOffline,

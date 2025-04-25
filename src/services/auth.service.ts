@@ -28,6 +28,7 @@ export const loginAssessor = async (
         throw new AppError("Invalid credentials", 401);
       }
     }
+    console.log("error", error);
     throw new AppError("internal server error", 500);
   }
 };
@@ -38,13 +39,21 @@ export const loginCandidate = async (data: LoginCandidate) => {
         OR: [{ id: data._id }, { enrollmentNo: data._id }],
         password: data.password,
       },
+      select: {
+        id: true,
+        batchId: true,
+      },
     });
     if (!candidate) {
       throw new AppError("invalid  credentials", 401, true);
     }
-    const token = jwt.sign({ _id: candidate.id }, process.env.JWT_SECRET!, {
-      expiresIn: "1d",
-    });
+    const token = jwt.sign(
+      { _id: candidate.id, batchId: candidate.batchId },
+      process.env.JWT_SECRET!,
+      {
+        expiresIn: "1d",
+      }
+    );
     return token;
   } catch (error) {
     console.log("error", error);

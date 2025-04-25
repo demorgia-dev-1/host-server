@@ -39,6 +39,7 @@ model Batch {
   assessorGroupPhoto                    String?
   candidates                            Candidate[]
   theoryResponses                       TheoryExamResponse[]
+  practicalResponses                    PracticalExamResponse[]
   @@map("batches") 
 }
 
@@ -77,11 +78,11 @@ model Candidate {
   resetedAt                    DateTime?
   batch                        Batch    @relation(fields: [batchId], references: [id])    
   theroryExamResponse         TheoryExamResponse[]
+  practicalExamResponse       PracticalExamResponse[]
   @@map("candidates") // optional: name of the table in DB
 }
 
 model TheoryExamResponse{
-  id                     Int      @id @default(autoincrement())
   candidateId            String
   batchId                String
   questionId             String
@@ -90,6 +91,22 @@ model TheoryExamResponse{
   endedAt                DateTime
   candidate             Candidate @relation(fields: [candidateId], references: [id])
   batch                 Batch     @relation(fields: [batchId], references: [id])
-  @@map("theory_exam_response") // optional: name of the table in DB
+  
+  @@map("theory_exam_response") 
+  @@id([questionId, answerId, candidateId,startedAt,endedAt]) // composite primary key
+}
+
+model PracticalExamResponse{
+  candidateId            String
+  batchId                String
+  questionId             String
+  answerId               String
+  startedAt              DateTime
+  endedAt                DateTime
+  marksObtained          Int?
+  candidate             Candidate @relation(fields: [candidateId], references: [id])
+  batch                 Batch     @relation(fields: [batchId], references: [id])
+  @@map("practical_exam_response") 
+  @@id([questionId, answerId, candidateId,startedAt,endedAt]) // composite primary key
 }
 

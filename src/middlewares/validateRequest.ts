@@ -6,7 +6,6 @@ const validateRequest =
   (req: Request<{}, {}, any>, res: Response, next: NextFunction) => {
     try {
       schema.parse({ body: req.body });
-
       next();
     } catch (e: any) {
       next(e);

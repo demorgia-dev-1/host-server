@@ -13,11 +13,13 @@ const isAuthenticatedCandidate = async (
     }
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
       _id: string;
+      batchId: string;
     };
     if (!decoded || !decoded._id) {
       throw new AppError("Unauthorized", 401, true);
     }
     req.headers["x-candidate-id"] = decoded._id;
+    req.headers["x-batch-id"] = decoded.batchId;
     next();
   } catch (error) {
     next(error);

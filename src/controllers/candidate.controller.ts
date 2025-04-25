@@ -31,4 +31,28 @@ const submitTheoryResponses = async (
     next(error);
   }
 };
-export default { getMyTheoryTest, submitTheoryResponses };
+const uploadOnboardingEvidences = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const candidateId = req.headers["x-candidate-id"] as string;
+    await candidateService.uploadOnboardingEvidence(
+      candidateId,
+      req?.body?.location,
+      // @ts-ignore
+      req?.files?.adhar,
+      // @ts-ignore
+      req?.files?.selfie
+    );
+    res.status(200).json({});
+  } catch (error) {
+    next(error);
+  }
+};
+export default {
+  getMyTheoryTest,
+  submitTheoryResponses,
+  uploadOnboardingEvidences,
+};
