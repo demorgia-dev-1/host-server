@@ -133,6 +133,7 @@ const getMyTheoryTest = async (candidateId: string) => {
     where: { id: candidateId },
     data: {
       theoryExamStatus: "started",
+      theoryStartedAt: new Date(),
     },
   });
   return questionBank;
@@ -181,6 +182,42 @@ const submitTheoryResponses = async (
     VALUES ${values}
   `;
   await prisma.$executeRawUnsafe(query);
+};
+const submitTheoryTest = async (candidateId: string, batchId: string) => {
+  const candidate = await prisma.candidate.findFirst({
+    where: {
+      id: candidateId,
+      batchId: batchId,
+    },
+    select: {
+      isPresentInTheory: true,
+      theoryExamStatus: true,
+    },
+  });
+  if (!candidate) {
+    throw new AppError("invalid credentials", 401, true);
+  }
+  if (!candidate.isPresentInTheory) {
+    throw new AppError(
+      "Your attendance is not marked in theory exam",
+      401,
+      true
+    );
+  }
+  if (candidate.theoryExamStatus !== "started") {
+    const msg =
+      candidate.theoryExamStatus === "submitted"
+        ? "Your exam is already submitted"
+        : "Your exam is not started";
+    throw new AppError(msg, 401, true);
+  }
+  await prisma.candidate.update({
+    where: { id: candidateId },
+    data: {
+      theoryExamStatus: "submitted",
+      theorySubmittedAt: new Date(),
+    },
+  });
 };
 const uploadRandomVideo = async (
   candidateId: string,
@@ -341,11 +378,143 @@ const uploadRandomPhoto = async (
   }
   await photo.mv(photoPath);
 };
+const getMyPracticalTest = async (candidateId: string) => {
+  const candidate = await prisma.candidate.findFirst({
+    where: {
+      id: candidateId,
+    },
+    select: {
+      batch: true,
+      isPresentInPractical: true,
+      practicalExamStatus: true,
+      isEvidanceUploaded: true,
+    },
+  });
+  if (!candidate) {
+    throw new AppError("invalid credentials", 401, true);
+  }
+  if (!candidate.isPresentInPractical) {
+    throw new AppError(
+      "your attendance is not marked in practical exam",
+      401,
+      true
+    );
+  }
+  if (candidate.practicalExamStatus !== "notStarted") {
+    const msg =
+      candidate.practicalExamStatus === "submitted"
+        ? "Your exam is already submitted"
+        : "Your exam is already started";
+    throw new AppError(msg, 401, true);
+  }
 
+  const questionBank = JSON.parse(candidate.batch.practicalQuestionBank);
+  if (!questionBank) {
+    throw new AppError("Question bank not found", 404);
+  }
+  await prisma.candidate.update({
+    where: { id: candidateId },
+    data: {
+      practicalExamStatus: "started",
+      practicalStartedAt: new Date(),
+    },
+  });
+  return questionBank;
+};
+const submitPracticalResponses = async (
+  responses: SubmitTheoryResponses,
+  candidateId: string,
+  batchId: string
+) => {
+  const candidate = await prisma.candidate.findFirst({
+    where: {
+      id: candidateId,
+      batchId: batchId,
+    },
+    select: {
+      isPresentInPractical: true,
+      practicalExamStatus: true,
+    },
+  });
+  if (!candidate) {
+    throw new AppError("invalid credentials", 401, true);
+  }
+  if (!candidate.isPresentInPractical) {
+    throw new AppError(
+      "Your attendance is not marked in practical exam",
+      401,
+      true
+    );
+  }
+  if (
+    candidate.practicalExamStatus === "submitted" ||
+    candidate.practicalExamStatus === "notStarted"
+  ) {
+    const msg =
+      candidate.practicalExamStatus === "submitted"
+        ? "Your exam is already submitted"
+        : "Your exam is not started";
+    throw new AppError(msg, 401, true);
+  }
+  if (responses.responses.length === 0) {
+    throw new AppError("No responses found", 400);
+  }
+  const values = responses.responses.map((response) => {
+    return `('${response.questionId}', '${response.answerId}','${batchId}', '${candidateId}','${response.startedAt}', '${response.endedAt}', 'PRACTICAL')`;
+  });
+  const query = `
+    INSERT OR REPLACE INTO exam_response 
+    (questionId, answerId, batchId, candidateId, startedAt, endedAt,type) 
+    VALUES ${values}
+  `;
+  await prisma.$executeRawUnsafe(query);
+};
+const submitPracticalTest = async (candidateId: string, batchId: string) => {
+  const candidate = await prisma.candidate.findFirst({
+    where: {
+      id: candidateId,
+      batchId: batchId,
+    },
+    select: {
+      isPresentInPractical: true,
+      practicalExamStatus: true,
+    },
+  });
+  if (!candidate) {
+    throw new AppError("invalid credentials", 401, true);
+  }
+  if (!candidate.isPresentInPractical) {
+    throw new AppError(
+      "Your attendance is not marked in practical exam",
+      401,
+      true
+    );
+  }
+  if (
+    candidate.practicalExamStatus === "submitted" ||
+    candidate.practicalExamStatus === "notStarted"
+  ) {
+    const msg =
+      candidate.practicalExamStatus === "submitted"
+        ? "Your exam is already submitted"
+        : "Your exam is not started";
+    throw new AppError(msg, 401, true);
+  }
+  await prisma.candidate.update({
+    where: { id: candidateId },
+    data: {
+      practicalExamStatus: "submitted",
+      practicalSubmittedAt: new Date(),
+    },
+  });
+};
 export default {
   getMyTheoryTest,
   submitTheoryResponses,
+  submitTheoryTest,
   uploadOnboardingEvidence,
   uploadRandomVideo,
   uploadRandomPhoto,
+  submitPracticalResponses,
+  submitPracticalTest,
 };

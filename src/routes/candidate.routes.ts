@@ -24,6 +24,24 @@ router
     candidateController.submitTheoryResponses
   );
 router
+  .route("/submit-theory-test")
+  .post(
+    authMiddleware.isAuthenticatedCandidate,
+    candidateController.submitTheoryTest
+  );
+router
+  .route("/submit-practical-responses")
+  .post(
+    authMiddleware.isAuthenticatedCandidate,
+    candidateController.submitPracticalResponses
+  );
+router
+  .route("/submit-practical-test")
+  .post(
+    authMiddleware.isAuthenticatedCandidate,
+    candidateController.submitPracticalTest
+  );
+router
   .route("/upload-random-video")
   .post(
     authMiddleware.isAuthenticatedCandidate,

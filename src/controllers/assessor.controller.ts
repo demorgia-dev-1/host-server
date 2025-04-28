@@ -288,7 +288,6 @@ export const submitCandidateVivaResponses = async (
     next(error);
   }
 };
-
 export default {
   getOfflineBatches,
   saveBatchOffline,

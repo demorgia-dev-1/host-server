@@ -32,6 +32,53 @@ const submitTheoryResponses = async (
     next(error);
   }
 };
+const submitTheoryTest = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const candidateId = req.headers["x-candidate-id"] as string;
+    const batchId = req.headers["x-batch-id"] as string;
+    await candidateService.submitTheoryTest(candidateId, batchId);
+    res.status(200).json({});
+  } catch (error) {
+    next(error);
+  }
+};
+const submitPracticalResponses = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const candidateId = req.headers["x-candidate-id"] as string;
+    const batchId = req.headers["x-batch-id"] as string;
+    await candidateService.submitPracticalResponses(
+      req.body,
+      candidateId,
+      batchId
+    );
+    res.status(200).json({});
+  } catch (error) {
+    next(error);
+  }
+};
+const submitPracticalTest = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const candidateId = req.headers["x-candidate-id"] as string;
+    const batchId = req.headers["x-batch-id"] as string;
+    await candidateService.submitPracticalTest(candidateId, batchId);
+    res.status(200).json({});
+  } catch (error) {
+    next(error);
+  }
+};
+
 const uploadOnboardingEvidences = async (
   req: Request,
   res: Response,
@@ -101,6 +148,9 @@ const uploadRandomPhoto = async (
 export default {
   getMyTheoryTest,
   submitTheoryResponses,
+  submitTheoryTest,
+  submitPracticalResponses,
+  submitPracticalTest,
   uploadOnboardingEvidences,
   uploadRandomVideo,
   uploadRandomPhoto,

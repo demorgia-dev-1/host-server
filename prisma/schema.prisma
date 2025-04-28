@@ -81,6 +81,8 @@ model Candidate {
   candidateSelfie              String?
   adharPicture                 String?
   resetedAt                    DateTime?
+  practicalStartedAt         DateTime?
+  practicalSubmittedAt       DateTime?
   batch                        Batch    @relation(fields: [batchId], references: [id])    
   examResponses               ExamResponse[]
   @@map("candidates") // optional: name of the table in DB
@@ -97,8 +99,6 @@ model ExamResponse{
   marksObtained         Int       @default(0)
   candidate             Candidate @relation(fields: [candidateId], references: [id])
   batch                 Batch     @relation(fields: [batchId], references: [id])
-
-
   @@map("exam_response") 
   @@id([questionId, answerId, candidateId,startedAt,endedAt]) 
 }
