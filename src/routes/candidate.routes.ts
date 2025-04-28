@@ -23,4 +23,16 @@ router
     authMiddleware.isAuthenticatedCandidate,
     candidateController.submitTheoryResponses
   );
+router
+  .route("/upload-random-video")
+  .post(
+    authMiddleware.isAuthenticatedCandidate,
+    candidateController.uploadRandomVideo
+  );
+router
+  .route("/upload-random-photo")
+  .post(
+    authMiddleware.isAuthenticatedCandidate,
+    candidateController.uploadRandomPhoto
+  );
 export default router;

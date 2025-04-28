@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import candidateService from "../services/candidate.service";
+import { AppError } from "../utils/AppError";
 const getMyTheoryTest = async (
   req: Request,
   res: Response,
@@ -51,8 +52,56 @@ const uploadOnboardingEvidences = async (
     next(error);
   }
 };
+const uploadRandomVideo = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.body.testType) {
+      throw new AppError("Test type is required,(THEORY/PRATICAL)", 400);
+    }
+    const candidateId = req.headers["x-candidate-id"] as string;
+    const batchId = req.headers["x-batch-id"] as string;
+    await candidateService.uploadRandomVideo(
+      candidateId,
+      // @ts-ignore
+      req?.files?.video,
+      batchId,
+      req.body.testType
+    );
+    res.status(200).json({});
+  } catch (error) {
+    next(error);
+  }
+};
+const uploadRandomPhoto = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.body?.testType) {
+      throw new AppError("Test type is required,(THEORY/PRATICAL)", 400);
+    }
+    const candidateId = req.headers["x-candidate-id"] as string;
+    const batchId = req.headers["x-batch-id"] as string;
+    await candidateService.uploadRandomPhoto(
+      candidateId,
+      // @ts-ignore
+      req?.files?.photo,
+      batchId,
+      req.body.testType
+    );
+    res.status(200).json({});
+  } catch (error) {
+    next(error);
+  }
+};
 export default {
   getMyTheoryTest,
   submitTheoryResponses,
   uploadOnboardingEvidences,
+  uploadRandomVideo,
+  uploadRandomPhoto,
 };

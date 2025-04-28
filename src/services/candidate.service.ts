@@ -182,9 +182,170 @@ const submitTheoryResponses = async (
   `;
   await prisma.$executeRawUnsafe(query);
 };
+const uploadRandomVideo = async (
+  candidateId: string,
+  video: UploadedFile,
+  batchId: string,
+  testType: "THEORY" | "PRACTICAL" | "VIVA"
+) => {
+  const batch = await prisma.batch.findFirst({
+    where: {
+      id: batchId,
+    },
+    select: {
+      isCandidateVideoRequired: true,
+    },
+  });
+  if (!batch) {
+    throw new AppError("Batch not found", 404);
+  }
+  if (!batch.isCandidateVideoRequired) {
+    throw new AppError("Video upload is not required for this batch", 400);
+  }
+  if (!video) {
+    throw new AppError("Video is required", 400);
+  }
+  const candidate = await prisma.candidate.findFirst({
+    where: {
+      id: candidateId,
+      batchId: batchId,
+    },
+    select: {
+      isPresentInTheory: true,
+      isPresentInPractical: true,
+      theoryExamStatus: true,
+      practicalExamStatus: true,
+    },
+  });
+  if (!candidate) {
+    throw new AppError("Candidate not found", 404);
+  }
+  if (testType === "THEORY" && !candidate.isPresentInTheory) {
+    throw new AppError("Your attendance is not marked in theory exam", 401);
+  }
+  if (testType === "PRACTICAL" && !candidate.isPresentInPractical) {
+    throw new AppError("Your attendance is not marked in practical exam", 401);
+  }
+  if (
+    testType === "THEORY" &&
+    (candidate.theoryExamStatus === "notStarted" ||
+      candidate.theoryExamStatus === "submitted")
+  ) {
+    throw new AppError("Your exam is not started or already submitted", 401);
+  }
+  if (
+    testType === "PRACTICAL" &&
+    (candidate.practicalExamStatus === "notStarted" ||
+      candidate.practicalExamStatus === "submitted")
+  ) {
+    throw new AppError("Your exam is not started or already submitted", 401);
+  }
+  const ext = path.extname(video.name);
+  const videoPath = path.join(
+    __dirname,
+    "..",
+    "..",
+    "uploads",
+    "evidences",
+    "candidates",
+    candidateId,
+    "videos",
+    testType,
+    `${Date.now()}${ext}`
+  );
+  if (!video.mimetype.startsWith("video/")) {
+    throw new AppError("Invalid file type", 400);
+  }
+  if (video.size > 10 * 1024 * 1024) {
+    throw new AppError("File size exceeds 10MB", 400);
+  }
+  await video.mv(videoPath);
+};
+const uploadRandomPhoto = async (
+  candidateId: string,
+  photo: UploadedFile,
+  batchId: string,
+  testType: "THEORY" | "PRACTICAL" | "VIVA"
+) => {
+  const batch = await prisma.batch.findFirst({
+    where: {
+      id: batchId,
+    },
+    select: {
+      isCandidatePhotosRequired: true,
+    },
+  });
+  if (!batch) {
+    throw new AppError("Batch not found", 404);
+  }
+  if (!batch.isCandidatePhotosRequired) {
+    throw new AppError("Video upload is not required for this batch", 400);
+  }
+  if (!photo) {
+    throw new AppError("Photo is required", 400);
+  }
+  const candidate = await prisma.candidate.findFirst({
+    where: {
+      id: candidateId,
+      batchId: batchId,
+    },
+    select: {
+      isPresentInTheory: true,
+      isPresentInPractical: true,
+      theoryExamStatus: true,
+      practicalExamStatus: true,
+    },
+  });
+  if (!candidate) {
+    throw new AppError("Candidate not found", 404);
+  }
+  if (testType === "THEORY" && !candidate.isPresentInTheory) {
+    throw new AppError("Your attendance is not marked in theory exam", 401);
+  }
+  if (testType === "PRACTICAL" && !candidate.isPresentInPractical) {
+    throw new AppError("Your attendance is not marked in practical exam", 401);
+  }
+  if (
+    testType === "THEORY" &&
+    (candidate.theoryExamStatus === "notStarted" ||
+      candidate.theoryExamStatus === "submitted")
+  ) {
+    throw new AppError("Your exam is not started or already submitted", 401);
+  }
+  if (
+    testType === "PRACTICAL" &&
+    (candidate.practicalExamStatus === "notStarted" ||
+      candidate.practicalExamStatus === "submitted")
+  ) {
+    throw new AppError("Your exam is not started or already submitted", 401);
+  }
+
+  const ext = path.extname(photo.name);
+  const photoPath = path.join(
+    __dirname,
+    "..",
+    "..",
+    "uploads",
+    "evidences",
+    "candidates",
+    candidateId,
+    "photos",
+    testType,
+    `${Date.now()}${ext}`
+  );
+  if (!photo.mimetype.startsWith("image/")) {
+    throw new AppError("Invalid file type", 400);
+  }
+  if (photo.size > 2 * 1024 * 1024) {
+    throw new AppError("File size exceeds 2MB", 400);
+  }
+  await photo.mv(photoPath);
+};
 
 export default {
   getMyTheoryTest,
   submitTheoryResponses,
   uploadOnboardingEvidence,
+  uploadRandomVideo,
+  uploadRandomPhoto,
 };
