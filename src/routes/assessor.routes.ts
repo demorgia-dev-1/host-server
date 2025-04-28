@@ -51,6 +51,20 @@ router
     assessorController.markAttendanceInTheory
   );
 router
+  .route("/offline-batches/:batchId/mark-practical-attendance")
+  .post(
+    validateRequest(markCandidateAttendanceSchema),
+    authMiddleware.isAuthenticatedAssessor,
+    assessorController.markAttendanceInPractical
+  );
+router
+  .route("/offline-batches/:batchId/mark-viva-attendance")
+  .post(
+    validateRequest(markCandidateAttendanceSchema),
+    authMiddleware.isAuthenticatedAssessor,
+    assessorController.markAttendanceInViva
+  );
+router
   .route("/offline-batches/:batchId/start-batch")
   .post(authMiddleware.isAuthenticatedAssessor, assessorController.startBatch);
 router

@@ -173,11 +173,11 @@ const submitTheoryResponses = async (
     throw new AppError("No responses found", 400);
   }
   const values = responses.responses.map((response) => {
-    return `('${response.questionId}', '${response.answerId}','${batchId}', '${candidateId}','${response.startedAt}', '${response.endedAt}')`;
+    return `('${response.questionId}', '${response.answerId}','${batchId}', '${candidateId}','${response.startedAt}', '${response.endedAt}', 'THEORY')`;
   });
   const query = `
-    INSERT OR REPLACE INTO theory_exam_response 
-    (questionId, answerId, batchId, candidateId, startedAt, endedAt) 
+    INSERT OR REPLACE INTO exam_response 
+    (questionId, answerId, batchId, candidateId, startedAt, endedAt,type) 
     VALUES ${values}
   `;
   await prisma.$executeRawUnsafe(query);

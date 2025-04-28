@@ -121,6 +121,40 @@ export const markAttendanceInTheory = async (
     next(error);
   }
 };
+export const markAttendanceInPractical = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const candidates = req.body.candidates;
+    const batchId = req.params.batchId;
+    const assessorId = req.headers["x-assessor-id"] as string;
+    await assessorService.markAttendanceInPractical(
+      candidates,
+      batchId,
+      assessorId
+    );
+    res.status(200).json({});
+  } catch (error) {
+    next(error);
+  }
+};
+export const markAttendanceInViva = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const candidates = req.body.candidates;
+    const batchId = req.params.batchId;
+    const assessorId = req.headers["x-assessor-id"] as string;
+    await assessorService.markAttendanceInViva(candidates, batchId, assessorId);
+    res.status(200).json({});
+  } catch (error) {
+    next(error);
+  }
+};
 export const markAsReached = async (
   req: Request,
   res: Response,
@@ -168,15 +202,105 @@ export const deleteBatches = async (
     next(error);
   }
 };
+export const submitCandidatePracticalResponses = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const batchId = req.params.batchId;
+    const candidateId = req.params.candidateId;
+    const assessorId = req.headers["x-assessor-id"] as string;
+    if (!Array.isArray(req.body.responses)) {
+      return next(new AppError("responses should be an array", 400, true));
+    }
+    const validFields = ["questionId", "answerId", "marksObtained"];
+    const responses = req.body.responses.map(
+      (response: Record<string, any>) => {
+        const invalidFields = Object.keys(response).filter(
+          (key) => !validFields.includes(key)
+        );
+        if (invalidFields.length > 0) {
+          throw new AppError(
+            `Invalid fields in response: ${invalidFields.join(", ")}`,
+            400,
+            true
+          );
+        }
+        return {
+          questionId: response.questionId,
+          answerId: response.answerId,
+          marksObtained: response.marksObtained,
+        };
+      }
+    );
+
+    await assessorService.submitCandidatePracticalResponses(
+      responses,
+      candidateId,
+      batchId,
+      assessorId
+    );
+  } catch (error) {
+    next(error);
+  }
+};
+export const submitCandidateVivaResponses = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const batchId = req.params.batchId;
+    const candidateId = req.params.candidateId;
+    const assessorId = req.headers["x-assessor-id"] as string;
+    if (!Array.isArray(req.body.responses)) {
+      return next(new AppError("responses should be an array", 400, true));
+    }
+    const validFields = ["questionId", "marksObtained"];
+    const responses = req.body.responses.map(
+      (response: Record<string, any>) => {
+        const invalidFields = Object.keys(response).filter(
+          (key) => !validFields.includes(key)
+        );
+        if (invalidFields.length > 0) {
+          throw new AppError(
+            `Invalid fields in response: ${invalidFields.join(", ")}`,
+            400,
+            true
+          );
+        }
+        return {
+          questionId: response.questionId,
+          answerId: response.answerId,
+          marksObtained: response.marksObtained,
+        };
+      }
+    );
+    await assessorService.submitCandidateVivaResponses(
+      responses,
+      candidateId,
+      batchId,
+      assessorId
+    );
+    res.status(200).json({});
+  } catch (error) {
+    next(error);
+  }
+};
 
 export default {
   getOfflineBatches,
   saveBatchOffline,
   getLoadedBatches,
   markAttendanceInTheory,
+  markAttendanceInPractical,
+  markAttendanceInViva,
   candidateList,
   resetCandidates,
   markAsReached,
   startBatch,
   deleteBatches,
+  submitCandidatePracticalResponses,
+  submitCandidateVivaResponses,
 };

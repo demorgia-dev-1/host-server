@@ -167,6 +167,9 @@ const markAttendanceInTheory = async (
     if (!batch) {
       throw new AppError("Batch not found", 404);
     }
+    if (!batch.theoryQuestionBank) {
+      throw new AppError("no theory question bank found", 400);
+    }
     if (batch.status === "assigned") {
       throw new AppError("Batch is not started yet", 400);
     }
@@ -193,6 +196,74 @@ const markAttendanceInTheory = async (
     }
     throw new AppError("internal server error", 500);
   }
+};
+const markAttendanceInPractical = async (
+  candidates: string[],
+  batchId: string,
+  assessorId: string
+) => {
+  const batch = await prisma.batch.findFirst({
+    where: { id: batchId, assessor: assessorId },
+  });
+  if (!batch) {
+    throw new AppError("Batch not found", 404);
+  }
+  if (!batch.practicalQuestionBank) {
+    throw new AppError("no practical question bank found", 400);
+  }
+  if (batch.status === "assigned") {
+    throw new AppError("Batch is not started yet", 400);
+  }
+  if (batch.status === "completed") {
+    throw new AppError("Batch is already completed", 400);
+  }
+  if (!batch.isAssessorReached) {
+    throw new AppError("mark yourself as reached", 400);
+  }
+  const updatedCandidates = await prisma.candidate.updateMany({
+    where: {
+      id: { in: candidates },
+      batchId: batchId,
+    },
+    data: {
+      isPresentInPractical: true,
+    },
+  });
+  return updatedCandidates;
+};
+const markAttendanceInViva = async (
+  candidates: string[],
+  batchId: string,
+  assessorId: string
+) => {
+  const batch = await prisma.batch.findFirst({
+    where: { id: batchId, assessor: assessorId },
+  });
+  if (!batch) {
+    throw new AppError("Batch not found", 404);
+  }
+  if (!batch.vivaQuestionBank) {
+    throw new AppError("no viva question bank found", 400);
+  }
+  if (batch.status === "assigned") {
+    throw new AppError("Batch is not started yet", 400);
+  }
+  if (batch.status === "completed") {
+    throw new AppError("Batch is already completed", 400);
+  }
+  if (!batch.isAssessorReached) {
+    throw new AppError("mark yourself as reached", 400);
+  }
+  const updatedCandidates = await prisma.candidate.updateMany({
+    where: {
+      id: { in: candidates },
+      batchId: batchId,
+    },
+    data: {
+      isPresentInViva: true,
+    },
+  });
+  return updatedCandidates;
 };
 const resetCandidates = async (
   candidateIds: string[],
@@ -337,14 +408,129 @@ const deleteBatches = async (ids: string[], assessorId: string) => {
     },
   });
 };
+const submitCandidatePracticalResponses = async (
+  responses: any,
+  candidateId: string,
+  batchId: string,
+  assessorId: string
+) => {
+  const batch = await prisma.batch.findFirst({
+    where: { id: batchId, assessor: assessorId },
+    select: {
+      isPracticalVisibleToCandidate: true,
+      practicalQuestionBank: true,
+      isAssessorReached: true,
+    },
+  });
+  if (!batch) {
+    throw new AppError("Batch not found", 404);
+  }
+  if (batch.isPracticalVisibleToCandidate) {
+    throw new AppError(
+      "Practical is visible to candidate,can't submit practical",
+      400
+    );
+  }
+  if (!batch.practicalQuestionBank) {
+    throw new AppError("no practical question bank found", 400);
+  }
+  if (!batch.isAssessorReached) {
+    throw new AppError("mark yourself as reached", 400);
+  }
+  const candidate = await prisma.candidate.findFirst({
+    where: { id: candidateId, batchId: batchId },
+    select: {
+      isPresentInPractical: true,
+      practicalExamStatus: true,
+    },
+  });
+  if (!candidate) {
+    throw new AppError("Candidate not found", 404);
+  }
+  if (candidate.practicalExamStatus === "submitted") {
+    throw new AppError("Candidate already submitted", 400);
+  }
+  if (!candidate.isPresentInPractical) {
+    throw new AppError("Candidate is not present in practical", 400);
+  }
+  if (responses.length === 0) {
+    throw new AppError("No responses found", 400);
+  }
+  await prisma.examResponse.createMany({
+    data: responses.map((response: any) => ({
+      questionId: response.questionId,
+      answerId: "no-answer-mentioned-practial-submitted-by-assessor",
+      marksObtained: response.marksObtained,
+      candidateId: candidateId,
+      batchId: batchId,
+      startedAt: new Date(),
+      endedAt: new Date(),
+      type: "PRACTICAL",
+    })),
+  });
+};
+const submitCandidateVivaResponses = async (
+  responses: any,
+  candidateId: string,
+  batchId: string,
+  assessorId: string
+) => {
+  const batch = await prisma.batch.findFirst({
+    where: { id: batchId, assessor: assessorId },
+  });
+  if (!batch) {
+    throw new AppError("Batch not found", 404);
+  }
+  if (!batch.vivaQuestionBank) {
+    throw new AppError("no viva question bank found", 400);
+  }
+  if (!batch.isAssessorReached) {
+    throw new AppError("mark yourself as reached", 400);
+  }
+  const candidate = await prisma.candidate.findFirst({
+    where: { id: candidateId, batchId: batchId },
+    select: {
+      isPresentInViva: true,
+      vivaExamStatus: true,
+    },
+  });
+  if (!candidate) {
+    throw new AppError("Candidate not found", 404);
+  }
+  if (candidate.vivaExamStatus === "submitted") {
+    throw new AppError("Candidate already submitted", 400);
+  }
+  if (!candidate.isPresentInViva) {
+    throw new AppError("Candidate is not present in viva", 400);
+  }
+  if (responses.length === 0) {
+    throw new AppError("No responses found", 400);
+  }
+  await prisma.examResponse.createMany({
+    data: responses.map((response: any) => ({
+      questionId: response.questionId,
+      answerId: "no-answer-mentioned-viva-submitted-by-assessor",
+      marksObtained: response.marksObtained,
+      candidateId: candidateId,
+      batchId: batchId,
+      startedAt: new Date(),
+      endedAt: new Date(),
+      type: "VIVA",
+    })),
+  });
+};
 export default {
   getAssignedBatches,
   saveBatchOffline,
   getLoadedBatches,
   markAttendanceInTheory,
+  markAttendanceInPractical,
+  markAttendanceInViva,
   getCandidateList,
   resetCandidates,
   markAssessorAsReached,
   startBatch,
   deleteBatches,
+  submitCandidatePracticalResponses,
+  submitCandidateVivaResponses,
 };

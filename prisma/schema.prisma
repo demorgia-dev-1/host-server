@@ -10,6 +10,12 @@ datasource db {
   provider = "sqlite"
   url      = env("DATABASE_URL")
 }
+enum ExamType {
+  THEORY
+  PRACTICAL
+  VIVA
+}
+
 
 model Batch {
   id                                    String   @id @map("_id")
@@ -38,8 +44,7 @@ model Batch {
   assessorCoordinates                   String?
   assessorGroupPhoto                    String?
   candidates                            Candidate[]
-  theoryResponses                       TheoryExamResponse[]
-  practicalResponses                    PracticalExamResponse[]
+  examResponses                         ExamResponse[]
   @@map("batches") 
 }
 
@@ -77,36 +82,23 @@ model Candidate {
   adharPicture                 String?
   resetedAt                    DateTime?
   batch                        Batch    @relation(fields: [batchId], references: [id])    
-  theroryExamResponse         TheoryExamResponse[]
-  practicalExamResponse       PracticalExamResponse[]
+  examResponses               ExamResponse[]
   @@map("candidates") // optional: name of the table in DB
 }
 
-model TheoryExamResponse{
+model ExamResponse{
   candidateId            String
   batchId                String
   questionId             String
   answerId               String
   startedAt              DateTime
   endedAt                DateTime
+  type                  ExamType  @default(THEORY)
+  marksObtained         Int       @default(0)
   candidate             Candidate @relation(fields: [candidateId], references: [id])
   batch                 Batch     @relation(fields: [batchId], references: [id])
-  
-  @@map("theory_exam_response") 
-  @@id([questionId, answerId, candidateId,startedAt,endedAt]) // composite primary key
-}
 
-model PracticalExamResponse{
-  candidateId            String
-  batchId                String
-  questionId             String
-  answerId               String
-  startedAt              DateTime
-  endedAt                DateTime
-  marksObtained          Int?
-  candidate             Candidate @relation(fields: [candidateId], references: [id])
-  batch                 Batch     @relation(fields: [batchId], references: [id])
-  @@map("practical_exam_response") 
-  @@id([questionId, answerId, candidateId,startedAt,endedAt]) // composite primary key
-}
 
+  @@map("exam_response") 
+  @@id([questionId, answerId, candidateId,startedAt,endedAt]) 
+}
