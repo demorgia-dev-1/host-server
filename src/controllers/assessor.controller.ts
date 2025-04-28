@@ -155,6 +155,19 @@ export const startBatch = async (
     next(error);
   }
 };
+export const deleteBatches = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const ids = req.body.ids;
+    assessorService.deleteBatches(ids, req.headers["x-assessor-id"] as string);
+    res.status(200).json({});
+  } catch (error) {
+    next(error);
+  }
+};
 
 export default {
   getOfflineBatches,
@@ -165,4 +178,5 @@ export default {
   resetCandidates,
   markAsReached,
   startBatch,
+  deleteBatches,
 };

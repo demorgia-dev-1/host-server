@@ -329,6 +329,14 @@ const startBatch = async (batchId: string, assessorId: string) => {
     },
   });
 };
+const deleteBatches = async (ids: string[], assessorId: string) => {
+  await prisma.batch.deleteMany({
+    where: {
+      id: { in: ids },
+      assessor: assessorId,
+    },
+  });
+};
 export default {
   getAssignedBatches,
   saveBatchOffline,
@@ -338,4 +346,5 @@ export default {
   resetCandidates,
   markAssessorAsReached,
   startBatch,
+  deleteBatches,
 };

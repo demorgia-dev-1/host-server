@@ -10,6 +10,12 @@ import {
 import authMiddleware from "../middlewares/auth.middleware";
 router.route("/offline-batches").get(assessorController.getOfflineBatches);
 router
+  .route("/offline-batches")
+  .delete(
+    authMiddleware.isAuthenticatedAssessor,
+    assessorController.deleteBatches
+  );
+router
   .route("/offline-batches/:batchId")
   .get(assessorController.saveBatchOffline);
 router.route("/offline-batches/:batchId/mark-assessor-as-reached").post(
