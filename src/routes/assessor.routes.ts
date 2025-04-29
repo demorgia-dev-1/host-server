@@ -37,7 +37,7 @@ router
     assessorController.candidateList
   );
 router
-  .route("/offline-batches/:batchId/reset-candidates")
+  .route("/offline-batches/:batchId/reset-theory")
   .post(
     validateRequest(resetCandidateTheoryTestSchema),
     authMiddleware.isAuthenticatedAssessor,
