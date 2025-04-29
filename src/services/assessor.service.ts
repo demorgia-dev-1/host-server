@@ -282,21 +282,69 @@ const resetCandidates = async (
   if (batch.status !== "ongoing") {
     throw new AppError("Batch is not ongoing", 400);
   }
-  await prisma.candidate.updateMany({
-    where: {
-      id: { in: candidateIds },
-      batchId: batchId,
-    },
-    data: {
-      isPresentInTheory: false,
-      isPresentInPractical: false,
-      isPresentInViva: false,
-      isTheorySubmitted: false,
-      theoryExamStatus: "notStarted",
-      practicalExamStatus: "notStarted",
-      vivaExamStatus: "notStarted",
-    },
+  await prisma.$transaction([
+    prisma.examResponse.deleteMany({
+      where: {
+        candidateId: { in: candidateIds },
+        batchId: batchId,
+        type: "THEORY",
+      },
+    }),
+    prisma.candidate.updateMany({
+      where: {
+        id: { in: candidateIds },
+        batchId: batchId,
+      },
+      data: {
+        isPresentInTheory: false,
+        isPresentInPractical: false,
+        isPresentInViva: false,
+        isTheorySubmitted: false,
+        theoryExamStatus: "notStarted",
+        practicalExamStatus: "notStarted",
+        vivaExamStatus: "notStarted",
+      },
+    }),
+  ]);
+};
+const resetCandidatesPractical = async (
+  candidateIds: string[],
+  batchId: string,
+  assessorId: string
+) => {
+  const batch = await prisma.batch.findFirst({
+    where: { id: batchId, assessor: assessorId },
   });
+  if (!batch) {
+    throw new AppError("Batch not found", 404);
+  }
+  if (!batch.isAssessorReached) {
+    throw new AppError("mark yourself as reached", 400);
+  }
+  if (batch.status !== "ongoing") {
+    throw new AppError("Batch is not ongoing", 400);
+  }
+  await prisma.$transaction([
+    prisma.examResponse.deleteMany({
+      where: {
+        candidateId: { in: candidateIds },
+        batchId: batchId,
+        type: "PRACTICAL",
+      },
+    }),
+    prisma.candidate.updateMany({
+      where: {
+        id: { in: candidateIds },
+        batchId: batchId,
+      },
+      data: {
+        isPresentInPractical: false,
+        practicalExamStatus: "notStarted",
+        practicalStartedAt: null,
+        practicalSubmittedAt: null,
+      },
+    }),
+  ]);
 };
 const markAssessorAsReached = async (
   batchId: string,
@@ -538,4 +586,5 @@ export default {
   deleteBatches,
   submitCandidatePracticalResponses,
   submitCandidateVivaResponses,
+  resetCandidatesPractical,
 };

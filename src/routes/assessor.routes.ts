@@ -44,6 +44,13 @@ router
     assessorController.resetCandidates
   );
 router
+  .route("/offline-batches/:batchId/reset-practical")
+  .post(
+    validateRequest(resetCandidateTheoryTestSchema),
+    authMiddleware.isAuthenticatedAssessor,
+    assessorController.resetCandidatesPractical
+  );
+router
   .route("/offline-batches/:batchId/mark-theory-attendance")
   .post(
     validateRequest(markCandidateAttendanceSchema),
