@@ -138,7 +138,7 @@ const getMyTheoryTest = async (candidateId: string) => {
   });
   return questionBank;
 };
-const getPracticalTest = async (candidateId: string) => {
+const getMyPracticalTest = async (candidateId: string) => {
   const candidate = await prisma.candidate.findFirst({
     where: {
       id: candidateId,
@@ -146,29 +146,34 @@ const getPracticalTest = async (candidateId: string) => {
     select: {
       batch: true,
       isPresentInPractical: true,
+      practicalExamStatus: true,
+      isEvidanceUploaded: true,
     },
   });
   if (!candidate) {
-    throw new AppError("candidate not found", 401, true);
+    throw new AppError("invalid credentials", 401, true);
   }
-  if (!candidate?.batch?.practicalQuestionBank) {
-    throw new AppError("practical question bank not found", 404, true);
-  }
-  if (!candidate.batch.isPracticalVisibleToCandidate) {
+  if (!candidate.isPresentInPractical) {
     throw new AppError(
-      "practical question bank not visible to candidate",
-      404,
+      "your attendance is not marked in practical exam",
+      401,
       true
     );
   }
-  if (!candidate.isPresentInPractical) {
-    throw new AppError("attendance not marked", 400, true);
+  if (candidate.practicalExamStatus !== "notStarted") {
+    const msg =
+      candidate.practicalExamStatus === "submitted"
+        ? "Your exam is already submitted"
+        : "Your exam is already started";
+    throw new AppError(msg, 401, true);
   }
+
   const questionBank = JSON.parse(candidate.batch.practicalQuestionBank);
+  if (!questionBank) {
+    throw new AppError("Question bank not found", 404);
+  }
   await prisma.candidate.update({
-    where: {
-      id: candidateId,
-    },
+    where: { id: candidateId },
     data: {
       practicalExamStatus: "started",
       practicalStartedAt: new Date(),
@@ -416,49 +421,6 @@ const uploadRandomPhoto = async (
   }
   await photo.mv(photoPath);
 };
-const getMyPracticalTest = async (candidateId: string) => {
-  const candidate = await prisma.candidate.findFirst({
-    where: {
-      id: candidateId,
-    },
-    select: {
-      batch: true,
-      isPresentInPractical: true,
-      practicalExamStatus: true,
-      isEvidanceUploaded: true,
-    },
-  });
-  if (!candidate) {
-    throw new AppError("invalid credentials", 401, true);
-  }
-  if (!candidate.isPresentInPractical) {
-    throw new AppError(
-      "your attendance is not marked in practical exam",
-      401,
-      true
-    );
-  }
-  if (candidate.practicalExamStatus !== "notStarted") {
-    const msg =
-      candidate.practicalExamStatus === "submitted"
-        ? "Your exam is already submitted"
-        : "Your exam is already started";
-    throw new AppError(msg, 401, true);
-  }
-
-  const questionBank = JSON.parse(candidate.batch.practicalQuestionBank);
-  if (!questionBank) {
-    throw new AppError("Question bank not found", 404);
-  }
-  await prisma.candidate.update({
-    where: { id: candidateId },
-    data: {
-      practicalExamStatus: "started",
-      practicalStartedAt: new Date(),
-    },
-  });
-  return questionBank;
-};
 const submitPracticalResponses = async (
   responses: SubmitTheoryResponses,
   candidateId: string,
@@ -494,9 +456,9 @@ const submitPracticalResponses = async (
         : "Your exam is not started";
     throw new AppError(msg, 401, true);
   }
-  if (responses.responses.length === 0) {
-    throw new AppError("No responses found", 400);
-  }
+  // if (responses.responses.length === 0) {
+  //   throw new AppError("No responses found", 400);
+  // }
   const values = responses.responses.map((response) => {
     return `('${response.questionId}', '${response.answerId}','${batchId}', '${candidateId}','${response.startedAt}', '${response.endedAt}', 'PRACTICAL')`;
   });
@@ -546,6 +508,26 @@ const submitPracticalTest = async (candidateId: string, batchId: string) => {
     },
   });
 };
+const getBatchDetails = async (batchId: string) => {
+  const batch = await prisma.batch.findFirst({
+    where: {
+      id: batchId,
+    },
+    select: {
+      id: true,
+      status: true,
+      durationInMin: true,
+      isCandidateAdharRequired: true,
+      isCandidateLocationRequired: true,
+      isCandidatePhotosRequired: true,
+      isCandidateVideoRequired: true,
+      isPracticalVisibleToCandidate: true,
+      isCandidateSelfieRequired: true,
+      isSuspiciousActivityDetectionRequired: true,
+    },
+  });
+  return batch;
+};
 export default {
   getMyTheoryTest,
   submitTheoryResponses,
@@ -556,4 +538,5 @@ export default {
   submitPracticalResponses,
   submitPracticalTest,
   getMyPracticalTest,
+  getBatchDetails,
 };

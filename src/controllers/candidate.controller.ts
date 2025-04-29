@@ -158,6 +158,19 @@ const uploadRandomPhoto = async (
     next(error);
   }
 };
+const batchDetails = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const batchId = req.headers["x-batch-id"] as string;
+    const batch = await candidateService.getBatchDetails(batchId);
+    res.status(200).json(batch);
+  } catch (error) {
+    return next(error);
+  }
+};
 export default {
   getMyTheoryTest,
   submitTheoryResponses,
@@ -168,4 +181,5 @@ export default {
   uploadRandomVideo,
   uploadRandomPhoto,
   getPracticalTest,
+  batchDetails,
 };

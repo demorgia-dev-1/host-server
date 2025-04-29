@@ -5,6 +5,12 @@ import candidateController from "../controllers/candidate.controller";
 import validateRequest from "../middlewares/validateRequest";
 import { submitTheoryResponsesSchema } from "../schemas/candidate.schema";
 router
+  .route("/batch-details")
+  .get(
+    authMiddleware.isAuthenticatedCandidate,
+    candidateController.batchDetails
+  );
+router
   .route("/upload-onboarding-evidences")
   .post(
     authMiddleware.isAuthenticatedCandidate,
