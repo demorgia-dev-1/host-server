@@ -51,6 +51,13 @@ router
     assessorController.resetCandidatesPractical
   );
 router
+  .route("/offline-batches/:batchId/reset-viva")
+  .post(
+    validateRequest(resetCandidateTheoryTestSchema),
+    authMiddleware.isAuthenticatedAssessor,
+    assessorController.resetCandidatesViva
+  );
+router
   .route("/offline-batches/:batchId/mark-theory-attendance")
   .post(
     validateRequest(markCandidateAttendanceSchema),

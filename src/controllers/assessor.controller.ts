@@ -122,6 +122,22 @@ export const resetCandidatesPractical = async (
     next(error);
   }
 };
+export const resetCandidatesViva = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    await assessorService.resetCandidatesViva(
+      req.body.candidates,
+      req.params.batchId,
+      req.headers["x-assessor-id"] as string
+    );
+    res.status(200).json({});
+  } catch (error) {
+    return next(error);
+  }
+};
 export const markAttendanceInTheory = async (
   req: Request,
   res: Response,
@@ -320,4 +336,5 @@ export default {
   submitCandidatePracticalResponses,
   submitCandidateVivaResponses,
   resetCandidatesPractical,
+  resetCandidatesViva,
 };

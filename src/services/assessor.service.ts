@@ -346,6 +346,43 @@ const resetCandidatesPractical = async (
     }),
   ]);
 };
+const resetCandidatesViva = async (
+  candidateIds: string[],
+  batchId: string,
+  assessorId: string
+) => {
+  const batch = await prisma.batch.findFirst({
+    where: { id: batchId, assessor: assessorId },
+  });
+  if (!batch) {
+    throw new AppError("Batch not found", 404);
+  }
+  if (!batch.isAssessorReached) {
+    throw new AppError("mark yourself as reached", 400);
+  }
+  if (batch.status !== "ongoing") {
+    throw new AppError("Batch is not ongoing", 400);
+  }
+  await prisma.$transaction([
+    prisma.examResponse.deleteMany({
+      where: {
+        candidateId: { in: candidateIds },
+        batchId: batchId,
+        type: "VIVA",
+      },
+    }),
+    prisma.candidate.updateMany({
+      where: {
+        id: { in: candidateIds },
+        batchId: batchId,
+      },
+      data: {
+        isPresentInViva: false,
+        vivaExamStatus: "notStarted",
+      },
+    }),
+  ]);
+};
 const markAssessorAsReached = async (
   batchId: string,
   assessorId: string,
@@ -587,4 +624,5 @@ export default {
   submitCandidatePracticalResponses,
   submitCandidateVivaResponses,
   resetCandidatesPractical,
+  resetCandidatesViva,
 };
