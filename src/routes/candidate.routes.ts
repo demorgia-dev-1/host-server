@@ -17,6 +17,12 @@ router
     candidateController.getMyTheoryTest
   );
 router
+  .route("/my-practical-test")
+  .get(
+    authMiddleware.isAuthenticatedCandidate,
+    candidateController.getPracticalTest
+  );
+router
   .route("/submit-theory-responses")
   .post(
     validateRequest(submitTheoryResponsesSchema),

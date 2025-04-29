@@ -32,6 +32,20 @@ const submitTheoryResponses = async (
     next(error);
   }
 };
+const getPracticalTest = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const test = await candidateService.getMyPracticalTest(
+      req.headers["x-candidate-id"] as string
+    );
+    res.status(200).json(test);
+  } catch (error) {
+    return next(error);
+  }
+};
 const submitTheoryTest = async (
   req: Request,
   res: Response,
@@ -78,7 +92,6 @@ const submitPracticalTest = async (
     next(error);
   }
 };
-
 const uploadOnboardingEvidences = async (
   req: Request,
   res: Response,
@@ -154,4 +167,5 @@ export default {
   uploadOnboardingEvidences,
   uploadRandomVideo,
   uploadRandomPhoto,
+  getPracticalTest,
 };

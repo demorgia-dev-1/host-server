@@ -519,6 +519,11 @@ const submitCandidateVivaResponses = async (
     })),
   });
 };
+const syncBatchByCandidateId = async () => {
+  // TODO:
+  // Implement the logic to sync batch by candidate ID
+  //
+};
 export default {
   getAssignedBatches,
   saveBatchOffline,

@@ -138,6 +138,44 @@ const getMyTheoryTest = async (candidateId: string) => {
   });
   return questionBank;
 };
+const getPracticalTest = async (candidateId: string) => {
+  const candidate = await prisma.candidate.findFirst({
+    where: {
+      id: candidateId,
+    },
+    select: {
+      batch: true,
+      isPresentInPractical: true,
+    },
+  });
+  if (!candidate) {
+    throw new AppError("candidate not found", 401, true);
+  }
+  if (!candidate?.batch?.practicalQuestionBank) {
+    throw new AppError("practical question bank not found", 404, true);
+  }
+  if (!candidate.batch.isPracticalVisibleToCandidate) {
+    throw new AppError(
+      "practical question bank not visible to candidate",
+      404,
+      true
+    );
+  }
+  if (!candidate.isPresentInPractical) {
+    throw new AppError("attendance not marked", 400, true);
+  }
+  const questionBank = JSON.parse(candidate.batch.practicalQuestionBank);
+  await prisma.candidate.update({
+    where: {
+      id: candidateId,
+    },
+    data: {
+      practicalExamStatus: "started",
+      practicalStartedAt: new Date(),
+    },
+  });
+  return questionBank;
+};
 const submitTheoryResponses = async (
   responses: SubmitTheoryResponses,
   candidateId: string,
@@ -517,4 +555,5 @@ export default {
   uploadRandomPhoto,
   submitPracticalResponses,
   submitPracticalTest,
+  getMyPracticalTest,
 };
