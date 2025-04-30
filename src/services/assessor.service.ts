@@ -1,5 +1,6 @@
 import axios from "axios";
 import path from "path";
+import fs from "fs";
 import { AppError } from "../utils/AppError";
 import { PrismaClient } from "../../generated/prisma";
 import { PrismaClientKnownRequestError } from "../../generated/prisma/runtime/library";
@@ -604,10 +605,35 @@ const submitCandidateVivaResponses = async (
     })),
   });
 };
-const syncBatchByCandidateId = async () => {
-  // TODO:
-  // Implement the logic to sync batch by candidate ID
-  //
+const syncCandidate = async (batchId: string, candidateId: string) => {
+  // upload random photos
+  // 1. upload theory random photos
+  const randomPhotos = path.join(
+    __dirname,
+    "..",
+    "..",
+    "uploads",
+    "batches",
+    batchId,
+    "evidences",
+    "candidates",
+    candidateId,
+    "photos",
+    "THEORY"
+  );
+  if (!fs.existsSync(randomPhotos)) {
+    throw new AppError("Directory does not exist: " + randomPhotos, 404);
+  }
+  const photos = await fs.promises.readdir(randomPhotos);
+  Promise.all(
+    photos.map((photo) =>
+      axios.get(
+        `${process.env.MAIN_SERVER_URL}/assessor/offline-batches/${batchId}/candidates/${candidateId}/photos/THEORY/${photo}`
+      )
+    )
+  );
+  // console.log("photo", photos);
+  // await fs.readdir(randomPhotos, {});
 };
 export default {
   getAssignedBatches,
@@ -625,4 +651,5 @@ export default {
   submitCandidateVivaResponses,
   resetCandidatesPractical,
   resetCandidatesViva,
+  syncCandidate,
 };

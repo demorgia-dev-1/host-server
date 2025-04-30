@@ -1,6 +1,9 @@
 import express from "express";
 const router = express.Router();
-import assessorController from "../controllers/assessor.controller";
+import assessorController, {
+  submitCandidatePracticalResponses,
+  submitCandidateVivaResponses,
+} from "../controllers/assessor.controller";
 import validateRequest from "../middlewares/validateRequest";
 import {
   markAssessorAsReachedSchema,
@@ -36,6 +39,15 @@ router
     authMiddleware.isAuthenticatedAssessor,
     assessorController.candidateList
   );
+router
+  .route("/offline-batches/:batchId/candidates/:candidateId/submit-practical")
+  .post(
+    authMiddleware.isAuthenticatedAssessor,
+    submitCandidatePracticalResponses
+  );
+router
+  .route("/offline-batches/:batchId/candidates/:candidateId/submit-practical")
+  .post(authMiddleware.isAuthenticatedAssessor, submitCandidateVivaResponses);
 router
   .route("/offline-batches/:batchId/reset-theory")
   .post(
@@ -81,6 +93,12 @@ router
 router
   .route("/offline-batches/:batchId/start-batch")
   .post(authMiddleware.isAuthenticatedAssessor, assessorController.startBatch);
+router
+  .route("/offline-batches/:batchId/candidates/:candidateId/sync")
+  .post(
+    authMiddleware.isAuthenticatedAssessor,
+    assessorController.syncCandidate
+  );
 router
   .route("/loaded-batches")
   .get(

@@ -247,22 +247,13 @@ export const submitCandidatePracticalResponses = async (
     if (!Array.isArray(req.body.responses)) {
       return next(new AppError("responses should be an array", 400, true));
     }
-    const validFields = ["questionId", "answerId", "marksObtained"];
     const responses = req.body.responses.map(
       (response: Record<string, any>) => {
-        const invalidFields = Object.keys(response).filter(
-          (key) => !validFields.includes(key)
-        );
-        if (invalidFields.length > 0) {
-          throw new AppError(
-            `Invalid fields in response: ${invalidFields.join(", ")}`,
-            400,
-            true
-          );
+        if (!response.questionId || !response.marksObtained) {
+          throw new AppError("questionId and answerId are required", 400, true);
         }
         return {
           questionId: response.questionId,
-          answerId: response.answerId,
           marksObtained: response.marksObtained,
         };
       }
@@ -290,22 +281,17 @@ export const submitCandidateVivaResponses = async (
     if (!Array.isArray(req.body.responses)) {
       return next(new AppError("responses should be an array", 400, true));
     }
-    const validFields = ["questionId", "marksObtained"];
     const responses = req.body.responses.map(
       (response: Record<string, any>) => {
-        const invalidFields = Object.keys(response).filter(
-          (key) => !validFields.includes(key)
-        );
-        if (invalidFields.length > 0) {
+        if (!response.questionId || !response.marksObtained) {
           throw new AppError(
-            `Invalid fields in response: ${invalidFields.join(", ")}`,
+            "questionId and marksObtained are required",
             400,
             true
           );
         }
         return {
           questionId: response.questionId,
-          answerId: response.answerId,
           marksObtained: response.marksObtained,
         };
       }
@@ -318,6 +304,21 @@ export const submitCandidateVivaResponses = async (
     );
     res.status(200).json({});
   } catch (error) {
+    next(error);
+  }
+};
+export const syncCandidate = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const batchId = req.params.batchId;
+    const candidateId = req.params.candidateId;
+    await assessorService.syncCandidate(batchId, candidateId);
+    res.status(200).json({});
+  } catch (error) {
+    console.log("error", error);
     next(error);
   }
 };
@@ -337,4 +338,5 @@ export default {
   submitCandidateVivaResponses,
   resetCandidatesPractical,
   resetCandidatesViva,
+  syncCandidate,
 };
