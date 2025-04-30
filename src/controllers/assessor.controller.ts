@@ -235,6 +235,37 @@ export const deleteBatches = async (
     next(error);
   }
 };
+export const getPracticalQuestionBank = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const questionBank = await assessorService.getPracticalQuestionBank(
+      req.params.batchId,
+      req.headers["x-assessor-id"] as string
+    );
+    res.status(200).json(questionBank);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getVivaQuestionBank = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const questionBank = await assessorService.getVivaQuestionBank(
+      req.params.batchId,
+      req.headers["x-assessor-id"] as string
+    );
+    res.status(200).json(questionBank);
+  } catch (error) {
+    next(error);
+  }
+};
 export const submitCandidatePracticalResponses = async (
   req: Request,
   res: Response,
@@ -244,6 +275,9 @@ export const submitCandidatePracticalResponses = async (
     const batchId = req.params.batchId;
     const candidateId = req.params.candidateId;
     const assessorId = req.headers["x-assessor-id"] as string;
+    if (!req.body?.responses) {
+      return next(new AppError("responses are required", 400, true));
+    }
     if (!Array.isArray(req.body.responses)) {
       return next(new AppError("responses should be an array", 400, true));
     }
@@ -278,6 +312,9 @@ export const submitCandidateVivaResponses = async (
     const batchId = req.params.batchId;
     const candidateId = req.params.candidateId;
     const assessorId = req.headers["x-assessor-id"] as string;
+    if (!req.body?.responses) {
+      return next(new AppError("responses are required", 400, true));
+    }
     if (!Array.isArray(req.body.responses)) {
       return next(new AppError("responses should be an array", 400, true));
     }
@@ -339,4 +376,6 @@ export default {
   resetCandidatesPractical,
   resetCandidatesViva,
   syncCandidate,
+  getPracticalQuestionBank,
+  getVivaQuestionBank,
 };

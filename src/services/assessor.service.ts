@@ -605,6 +605,39 @@ const submitCandidateVivaResponses = async (
     })),
   });
 };
+const getPracticalQuestionBank = async (
+  batchId: string,
+  assessorId: string
+) => {
+  const batch = await prisma.batch.findFirst({
+    where: {
+      id: batchId,
+      assessor: assessorId,
+    },
+  });
+  if (!batch) {
+    throw new AppError("batch not found", 404);
+  }
+  if (!batch.practicalQuestionBank) {
+    throw new AppError("practical question bank not found", 404);
+  }
+  return JSON.parse(batch.practicalQuestionBank);
+};
+const getVivaQuestionBank = async (batchId: string, assessorId: string) => {
+  const batch = await prisma.batch.findFirst({
+    where: {
+      id: batchId,
+      assessor: assessorId,
+    },
+  });
+  if (!batch) {
+    throw new AppError("batch not found", 404);
+  }
+  if (!batch.vivaQuestionBank) {
+    throw new AppError("viva question bank not found", 404);
+  }
+  return JSON.parse(batch.vivaQuestionBank);
+};
 const syncCandidate = async (batchId: string, candidateId: string) => {
   // upload random photos
   // 1. upload theory random photos
@@ -652,4 +685,6 @@ export default {
   resetCandidatesPractical,
   resetCandidatesViva,
   syncCandidate,
+  getPracticalQuestionBank,
+  getVivaQuestionBank,
 };

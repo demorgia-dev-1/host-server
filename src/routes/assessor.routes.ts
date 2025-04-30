@@ -40,15 +40,6 @@ router
     assessorController.candidateList
   );
 router
-  .route("/offline-batches/:batchId/candidates/:candidateId/submit-practical")
-  .post(
-    authMiddleware.isAuthenticatedAssessor,
-    submitCandidatePracticalResponses
-  );
-router
-  .route("/offline-batches/:batchId/candidates/:candidateId/submit-practical")
-  .post(authMiddleware.isAuthenticatedAssessor, submitCandidateVivaResponses);
-router
   .route("/offline-batches/:batchId/reset-theory")
   .post(
     validateRequest(resetCandidateTheoryTestSchema),
@@ -94,11 +85,32 @@ router
   .route("/offline-batches/:batchId/start-batch")
   .post(authMiddleware.isAuthenticatedAssessor, assessorController.startBatch);
 router
+  .route("/offline-batches/:batchId/practical-question-bank")
+  .get(
+    authMiddleware.isAuthenticatedAssessor,
+    assessorController.getPracticalQuestionBank
+  );
+router
+  .route("/offline-batches/:batchId/viva-question-bank")
+  .get(
+    authMiddleware.isAuthenticatedAssessor,
+    assessorController.getVivaQuestionBank
+  );
+router
   .route("/offline-batches/:batchId/candidates/:candidateId/sync")
   .post(
     authMiddleware.isAuthenticatedAssessor,
     assessorController.syncCandidate
   );
+router
+  .route("/offline-batches/:batchId/candidates/:candidateId/submit-practical")
+  .post(
+    authMiddleware.isAuthenticatedAssessor,
+    submitCandidatePracticalResponses
+  );
+router
+  .route("/offline-batches/:batchId/candidates/:candidateId/submit-viva")
+  .post(authMiddleware.isAuthenticatedAssessor, submitCandidateVivaResponses);
 router
   .route("/loaded-batches")
   .get(
