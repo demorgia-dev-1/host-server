@@ -542,18 +542,29 @@ const submitCandidatePracticalResponses = async (
   if (responses.length === 0) {
     throw new AppError("No responses found", 400);
   }
-  await prisma.examResponse.createMany({
-    data: responses.map((response: any) => ({
-      questionId: response.questionId,
-      answerId: "no-answer-mentioned-practial-submitted-by-assessor",
-      marksObtained: response.marksObtained,
-      candidateId: candidateId,
-      batchId: batchId,
-      startedAt: new Date(),
-      endedAt: new Date(),
-      type: "PRACTICAL",
-    })),
-  });
+  await prisma.$transaction([
+    prisma.examResponse.createMany({
+      data: responses.map((response: any) => ({
+        questionId: response.questionId,
+        answerId: "no-answer-mentioned-practial-submitted-by-assessor",
+        marksObtained: response.marksObtained,
+        candidateId: candidateId,
+        batchId: batchId,
+        startedAt: new Date(),
+        endedAt: new Date(),
+        type: "PRACTICAL",
+      })),
+    }),
+    prisma.candidate.update({
+      where: {
+        id: candidateId,
+      },
+      data: {
+        practicalExamStatus: "submitted",
+        isPresentInPractical: false,
+      },
+    }),
+  ]);
 };
 const submitCandidateVivaResponses = async (
   responses: any,
@@ -592,18 +603,29 @@ const submitCandidateVivaResponses = async (
   if (responses.length === 0) {
     throw new AppError("No responses found", 400);
   }
-  await prisma.examResponse.createMany({
-    data: responses.map((response: any) => ({
-      questionId: response.questionId,
-      answerId: "no-answer-mentioned-viva-submitted-by-assessor",
-      marksObtained: response.marksObtained,
-      candidateId: candidateId,
-      batchId: batchId,
-      startedAt: new Date(),
-      endedAt: new Date(),
-      type: "VIVA",
-    })),
-  });
+  await prisma.$transaction([
+    prisma.examResponse.createMany({
+      data: responses.map((response: any) => ({
+        questionId: response.questionId,
+        answerId: "no-answer-mentioned-viva-submitted-by-assessor",
+        marksObtained: response.marksObtained,
+        candidateId: candidateId,
+        batchId: batchId,
+        startedAt: new Date(),
+        endedAt: new Date(),
+        type: "VIVA",
+      })),
+    }),
+    prisma.candidate.update({
+      where: {
+        id: candidateId,
+      },
+      data: {
+        vivaExamStatus: "submitted",
+        isPresentInViva: false,
+      },
+    }),
+  ]);
 };
 const getPracticalQuestionBank = async (
   batchId: string,
