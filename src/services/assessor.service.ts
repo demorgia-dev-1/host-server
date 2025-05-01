@@ -638,7 +638,11 @@ const getVivaQuestionBank = async (batchId: string, assessorId: string) => {
   }
   return JSON.parse(batch.vivaQuestionBank);
 };
-const syncCandidate = async (batchId: string, candidateId: string) => {
+const syncCandidate = async (
+  batchId: string,
+  candidateId: string,
+  token: string
+) => {
   // upload random photos
   // 1. upload theory random photos
   const randomPhotos = path.join(
@@ -658,15 +662,61 @@ const syncCandidate = async (batchId: string, candidateId: string) => {
     throw new AppError("Directory does not exist: " + randomPhotos, 404);
   }
   const photos = await fs.promises.readdir(randomPhotos);
-  Promise.all(
+  const signedUrlsToUploadRandomPhotos = await Promise.all(
     photos.map((photo) =>
       axios.get(
-        `${process.env.MAIN_SERVER_URL}/assessor/offline-batches/${batchId}/candidates/${candidateId}/photos/THEORY/${photo}`
+        `${process.env.MAIN_SERVER_URL}/assessor/offline-batches/${batchId}/candidates/${candidateId}/sync-random-evidences?testType=theory&evidenceType=image&fileName=${photo}`,
+        { headers: { Authorization: `Bearer ${token}` } }
       )
     )
   );
-  // console.log("photo", photos);
-  // await fs.readdir(randomPhotos, {});
+  await Promise.all(
+    photos.map((photo, index) => {
+      const filePath = path.join(randomPhotos, photo);
+      if (!fs.existsSync(filePath)) {
+        throw new AppError("File does not exist: " + filePath, 404);
+      }
+      return axios.put(signedUrlsToUploadRandomPhotos[index].data.data.url, {
+        file: fs.createReadStream(filePath),
+      });
+    })
+  );
+  const randomVideos = path.join(
+    __dirname,
+    "..",
+    "..",
+    "uploads",
+    "batches",
+    batchId,
+    "evidences",
+    "candidates",
+    candidateId,
+    "videos",
+    "THEORY"
+  );
+  if (!fs.existsSync(randomVideos)) {
+    throw new AppError("Directory does not exist: " + randomVideos, 404);
+  }
+  const videos = await fs.promises.readdir(randomVideos);
+  const signedUrlsToUploadRandomVideos = await Promise.all(
+    videos.map((video) =>
+      axios.get(
+        `${process.env.MAIN_SERVER_URL}/assessor/offline-batches/${batchId}/candidates/${candidateId}/sync-random-evidences?testType=theory&evidenceType=video&fileName=${video}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
+    )
+  );
+  await Promise.all(
+    videos.map((video, index) => {
+      const filePath = path.join(randomVideos, video);
+      if (!fs.existsSync(filePath)) {
+        throw new AppError("File does not exist: " + filePath, 404);
+      }
+      return axios.put(signedUrlsToUploadRandomVideos[index].data.data.url, {
+        file: fs.createReadStream(filePath),
+      });
+    })
+  );
 };
 export default {
   getAssignedBatches,

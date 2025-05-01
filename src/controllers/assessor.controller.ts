@@ -299,6 +299,7 @@ export const submitCandidatePracticalResponses = async (
       batchId,
       assessorId
     );
+    res.status(200).json({});
   } catch (error) {
     next(error);
   }
@@ -352,7 +353,11 @@ export const syncCandidate = async (
   try {
     const batchId = req.params.batchId;
     const candidateId = req.params.candidateId;
-    await assessorService.syncCandidate(batchId, candidateId);
+    await assessorService.syncCandidate(
+      batchId,
+      candidateId,
+      req.headers["x-server-auth-token"] as string
+    );
     res.status(200).json({});
   } catch (error) {
     console.log("error", error);
