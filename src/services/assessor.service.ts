@@ -498,7 +498,8 @@ const submitCandidatePracticalResponses = async (
   responses: any,
   candidateId: string,
   batchId: string,
-  assessorId: string
+  assessorId: string,
+  evidence?: UploadedFile
 ) => {
   const batch = await prisma.batch.findFirst({
     where: { id: batchId, assessor: assessorId },
@@ -542,6 +543,31 @@ const submitCandidatePracticalResponses = async (
   if (responses.length === 0) {
     throw new AppError("No responses found", 400);
   }
+  if (evidence) {
+    console.log("evidence", evidence.mimetype);
+    if (!evidence?.mimetype?.startsWith("video/")) {
+      throw new AppError("Invalid file type", 400);
+    }
+    if (evidence.size > 50 * 1024 * 1024) {
+      throw new AppError("File size exceeds 5MB", 400);
+    }
+    const ext = evidence.name.split(".").pop();
+    const uploadPath = path.join(
+      __dirname,
+      "..",
+      "..",
+      "uploads",
+      "batches",
+      batchId,
+      "evidences",
+      "candidates",
+      candidateId,
+      "videos",
+      "PRACTICAL",
+      `evidence.${ext}`
+    );
+    await evidence.mv(uploadPath);
+  }
   await prisma.$transaction([
     prisma.examResponse.createMany({
       data: responses.map((response: any) => ({
@@ -570,7 +596,8 @@ const submitCandidateVivaResponses = async (
   responses: any,
   candidateId: string,
   batchId: string,
-  assessorId: string
+  assessorId: string,
+  evidence?: UploadedFile
 ) => {
   const batch = await prisma.batch.findFirst({
     where: { id: batchId, assessor: assessorId },
@@ -603,6 +630,31 @@ const submitCandidateVivaResponses = async (
   if (responses.length === 0) {
     throw new AppError("No responses found", 400);
   }
+  if (evidence) {
+    if (!evidence.mimetype.startsWith("video/")) {
+      throw new AppError("Invalid file type", 400);
+    }
+    if (evidence.size > 50 * 1024 * 1024) {
+      throw new AppError("File size exceeds 2MB", 400);
+    }
+    const ext = evidence.name.split(".").pop();
+    const uploadPath = path.join(
+      __dirname,
+      "..",
+      "..",
+      "uploads",
+      "batches",
+      batchId,
+      "evidences",
+      "candidates",
+      candidateId,
+      "videos",
+      "VIVA",
+      `evidence.${ext}`
+    );
+    await evidence.mv(uploadPath);
+  }
+
   await prisma.$transaction([
     prisma.examResponse.createMany({
       data: responses.map((response: any) => ({

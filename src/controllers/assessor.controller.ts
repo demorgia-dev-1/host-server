@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { AppError } from "../utils/AppError";
 import assessorService from "../services/assessor.service";
 import { MarkCandidateAttendance } from "../schemas/assessor.schema";
+import { UploadedFile } from "express-fileupload";
 // will fetch the batches from main server
 export const getOfflineBatches = async (
   req: Request,
@@ -278,9 +279,12 @@ export const submitCandidatePracticalResponses = async (
     if (!req.body?.responses) {
       return next(new AppError("responses are required", 400, true));
     }
+    req.body.responses = JSON.parse(req.body.responses);
     if (!Array.isArray(req.body.responses)) {
       return next(new AppError("responses should be an array", 400, true));
     }
+    // @ts-ignore
+    const video: UploadedFile = req?.files?.video;
     const responses = req.body.responses.map(
       (response: Record<string, any>) => {
         if (!response.questionId || !response.marksObtained) {
@@ -297,7 +301,8 @@ export const submitCandidatePracticalResponses = async (
       responses,
       candidateId,
       batchId,
-      assessorId
+      assessorId,
+      video
     );
     res.status(200).json({});
   } catch (error) {
@@ -334,11 +339,14 @@ export const submitCandidateVivaResponses = async (
         };
       }
     );
+    // @ts-ignore
+    const video: UploadedFile = req?.files?.video;
     await assessorService.submitCandidateVivaResponses(
       responses,
       candidateId,
       batchId,
-      assessorId
+      assessorId,
+      video
     );
     res.status(200).json({});
   } catch (error) {
