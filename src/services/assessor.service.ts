@@ -283,15 +283,48 @@ const resetCandidates = async (
   if (batch.status !== "ongoing") {
     throw new AppError("Batch is not ongoing", 400);
   }
-  await prisma.$transaction([
-    prisma.examResponse.deleteMany({
+  await prisma.$transaction(async (tx) => {
+    const examFolders = [
+      ["photos", "THEORY"],
+      ["videos", "THEORY"],
+      ["videos", "PRACTICAL"],
+      ["videos", "VIVA"],
+      ["adhar"],
+      ["selfie"],
+    ];
+
+    const deletePaths = candidateIds.flatMap((candidateId) => {
+      const basePath = path.join(
+        __dirname,
+        "..",
+        "..",
+        "uploads",
+        "batches",
+        batchId,
+        "evidences",
+        "candidates",
+        candidateId
+      );
+      return examFolders.map((addOn) => path.join(basePath, ...addOn));
+    });
+
+    await Promise.all(
+      deletePaths.map(async (targetPath) => {
+        try {
+          await fs.promises.rm(targetPath, { recursive: true, force: true });
+        } catch (err) {
+          console.error(`Failed to delete ${targetPath}:`, err);
+        }
+      })
+    );
+    await tx.examResponse.deleteMany({
       where: {
         candidateId: { in: candidateIds },
         batchId: batchId,
         type: "THEORY",
       },
-    }),
-    prisma.candidate.updateMany({
+    });
+    await tx.candidate.updateMany({
       where: {
         id: { in: candidateIds },
         batchId: batchId,
@@ -304,9 +337,14 @@ const resetCandidates = async (
         theoryExamStatus: "notStarted",
         practicalExamStatus: "notStarted",
         vivaExamStatus: "notStarted",
+        multipleFaceDetectionCount: 0,
+        isEvidanceUploaded: false,
+        faceHiddenCount: 0,
+        tabSwitchCount: 0,
+        exitFullScreenCount: 0,
       },
-    }),
-  ]);
+    });
+  });
 };
 const resetCandidatesPractical = async (
   candidateIds: string[],
@@ -325,15 +363,30 @@ const resetCandidatesPractical = async (
   if (batch.status !== "ongoing") {
     throw new AppError("Batch is not ongoing", 400);
   }
-  await prisma.$transaction([
-    prisma.examResponse.deleteMany({
+  await prisma.$transaction(async (tx) => {
+    const examFolders = [["videos", "PRACTICAL"]];
+    const deletePaths = candidateIds.flatMap((candidateId) => {
+      const basePath = path.join(
+        __dirname,
+        "..",
+        "..",
+        "uploads",
+        "batches",
+        batchId,
+        "evidences",
+        "candidates",
+        candidateId
+      );
+      return examFolders.map((addOn) => path.join(basePath, ...addOn));
+    });
+    await tx.examResponse.deleteMany({
       where: {
         candidateId: { in: candidateIds },
         batchId: batchId,
         type: "PRACTICAL",
       },
-    }),
-    prisma.candidate.updateMany({
+    });
+    await tx.candidate.updateMany({
       where: {
         id: { in: candidateIds },
         batchId: batchId,
@@ -344,8 +397,17 @@ const resetCandidatesPractical = async (
         practicalStartedAt: null,
         practicalSubmittedAt: null,
       },
-    }),
-  ]);
+    });
+    await Promise.all(
+      deletePaths.map(async (targetPath) => {
+        try {
+          await fs.promises.rm(targetPath, { recursive: true, force: true });
+        } catch (err) {
+          console.error(`Failed to delete ${targetPath}:`, err);
+        }
+      })
+    );
+  });
 };
 const resetCandidatesViva = async (
   candidateIds: string[],
@@ -364,15 +426,23 @@ const resetCandidatesViva = async (
   if (batch.status !== "ongoing") {
     throw new AppError("Batch is not ongoing", 400);
   }
-  await prisma.$transaction([
-    prisma.examResponse.deleteMany({
-      where: {
-        candidateId: { in: candidateIds },
-        batchId: batchId,
-        type: "VIVA",
-      },
-    }),
-    prisma.candidate.updateMany({
+  const examFolders = [["videos", "VIVA"]];
+  const deletePaths = candidateIds.flatMap((candidateId) => {
+    const basePath = path.join(
+      __dirname,
+      "..",
+      "..",
+      "uploads",
+      "batches",
+      batchId,
+      "evidences",
+      "candidates",
+      candidateId
+    );
+    return examFolders.map((addOn) => path.join(basePath, ...addOn));
+  });
+  await prisma.$transaction(async (tx) => {
+    await tx.candidate.updateMany({
       where: {
         id: { in: candidateIds },
         batchId: batchId,
@@ -381,8 +451,24 @@ const resetCandidatesViva = async (
         isPresentInViva: false,
         vivaExamStatus: "notStarted",
       },
-    }),
-  ]);
+    });
+    await tx.examResponse.deleteMany({
+      where: {
+        candidateId: { in: candidateIds },
+        batchId: batchId,
+        type: "VIVA",
+      },
+    });
+    await Promise.all(
+      deletePaths.map(async (targetPath) => {
+        try {
+          await fs.promises.rm(targetPath, { recursive: true, force: true });
+        } catch (err) {
+          console.error(`Failed to delete ${targetPath}:`, err);
+        }
+      })
+    );
+  });
 };
 const markAssessorAsReached = async (
   batchId: string,
