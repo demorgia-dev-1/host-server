@@ -835,16 +835,20 @@ const syncCandidate = async (
           if (!fs.existsSync(filePath)) {
             throw new AppError("File does not exist: " + filePath, 404);
           }
+          const buffer = fs.readFileSync(filePath);
           return axios.put(
             signedUrlsToUploadRandomPhotos[index].data.data.url,
+            buffer,
             {
-              file: fs.createReadStream(filePath),
+              headers: {
+                "Content-Type":
+                  mime.lookup(photo) || "application/octet-stream",
+              },
             }
           );
         })
       );
     }
-
     const randomVideos = path.join(
       __dirname,
       "..",
@@ -868,26 +872,27 @@ const syncCandidate = async (
           )
         )
       );
-      console.log(
-        "signedUrlsToUploadRandomVideos",
-        signedUrlsToUploadRandomVideos
-      );
+
       await Promise.all(
         videos.map((video, index) => {
           const filePath = path.join(randomVideos, video);
-          if (!fs.existsSync(filePath)) {
+          if (fs.existsSync(filePath)) {
             throw new AppError("File does not exist: " + filePath, 404);
           }
+          const buffer = fs.readFileSync(filePath);
           return axios.put(
             signedUrlsToUploadRandomVideos[index].data.data.url,
+            buffer,
             {
-              file: fs.createReadStream(filePath),
+              headers: {
+                "Content-Type":
+                  mime.lookup(video) || "application/octet-stream",
+              },
             }
           );
         })
       );
     }
-
     let adharName = "";
     let selfieName = "";
     let adharContentType = "";
@@ -920,6 +925,11 @@ const syncCandidate = async (
       `${process.env.MAIN_SERVER_URL}/assessor/offline-batches/${batchId}/candidates/${candidateId}/sync-candidate-adhar-or-selfie?adharFileName=${adharName}&selfieFileName=${selfieName}&adharContentType=${adharContentType}&selfieContentType=${selfieContentType}`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
+    console.log(adharContentType, selfieContentType);
+    console.log(
+      "signedUrlsToUploadAdharSelfie",
+      signedUrlsToUploadAdharSelfie.data
+    );
     const uploadAdharSelfiePromises = [];
     if (adharName) {
       const adharFilePath = path.join(
@@ -931,9 +941,13 @@ const syncCandidate = async (
       );
 
       if (fs.existsSync(adharFilePath)) {
+        const buffer = fs.readFileSync(adharFilePath);
+        console.log("buffer", buffer);
         uploadAdharSelfiePromises.push(
-          axios.put(signedUrlsToUploadAdharSelfie.data.data.adhar.url, {
-            file: fs.createReadStream(adharFilePath),
+          axios.put(signedUrlsToUploadAdharSelfie.data.data.adhar.url, buffer, {
+            headers: {
+              "Content-Type": adharContentType,
+            },
           })
         );
       }
@@ -946,15 +960,142 @@ const syncCandidate = async (
         "selfie",
         selfieName
       );
+      const buffer = fs.readFileSync(selfieFilePath);
       if (fs.existsSync(selfieFilePath)) {
         uploadAdharSelfiePromises.push(
-          axios.put(signedUrlsToUploadAdharSelfie.data.data.selfie.url, {
-            file: fs.createReadStream(selfieFilePath),
-          })
+          axios.put(
+            signedUrlsToUploadAdharSelfie.data.data.selfie.url,
+            buffer,
+            {
+              headers: {
+                "Content-Type": selfieContentType,
+              },
+            }
+          )
         );
       }
     }
     await Promise.all(uploadAdharSelfiePromises);
+    const candidate = await prisma.candidate.findFirst({
+      where: {
+        id: candidateId,
+      },
+      select: {
+        batch: true,
+        isEvidanceUploaded: true,
+        isPresentInTheory: true,
+        isPresentInPractical: true,
+        isPresentInViva: true,
+        theoryExamStatus: true,
+        practicalExamStatus: true,
+        vivaExamStatus: true,
+        theoryStartedAt: true,
+        theorySubmittedAt: true,
+        practicalStartedAt: true,
+        practicalSubmittedAt: true,
+        faceHiddenCount: true,
+        tabSwitchCount: true,
+        exitFullScreenCount: true,
+        multipleFaceDetectionCount: true,
+        candidateSelfieCoordinates: true,
+        candidateSelfieTakenAt: true,
+      },
+    });
+    // sync candidates responses
+    const theoryResponses = await prisma.examResponse.findMany({
+      where: {
+        candidateId,
+        type: "THEORY",
+      },
+    });
+    const practicalResponses = await prisma.examResponse.findMany({
+      where: {
+        candidateId,
+        type: "PRACTICAL",
+      },
+    });
+    const vivaResponses = await prisma.examResponse.findMany({
+      where: { candidateId, type: "VIVA" },
+    });
+    const finalResponses = {
+      candidateDetails: {
+        isEvidanceUploaded: candidate?.isEvidanceUploaded,
+        isPresentInTheory: candidate?.isPresentInTheory,
+        isPresentInPractical: candidate?.isPresentInPractical,
+        isPresentInViva: candidate?.isPresentInViva,
+        theoryExamStatus: candidate?.theoryExamStatus,
+        practicalExamStatus: candidate?.practicalExamStatus,
+        vivaExamStatus: candidate?.vivaExamStatus,
+        theoryStartedAt: candidate?.theoryStartedAt,
+        theorySubmittedAt: candidate?.theoryStartedAt,
+        practicalStartedAt: candidate?.theorySubmittedAt,
+        practicalSubmittedAt: candidate?.practicalSubmittedAt,
+        faceHiddenCount: candidate?.faceHiddenCount,
+        tabSwitchCount: candidate?.tabSwitchCount,
+        exitFullScreenCount: candidate?.exitFullScreenCount,
+        multipleFaceDetectionCount: candidate?.multipleFaceDetectionCount,
+        candidateSelfieCoordinates: candidate?.candidateSelfieCoordinates
+          ? JSON.parse(candidate.candidateSelfieCoordinates)
+          : {},
+        candidateSelfieTakenAt: candidate?.candidateSelfieTakenAt,
+        adharcardPicture:
+          signedUrlsToUploadAdharSelfie.data.data.adhar.location,
+        candidateSelfie:
+          signedUrlsToUploadAdharSelfie.data.data.selfie.location,
+      },
+      theory: [],
+      practical: [],
+      viva: [],
+    };
+    theoryResponses.forEach((response) => {
+      // @ts-ignore
+      finalResponses.theory.push({
+        questionId: response.questionId,
+        answerId: response.answerId,
+        startedAt: response.startedAt,
+        endedAt: response.endedAt,
+      });
+    });
+    practicalResponses.forEach((response) => {
+      const obj = {
+        questionId: response.questionId,
+      };
+      // @ts-ignore
+
+      if (candidate?.batch.isPracticalVisibleToCandidate) {
+        // @ts-ignore
+        obj["startedAt"] = response.startedAt;
+        // @ts-ignore
+        obj["endedAt"] = response.endedAt;
+        // @ts-ignore
+        obj["answerId"] = response.answerId;
+      } else {
+        // @ts-ignore
+        obj["marksObtained"] = response.marksObtained || 0;
+      }
+      // @ts-ignore
+      finalResponses.practical.push(obj);
+    });
+    vivaResponses.forEach((response) => {
+      // @ts-ignore
+      finalResponses.viva.push({
+        questionId: response.questionId,
+        answerId: response.answerId,
+        marksObtained: response.marksObtained || 0,
+      });
+    });
+    console.log("finalResponses", finalResponses);
+    await axios.post(
+      `${process.env.MAIN_SERVER_URL}/assessor/offline-batches/${batchId}/candidates/${candidateId}/sync-responses`,
+      {
+        responses: finalResponses,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
   } catch (error) {
     console.log("error", error);
     if (axios.isAxiosError(error)) {
@@ -966,7 +1107,10 @@ const syncCandidate = async (
         throw new AppError("resource not found", 404);
       }
       if (error.response?.status === 400) {
-        throw new AppError("bad request", 500);
+        throw new AppError(
+          error.response.data.message || "something went wrong",
+          400
+        );
       }
     }
   }
