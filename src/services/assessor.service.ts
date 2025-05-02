@@ -5,6 +5,7 @@ import { AppError } from "../utils/AppError";
 import { PrismaClient } from "../../generated/prisma";
 import { PrismaClientKnownRequestError } from "../../generated/prisma/runtime/library";
 import { UploadedFile } from "express-fileupload";
+import mime from "mime-types";
 const prisma = new PrismaClient();
 const getAssignedBatches = async (token: string): Promise<any> => {
   try {
@@ -803,8 +804,7 @@ const syncCandidate = async (
   candidateId: string,
   token: string
 ) => {
-  // upload random photos
-  // 1. upload theory random photos
+  console.log("syncCandidate", batchId, candidateId);
   const randomPhotos = path.join(
     __dirname,
     "..",
@@ -818,65 +818,158 @@ const syncCandidate = async (
     "photos",
     "THEORY"
   );
-  if (!fs.existsSync(randomPhotos)) {
-    throw new AppError("Directory does not exist: " + randomPhotos, 404);
-  }
-  const photos = await fs.promises.readdir(randomPhotos);
-  const signedUrlsToUploadRandomPhotos = await Promise.all(
-    photos.map((photo) =>
-      axios.get(
-        `${process.env.MAIN_SERVER_URL}/assessor/offline-batches/${batchId}/candidates/${candidateId}/sync-random-evidences?testType=theory&evidenceType=image&fileName=${photo}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      )
-    )
-  );
-  await Promise.all(
-    photos.map((photo, index) => {
-      const filePath = path.join(randomPhotos, photo);
-      if (!fs.existsSync(filePath)) {
-        throw new AppError("File does not exist: " + filePath, 404);
+  try {
+    if (fs.existsSync(randomPhotos)) {
+      const photos = await fs.promises.readdir(randomPhotos);
+      const signedUrlsToUploadRandomPhotos = await Promise.all(
+        photos.map((photo) =>
+          axios.get(
+            `${process.env.MAIN_SERVER_URL}/assessor/offline-batches/${batchId}/candidates/${candidateId}/sync-random-evidences?testType=theory&evidenceType=image&fileName=${photo}`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          )
+        )
+      );
+      await Promise.all(
+        photos.map((photo, index) => {
+          const filePath = path.join(randomPhotos, photo);
+          if (!fs.existsSync(filePath)) {
+            throw new AppError("File does not exist: " + filePath, 404);
+          }
+          return axios.put(
+            signedUrlsToUploadRandomPhotos[index].data.data.url,
+            {
+              file: fs.createReadStream(filePath),
+            }
+          );
+        })
+      );
+    }
+
+    const randomVideos = path.join(
+      __dirname,
+      "..",
+      "..",
+      "uploads",
+      "batches",
+      batchId,
+      "evidences",
+      "candidates",
+      candidateId,
+      "videos",
+      "THEORY"
+    );
+    if (fs.existsSync(randomVideos)) {
+      const videos = await fs.promises.readdir(randomVideos);
+      const signedUrlsToUploadRandomVideos = await Promise.all(
+        videos.map((video) =>
+          axios.get(
+            `${process.env.MAIN_SERVER_URL}/assessor/offline-batches/${batchId}/candidates/${candidateId}/sync-random-evidences?testType=theory&evidenceType=video&fileName=${video}`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          )
+        )
+      );
+      console.log(
+        "signedUrlsToUploadRandomVideos",
+        signedUrlsToUploadRandomVideos
+      );
+      await Promise.all(
+        videos.map((video, index) => {
+          const filePath = path.join(randomVideos, video);
+          if (!fs.existsSync(filePath)) {
+            throw new AppError("File does not exist: " + filePath, 404);
+          }
+          return axios.put(
+            signedUrlsToUploadRandomVideos[index].data.data.url,
+            {
+              file: fs.createReadStream(filePath),
+            }
+          );
+        })
+      );
+    }
+
+    let adharName = "";
+    let selfieName = "";
+    let adharContentType = "";
+    let selfieContentType = "";
+    if (fs.existsSync(path.join(randomPhotos, "..", "..", "adhar"))) {
+      const adhar = await fs.promises.readdir(
+        path.join(randomPhotos, "..", "..", "adhar")
+      );
+      if (adhar.length === 0) {
+        console.log("No files in folder");
+      } else {
+        adharName = adhar[0];
+        console.log("adharName", adharName);
+        adharContentType = mime.lookup(adharName) || "application/octet-stream";
       }
-      return axios.put(signedUrlsToUploadRandomPhotos[index].data.data.url, {
-        file: fs.createReadStream(filePath),
-      });
-    })
-  );
-  const randomVideos = path.join(
-    __dirname,
-    "..",
-    "..",
-    "uploads",
-    "batches",
-    batchId,
-    "evidences",
-    "candidates",
-    candidateId,
-    "videos",
-    "THEORY"
-  );
-  if (!fs.existsSync(randomVideos)) {
-    throw new AppError("Directory does not exist: " + randomVideos, 404);
-  }
-  const videos = await fs.promises.readdir(randomVideos);
-  const signedUrlsToUploadRandomVideos = await Promise.all(
-    videos.map((video) =>
-      axios.get(
-        `${process.env.MAIN_SERVER_URL}/assessor/offline-batches/${batchId}/candidates/${candidateId}/sync-random-evidences?testType=theory&evidenceType=video&fileName=${video}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      )
-    )
-  );
-  await Promise.all(
-    videos.map((video, index) => {
-      const filePath = path.join(randomVideos, video);
-      if (!fs.existsSync(filePath)) {
-        throw new AppError("File does not exist: " + filePath, 404);
+    }
+    if (fs.existsSync(path.join(randomPhotos, "..", "..", "selfie"))) {
+      const selfie = await fs.promises.readdir(
+        path.join(randomPhotos, "..", "..", "selfie")
+      );
+      if (selfie.length === 0) {
+        console.log("No files in folder");
+      } else {
+        selfieName = selfie[0];
+        selfieContentType =
+          mime.lookup(selfieName) || "application/octet-stream";
       }
-      return axios.put(signedUrlsToUploadRandomVideos[index].data.data.url, {
-        file: fs.createReadStream(filePath),
-      });
-    })
-  );
+    }
+    const signedUrlsToUploadAdharSelfie = await axios.get(
+      `${process.env.MAIN_SERVER_URL}/assessor/offline-batches/${batchId}/candidates/${candidateId}/sync-candidate-adhar-or-selfie?adharFileName=${adharName}&selfieFileName=${selfieName}&adharContentType=${adharContentType}&selfieContentType=${selfieContentType}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    const uploadAdharSelfiePromises = [];
+    if (adharName) {
+      const adharFilePath = path.join(
+        randomPhotos,
+        "..",
+        "..",
+        "adhar",
+        adharName
+      );
+
+      if (fs.existsSync(adharFilePath)) {
+        uploadAdharSelfiePromises.push(
+          axios.put(signedUrlsToUploadAdharSelfie.data.data.adhar.url, {
+            file: fs.createReadStream(adharFilePath),
+          })
+        );
+      }
+    }
+    if (selfieName) {
+      const selfieFilePath = path.join(
+        randomPhotos,
+        "..",
+        "..",
+        "selfie",
+        selfieName
+      );
+      if (fs.existsSync(selfieFilePath)) {
+        uploadAdharSelfiePromises.push(
+          axios.put(signedUrlsToUploadAdharSelfie.data.data.selfie.url, {
+            file: fs.createReadStream(selfieFilePath),
+          })
+        );
+      }
+    }
+    await Promise.all(uploadAdharSelfiePromises);
+  } catch (error) {
+    console.log("error", error);
+    if (axios.isAxiosError(error)) {
+      if (error.response?.status === 401) {
+        throw new AppError("Invalid credentials", 401);
+      }
+      if (error.response?.status === 404) {
+        // console.log("error.response?.data", error.response?.data);
+        throw new AppError("resource not found", 404);
+      }
+      if (error.response?.status === 400) {
+        throw new AppError("bad request", 500);
+      }
+    }
+  }
 };
 export default {
   getAssignedBatches,

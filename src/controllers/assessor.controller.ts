@@ -361,6 +361,9 @@ export const syncCandidate = async (
   try {
     const batchId = req.params.batchId;
     const candidateId = req.params.candidateId;
+    if (!batchId || !candidateId) {
+      return next(new AppError("batchId and candidateId are required", 400));
+    }
     await assessorService.syncCandidate(
       batchId,
       candidateId,
