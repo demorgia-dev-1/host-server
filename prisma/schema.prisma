@@ -100,5 +100,5 @@ model ExamResponse{
   candidate             Candidate @relation(fields: [candidateId], references: [id],onDelete: Cascade)
   batch                 Batch     @relation(fields: [batchId], references: [id],onDelete: Cascade)  
   @@map("exam_response") 
-  @@id([questionId, answerId, candidateId,startedAt,endedAt]) 
+  @@id([questionId,  candidateId])
 }

@@ -799,6 +799,34 @@ const getVivaQuestionBank = async (batchId: string, assessorId: string) => {
   }
   return JSON.parse(batch.vivaQuestionBank);
 };
+const syncAssessor = async ({
+  assessorCoordinates,
+  assessorGroupPhoto,
+  assessorReachedAt,
+  batchId,
+  assessorId,
+  isAssessorReached,
+}: {
+  assessorReachedAt: Date;
+  assessorCoordinates: { lat: number; long: number };
+  assessorGroupPhoto: string;
+  batchId: string;
+  assessorId: string;
+  isAssessorReached: boolean;
+}) => {
+  const batch = await prisma.batch.findFirst({
+    where: {
+      id: batchId,
+      assessor: assessorId,
+    },
+  });
+  if (!batch) {
+    throw new AppError("Batch not found", 404);
+  }
+  if (!batch.isAssessorReached) {
+    throw new AppError("Assessor already reached", 400);
+  }
+};
 const syncCandidate = async (
   batchId: string,
   candidateId: string,
@@ -925,11 +953,6 @@ const syncCandidate = async (
       `${process.env.MAIN_SERVER_URL}/assessor/offline-batches/${batchId}/candidates/${candidateId}/sync-candidate-adhar-or-selfie?adharFileName=${adharName}&selfieFileName=${selfieName}&adharContentType=${adharContentType}&selfieContentType=${selfieContentType}`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
-    console.log(adharContentType, selfieContentType);
-    console.log(
-      "signedUrlsToUploadAdharSelfie",
-      signedUrlsToUploadAdharSelfie.data
-    );
     const uploadAdharSelfiePromises = [];
     if (adharName) {
       const adharFilePath = path.join(
@@ -939,7 +962,6 @@ const syncCandidate = async (
         "adhar",
         adharName
       );
-
       if (fs.existsSync(adharFilePath)) {
         const buffer = fs.readFileSync(adharFilePath);
         console.log("buffer", buffer);
@@ -1014,6 +1036,7 @@ const syncCandidate = async (
         type: "PRACTICAL",
       },
     });
+    console.log("practicalResponses", practicalResponses);
     const vivaResponses = await prisma.examResponse.findMany({
       where: { candidateId, type: "VIVA" },
     });
@@ -1057,6 +1080,7 @@ const syncCandidate = async (
       });
     });
     practicalResponses.forEach((response) => {
+      console.log("practical response = ", response);
       const obj = {
         questionId: response.questionId,
       };

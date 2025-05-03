@@ -220,15 +220,32 @@ const submitTheoryResponses = async (
   if (responses.responses.length === 0) {
     throw new AppError("No responses found", 400);
   }
-  const values = responses.responses.map((response) => {
-    return `('${response.questionId}', '${response.answerId}','${batchId}', '${candidateId}','${response.startedAt}', '${response.endedAt}', 'THEORY')`;
-  });
+  const placeholders = responses.responses
+    .map(() => "(?, ?, ?, ?, ?, ?, ?)")
+    .join(", ");
+  const values = responses.responses.flatMap((r) => [
+    r.questionId,
+    r.answerId,
+    batchId,
+    candidateId,
+    r.startedAt,
+    r.endedAt,
+    "THEORY",
+  ]);
+
   const query = `
-    INSERT OR REPLACE INTO exam_response 
-    (questionId, answerId, batchId, candidateId, startedAt, endedAt,type) 
-    VALUES ${values}
-  `;
-  await prisma.$executeRawUnsafe(query);
+  INSERT INTO exam_response
+  (questionId, answerId, batchId, candidateId, startedAt, endedAt, type)
+  VALUES ${placeholders}
+  ON CONFLICT(questionId, candidateId) DO UPDATE SET
+    answerId = excluded.answerId,
+    batchId = excluded.batchId,
+    startedAt = excluded.startedAt,
+    endedAt = excluded.endedAt,
+    type = excluded.type;
+`;
+
+  await prisma.$executeRawUnsafe(query, ...values);
 };
 const submitTheoryTest = async (candidateId: string, batchId: string) => {
   const candidate = await prisma.candidate.findFirst({
