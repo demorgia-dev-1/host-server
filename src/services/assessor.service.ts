@@ -310,15 +310,78 @@ const resetCandidates = async (
       return examFolders.map((addOn) => path.join(basePath, ...addOn));
     });
 
-    await Promise.all(
-      deletePaths.map(async (targetPath) => {
-        try {
-          await fs.promises.rm(targetPath, { recursive: true, force: true });
-        } catch (err) {
-          console.error(`Failed to delete ${targetPath}:`, err);
-        }
-      })
-    );
+    await Promise.all([
+      candidateIds.map(async (candidateId) => {
+        return fs.promises.rm(
+          path.join(
+            __dirname,
+            "..",
+            "..",
+            "uploads",
+            "batches",
+            batchId,
+            "evidences",
+            "candidates",
+            candidateId,
+            "photos",
+            "THEORY"
+          ),
+          { recursive: true, force: true }
+        );
+      }),
+      candidateIds.map(async (candidateId) => {
+        return fs.promises.rm(
+          path.join(
+            __dirname,
+            "..",
+            "..",
+            "uploads",
+            "batches",
+            batchId,
+            "evidences",
+            "candidates",
+            candidateId,
+            "videos",
+            "THEORY"
+          ),
+          { recursive: true, force: true }
+        );
+      }),
+      candidateIds.map(async (candidateId) => {
+        return fs.promises.rm(
+          path.join(
+            __dirname,
+            "..",
+            "..",
+            "uploads",
+            "batches",
+            batchId,
+            "evidences",
+            "candidates",
+            candidateId,
+            "adhar"
+          ),
+          { recursive: true, force: true }
+        );
+      }),
+      candidateIds.map(async (candidateId) => {
+        return fs.promises.rm(
+          path.join(
+            __dirname,
+            "..",
+            "..",
+            "uploads",
+            "batches",
+            batchId,
+            "evidences",
+            "candidates",
+            candidateId,
+            "selfie"
+          ),
+          { recursive: true, force: true }
+        );
+      }),
+    ]);
     await tx.examResponse.deleteMany({
       where: {
         candidateId: { in: candidateIds },
