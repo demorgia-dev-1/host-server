@@ -321,6 +321,7 @@ export const submitCandidateVivaResponses = async (
     if (!req.body?.responses) {
       return next(new AppError("responses are required", 400, true));
     }
+    req.body.responses = JSON.parse(req.body.responses);
     if (!Array.isArray(req.body.responses)) {
       return next(new AppError("responses should be an array", 400, true));
     }
