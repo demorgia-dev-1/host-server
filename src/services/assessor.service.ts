@@ -814,6 +814,9 @@ const syncCandidate = async (
   candidateId: string,
   token: string
 ) => {
+  if (!token) {
+    throw new AppError("server token is required", 401);
+  }
   const randomPhotos = path.join(
     __dirname,
     "..",
@@ -828,6 +831,34 @@ const syncCandidate = async (
     "THEORY"
   );
   try {
+    const candidate = await prisma.candidate.findFirst({
+      where: {
+        id: candidateId,
+      },
+      select: {
+        batch: true,
+        isEvidanceUploaded: true,
+        isPresentInTheory: true,
+        isPresentInPractical: true,
+        isPresentInViva: true,
+        theoryExamStatus: true,
+        practicalExamStatus: true,
+        vivaExamStatus: true,
+        theoryStartedAt: true,
+        theorySubmittedAt: true,
+        practicalStartedAt: true,
+        practicalSubmittedAt: true,
+        faceHiddenCount: true,
+        tabSwitchCount: true,
+        exitFullScreenCount: true,
+        multipleFaceDetectionCount: true,
+        candidateSelfieCoordinates: true,
+        candidateSelfieTakenAt: true,
+      },
+    });
+    if (!candidate) {
+      return;
+    }
     if (fs.existsSync(randomPhotos)) {
       const photos = await fs.promises.readdir(randomPhotos);
       const signedUrlsToUploadRandomPhotos = await Promise.all(
@@ -1076,31 +1107,7 @@ const syncCandidate = async (
       }
     }
     await Promise.all(uploadAdharSelfiePromises);
-    const candidate = await prisma.candidate.findFirst({
-      where: {
-        id: candidateId,
-      },
-      select: {
-        batch: true,
-        isEvidanceUploaded: true,
-        isPresentInTheory: true,
-        isPresentInPractical: true,
-        isPresentInViva: true,
-        theoryExamStatus: true,
-        practicalExamStatus: true,
-        vivaExamStatus: true,
-        theoryStartedAt: true,
-        theorySubmittedAt: true,
-        practicalStartedAt: true,
-        practicalSubmittedAt: true,
-        faceHiddenCount: true,
-        tabSwitchCount: true,
-        exitFullScreenCount: true,
-        multipleFaceDetectionCount: true,
-        candidateSelfieCoordinates: true,
-        candidateSelfieTakenAt: true,
-      },
-    });
+
     const theoryResponses = await prisma.examResponse.findMany({
       where: {
         candidateId,
