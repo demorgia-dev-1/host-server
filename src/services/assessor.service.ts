@@ -6,6 +6,7 @@ import { PrismaClient } from "../../generated/prisma";
 import { PrismaClientKnownRequestError } from "../../generated/prisma/runtime/library";
 import { UploadedFile } from "express-fileupload";
 import mime from "mime-types";
+import e from "express";
 const prisma = new PrismaClient();
 const getAssignedBatches = async (token: string): Promise<any> => {
   try {
@@ -519,12 +520,21 @@ const markAssessorAsReached = async (
   if (picture.size > 2 * 1024 * 1024) {
     throw new AppError("File size exceeds 2MB", 400);
   }
+  const ext = picture.name.split(".").pop();
+  if (!ext) {
+    throw new AppError("Invalid file name", 400);
+  }
   const uploadPath = path.join(
     __dirname,
     "..",
     "..",
     "uploads",
-    `${Date.now()}_${picture.name}`
+    "batches",
+    batchId,
+    "evidences",
+    "assessor",
+    "group-photo",
+    `${Date.now()}.${ext}`
   );
   const p = await new Promise((resolve, reject) => {
     picture.mv(uploadPath, (err) => {
@@ -799,40 +809,11 @@ const getVivaQuestionBank = async (batchId: string, assessorId: string) => {
   }
   return JSON.parse(batch.vivaQuestionBank);
 };
-const syncAssessor = async ({
-  assessorCoordinates,
-  assessorGroupPhoto,
-  assessorReachedAt,
-  batchId,
-  assessorId,
-  isAssessorReached,
-}: {
-  assessorReachedAt: Date;
-  assessorCoordinates: { lat: number; long: number };
-  assessorGroupPhoto: string;
-  batchId: string;
-  assessorId: string;
-  isAssessorReached: boolean;
-}) => {
-  const batch = await prisma.batch.findFirst({
-    where: {
-      id: batchId,
-      assessor: assessorId,
-    },
-  });
-  if (!batch) {
-    throw new AppError("Batch not found", 404);
-  }
-  if (!batch.isAssessorReached) {
-    throw new AppError("Assessor already reached", 400);
-  }
-};
 const syncCandidate = async (
   batchId: string,
   candidateId: string,
   token: string
 ) => {
-  console.log("syncCandidate", batchId, candidateId);
   const randomPhotos = path.join(
     __dirname,
     "..",
@@ -877,6 +858,38 @@ const syncCandidate = async (
         })
       );
     }
+    if (fs.existsSync(path.join(randomPhotos, "..", "PRACTICAL"))) {
+      const practicalPhotos = await fs.promises.readdir(
+        path.join(randomPhotos, "..", "PRACTICAL")
+      );
+      const signedUrlsToUploadPracticalPhotos = await Promise.all(
+        practicalPhotos.map((photo) =>
+          axios.get(
+            `${process.env.MAIN_SERVER_URL}/assessor/offline-batches/${batchId}/candidates/${candidateId}/sync-random-evidences?testType=practical&evidenceType=image&fileName=${photo}`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          )
+        )
+      );
+      await Promise.all(
+        practicalPhotos.map((photo, index) => {
+          const filePath = path.join(randomPhotos, "..", "PRACTICAL", photo);
+          if (!fs.existsSync(filePath)) {
+            throw new AppError("File does not exist: " + filePath, 404);
+          }
+          const buffer = fs.readFileSync(filePath);
+          return axios.put(
+            signedUrlsToUploadPracticalPhotos[index].data.data.url,
+            buffer,
+            {
+              headers: {
+                "Content-Type":
+                  mime.lookup(photo) || "application/octet-stream",
+              },
+            }
+          );
+        })
+      );
+    }
     const randomVideos = path.join(
       __dirname,
       "..",
@@ -890,6 +903,70 @@ const syncCandidate = async (
       "videos",
       "THEORY"
     );
+    if (fs.existsSync(path.join(randomVideos, "..", "PRACTICAL"))) {
+      const practicalVideos = await fs.promises.readdir(
+        path.join(randomVideos, "..", "PRACTICAL")
+      );
+      const signedUrlsToUploadPracticalVideos = await Promise.all(
+        practicalVideos.map((video) =>
+          axios.get(
+            `${process.env.MAIN_SERVER_URL}/assessor/offline-batches/${batchId}/candidates/${candidateId}/sync-random-evidences?testType=practical&evidenceType=video&fileName=${video}`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          )
+        )
+      );
+      await Promise.all(
+        practicalVideos.map((video, index) => {
+          const filePath = path.join(randomVideos, "..", "PRACTICAL", video);
+          if (!fs.existsSync(filePath)) {
+            throw new AppError("File does not exist: " + filePath, 404);
+          }
+          const buffer = fs.readFileSync(filePath);
+          return axios.put(
+            signedUrlsToUploadPracticalVideos[index].data.data.url,
+            buffer,
+            {
+              headers: {
+                "Content-Type":
+                  mime.lookup(video) || "application/octet-stream",
+              },
+            }
+          );
+        })
+      );
+    }
+    if (fs.existsSync(path.join(randomVideos, "..", "VIVA"))) {
+      const vivaVideos = await fs.promises.readdir(
+        path.join(randomVideos, "..", "VIVA")
+      );
+      const signedUrlsToUploadVivaVideos = await Promise.all(
+        vivaVideos.map((video) =>
+          axios.get(
+            `${process.env.MAIN_SERVER_URL}/assessor/offline-batches/${batchId}/candidates/${candidateId}/sync-random-evidences?testType=viva&evidenceType=video&fileName=${video}`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          )
+        )
+      );
+      await Promise.all(
+        vivaVideos.map((video, index) => {
+          const filePath = path.join(randomVideos, "..", "VIVA", video);
+          if (!fs.existsSync(filePath)) {
+            throw new AppError("File does not exist: " + filePath, 404);
+          }
+          const buffer = fs.readFileSync(filePath);
+          return axios.put(
+            signedUrlsToUploadVivaVideos[index].data.data.url,
+            buffer,
+            {
+              headers: {
+                "Content-Type":
+                  mime.lookup(video) || "application/octet-stream",
+              },
+            }
+          );
+        })
+      );
+    }
     if (fs.existsSync(randomVideos)) {
       const videos = await fs.promises.readdir(randomVideos);
       const signedUrlsToUploadRandomVideos = await Promise.all(
@@ -921,6 +998,7 @@ const syncCandidate = async (
         })
       );
     }
+
     let adharName = "";
     let selfieName = "";
     let adharContentType = "";
@@ -1023,7 +1101,6 @@ const syncCandidate = async (
         candidateSelfieTakenAt: true,
       },
     });
-    // sync candidates responses
     const theoryResponses = await prisma.examResponse.findMany({
       where: {
         candidateId,
@@ -1036,11 +1113,11 @@ const syncCandidate = async (
         type: "PRACTICAL",
       },
     });
-    console.log("practicalResponses", practicalResponses);
     const vivaResponses = await prisma.examResponse.findMany({
       where: { candidateId, type: "VIVA" },
     });
     const finalResponses = {
+      assessorDetails: {},
       candidateDetails: {
         isEvidanceUploaded: candidate?.isEvidanceUploaded,
         isPresentInTheory: candidate?.isPresentInTheory,
@@ -1058,7 +1135,8 @@ const syncCandidate = async (
         exitFullScreenCount: candidate?.exitFullScreenCount,
         multipleFaceDetectionCount: candidate?.multipleFaceDetectionCount,
         candidateSelfieCoordinates: candidate?.candidateSelfieCoordinates
-          ? JSON.parse(candidate.candidateSelfieCoordinates)
+          ? // @ts-ignore
+            JSON.parse(candidate?.candidateSelfieCoordinates)
           : {},
         candidateSelfieTakenAt: candidate?.candidateSelfieTakenAt,
         adharcardPicture:
@@ -1108,7 +1186,81 @@ const syncCandidate = async (
         marksObtained: response.marksObtained || 0,
       });
     });
-    console.log("finalResponses", finalResponses);
+    const assessorDetails = {
+      isAssessorReached: candidate?.batch.isAssessorReached,
+      assessorReachedAt: candidate?.batch.assessorReachedAt,
+      assessorCoordinates: candidate?.batch.assessorCoordinates
+        ? // @ts-ignore
+          JSON.parse(candidate?.batch.assessorCoordinates)
+        : {},
+      assessorGroupPhoto: "",
+    };
+    if (candidate?.batch.isAssessorEvidenceRequired) {
+      if (
+        fs.existsSync(
+          path.join(
+            __dirname,
+            "..",
+            "..",
+            "uploads",
+            "batches",
+            batchId,
+            "evidences",
+            "assessor",
+            "group-photo"
+          )
+        )
+      ) {
+        const evidences = await fs.promises.readdir(
+          path.join(
+            __dirname,
+            "..",
+            "..",
+            "uploads",
+            "batches",
+            batchId,
+            "evidences",
+            "assessor",
+            "group-photo"
+          )
+        );
+        const responses = await Promise.all(
+          evidences.map((evidence) => {
+            return axios.get(
+              `${process.env.MAIN_SERVER_URL}/assessor/offline-batches/${batchId}/presigned-url-for-assessor`,
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+          })
+        );
+        const uploadPromises = evidences.map((evidence, index) => {
+          const filePath = path.join(
+            __dirname,
+            "..",
+            "..",
+            "uploads",
+            "batches",
+            batchId,
+            "evidences",
+            "assessor",
+            "group-photo",
+            evidence
+          );
+          if (!fs.existsSync(filePath)) {
+            throw new AppError("File does not exist: " + filePath, 404);
+          }
+          const buffer = fs.readFileSync(filePath);
+          return axios.put(responses[index].data.data.url, buffer, {
+            headers: {
+              "Content-Type":
+                mime.lookup(evidence) || "application/octet-stream",
+            },
+          });
+        });
+        await Promise.all(uploadPromises);
+        assessorDetails.assessorGroupPhoto = responses[0].data.data.location;
+      }
+    }
+    finalResponses.assessorDetails = assessorDetails;
     await axios.post(
       `${process.env.MAIN_SERVER_URL}/assessor/offline-batches/${batchId}/candidates/${candidateId}/sync-responses`,
       {
