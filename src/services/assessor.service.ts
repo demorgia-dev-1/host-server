@@ -429,21 +429,6 @@ const resetCandidatesPractical = async (
     throw new AppError("Batch is not ongoing", 400);
   }
   await prisma.$transaction(async (tx) => {
-    const examFolders = [["videos", "PRACTICAL"]];
-    const deletePaths = candidateIds.flatMap((candidateId) => {
-      const basePath = path.join(
-        __dirname,
-        "..",
-        "..",
-        "uploads",
-        "batches",
-        batchId,
-        "evidences",
-        "candidates",
-        candidateId
-      );
-      return examFolders.map((addOn) => path.join(basePath, ...addOn));
-    });
     await tx.examResponse.deleteMany({
       where: {
         candidateId: { in: candidateIds },
@@ -463,15 +448,44 @@ const resetCandidatesPractical = async (
         practicalSubmittedAt: null,
       },
     });
-    await Promise.all(
-      deletePaths.map(async (targetPath) => {
-        try {
-          await fs.promises.rm(targetPath, { recursive: true, force: true });
-        } catch (err) {
-          console.error(`Failed to delete ${targetPath}:`, err);
-        }
-      })
-    );
+    await Promise.all([
+      candidateIds.map(async (candidateId) => {
+        return fs.promises.rm(
+          path.join(
+            __dirname,
+            "..",
+            "..",
+            "uploads",
+            "batches",
+            batchId,
+            "evidences",
+            "candidates",
+            candidateId,
+            "videos",
+            "PRACTICAL"
+          ),
+          { recursive: true, force: true }
+        );
+      }),
+      candidateIds.map(async (candidateId) => {
+        return fs.promises.rm(
+          path.join(
+            __dirname,
+            "..",
+            "..",
+            "uploads",
+            "batches",
+            batchId,
+            "evidences",
+            "candidates",
+            candidateId,
+            "photos",
+            "Practical"
+          ),
+          { recursive: true, force: true }
+        );
+      }),
+    ]);
   });
 };
 const resetCandidatesViva = async (
