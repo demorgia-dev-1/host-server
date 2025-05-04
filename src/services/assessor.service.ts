@@ -661,11 +661,37 @@ const startBatch = async (batchId: string, assessorId: string) => {
   });
 };
 const deleteBatches = async (ids: string[], assessorId: string) => {
-  await prisma.batch.deleteMany({
+  const batches = await prisma.batch.findMany({
     where: {
       id: { in: ids },
       assessor: assessorId,
     },
+  });
+  if (ids.length !== batches.length) {
+    throw new AppError("Batch not found", 404);
+  }
+  await prisma.$transaction(async (tx) => {
+    await Promise.all(
+      ids.map((id) => {
+        const folderPath = path.join(
+          __dirname,
+          "..",
+          "..",
+          "uploads",
+          "batches",
+          id
+        );
+        if (fs.existsSync(folderPath)) {
+          fs.promises.rm(folderPath, { recursive: true, force: true });
+        }
+      })
+    );
+    await tx.batch.deleteMany({
+      where: {
+        id: { in: ids },
+        assessor: assessorId,
+      },
+    });
   });
 };
 const submitCandidatePracticalResponses = async (

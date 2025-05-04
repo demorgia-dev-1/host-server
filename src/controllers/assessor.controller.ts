@@ -230,7 +230,10 @@ export const deleteBatches = async (
 ) => {
   try {
     const ids = req.body.ids;
-    assessorService.deleteBatches(ids, req.headers["x-assessor-id"] as string);
+    await assessorService.deleteBatches(
+      ids,
+      req.headers["x-assessor-id"] as string
+    );
     res.status(200).json({});
   } catch (error) {
     next(error);
