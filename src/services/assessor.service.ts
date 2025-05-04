@@ -949,20 +949,19 @@ const syncCandidate = async (
       await Promise.all(
         photos.map((photo, index) => {
           const filePath = path.join(randomPhotos, photo);
-          if (!fs.existsSync(filePath)) {
-            throw new AppError("File does not exist: " + filePath, 404);
+          if (fs.existsSync(filePath)) {
+            const buffer = fs.readFileSync(filePath);
+            return axios.put(
+              signedUrlsToUploadRandomPhotos[index].data.data.url,
+              buffer,
+              {
+                headers: {
+                  "Content-Type":
+                    mime.lookup(photo) || "application/octet-stream",
+                },
+              }
+            );
           }
-          const buffer = fs.readFileSync(filePath);
-          return axios.put(
-            signedUrlsToUploadRandomPhotos[index].data.data.url,
-            buffer,
-            {
-              headers: {
-                "Content-Type":
-                  mime.lookup(photo) || "application/octet-stream",
-              },
-            }
-          );
         })
       );
     }
@@ -1090,23 +1089,21 @@ const syncCandidate = async (
         videos.map((video, index) => {
           const filePath = path.join(randomVideos, video);
           if (fs.existsSync(filePath)) {
-            throw new AppError("File does not exist: " + filePath, 404);
+            const buffer = fs.readFileSync(filePath);
+            return axios.put(
+              signedUrlsToUploadRandomVideos[index].data.data.url,
+              buffer,
+              {
+                headers: {
+                  "Content-Type":
+                    mime.lookup(video) || "application/octet-stream",
+                },
+              }
+            );
           }
-          const buffer = fs.readFileSync(filePath);
-          return axios.put(
-            signedUrlsToUploadRandomVideos[index].data.data.url,
-            buffer,
-            {
-              headers: {
-                "Content-Type":
-                  mime.lookup(video) || "application/octet-stream",
-              },
-            }
-          );
         })
       );
     }
-
     let adharName = "";
     let selfieName = "";
     let adharContentType = "";
