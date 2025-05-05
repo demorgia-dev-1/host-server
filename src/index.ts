@@ -7,9 +7,11 @@ import authRoutes from "./routes/auth.routes";
 import assessorRoutes from "./routes/assessor.routes";
 import candidateRoutes from "./routes/candidate.routes";
 import { errorHandler } from "./middlewares/error.middleware";
+import cors from "cors";
 
 dotenv.config();
 const app = express();
+app.use(cors());
 app.use(
   fileUpload({
     useTempFiles: false,
