@@ -140,6 +140,25 @@ const getMyTheoryTest = async (candidateId: string) => {
       theoryStartedAt: new Date(),
     },
   });
+  // randomize questions
+  const questions = questionBank[0].questions;
+  if (questions) {
+    questions.forEach((question: any) => {
+      const options = question.options;
+      if (options) {
+        for (let i = options.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [options[i], options[j]] = [options[j], options[i]];
+        }
+      }
+      question.options = options;
+    });
+    for (let i = questions.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [questions[i], questions[j]] = [questions[j], questions[i]];
+    }
+  }
+  questionBank[0].questions = questions;
   return questionBank;
 };
 const getMyPracticalTest = async (candidateId: string) => {
@@ -176,6 +195,26 @@ const getMyPracticalTest = async (candidateId: string) => {
   if (!questionBank) {
     throw new AppError("Question bank not found", 404);
   }
+  // randomize questions
+  const questions = questionBank[0]?.questions;
+  if (questions) {
+    questions.forEach((question: any) => {
+      const options = question.options;
+      if (options) {
+        for (let i = options.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [options[i], options[j]] = [options[j], options[i]];
+        }
+      }
+      question.options = options;
+    });
+    for (let i = questions.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [questions[i], questions[j]] = [questions[j], questions[i]];
+    }
+    questionBank[0].questions = questions;
+  }
+
   await prisma.candidate.update({
     where: { id: candidateId },
     data: {
@@ -359,8 +398,8 @@ const uploadRandomVideo = async (
   if (!video.mimetype.startsWith("video/")) {
     throw new AppError("Invalid file type", 400);
   }
-  if (video.size > 10 * 1024 * 1024) {
-    throw new AppError("File size exceeds 10MB", 400);
+  if (video.size > 200 * 1024 * 1024) {
+    throw new AppError("File size exceeds 200MB", 400);
   }
   await video.mv(videoPath);
 };
@@ -441,8 +480,8 @@ const uploadRandomPhoto = async (
   if (!photo.mimetype.startsWith("image/")) {
     throw new AppError("Invalid file type", 400);
   }
-  if (photo.size > 2 * 1024 * 1024) {
-    throw new AppError("File size exceeds 2MB", 400);
+  if (photo.size > 10 * 1024 * 1024) {
+    throw new AppError("File size exceeds 10MB", 400);
   }
   await photo.mv(photoPath);
 };

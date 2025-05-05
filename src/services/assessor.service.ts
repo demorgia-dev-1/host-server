@@ -108,7 +108,6 @@ const saveBatchOffline = async (token: string, batchId: string) => {
       }),
     ]);
   } catch (error) {
-    console.log("error", error);
     if (axios.isAxiosError(error)) {
       if (error.response?.status === 401) {
         throw new AppError("Invalid credentials", 401);
@@ -748,8 +747,8 @@ const submitCandidatePracticalResponses = async (
     if (!evidence?.mimetype?.startsWith("video/")) {
       throw new AppError("Invalid file type", 400);
     }
-    if (evidence.size > 50 * 1024 * 1024) {
-      throw new AppError("File size exceeds 5MB", 400);
+    if (evidence.size > 100 * 1024 * 1024) {
+      throw new AppError("File size exceeds 100MB", 400);
     }
     const ext = evidence.name.split(".").pop();
     const uploadPath = path.join(
@@ -834,8 +833,8 @@ const submitCandidateVivaResponses = async (
     if (!evidence.mimetype.startsWith("video/")) {
       throw new AppError("Invalid file type", 400);
     }
-    if (evidence.size > 50 * 1024 * 1024) {
-      throw new AppError("File size exceeds 2MB", 400);
+    if (evidence.size > 100 * 1024 * 1024) {
+      throw new AppError("File size exceeds 100MB", 400);
     }
     const ext = evidence.name.split(".").pop();
     const uploadPath = path.join(
