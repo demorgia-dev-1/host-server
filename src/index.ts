@@ -18,9 +18,17 @@ app.use(
 );
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
 app.use("/auth", authRoutes);
 app.use("/assessor", assessorRoutes);
 app.use("/candidate", candidateRoutes);
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    status: "ok",
+    message: "Server is running",
+    timestamp: new Date().toISOString(),
+  });
+});
 app.use(errorHandler);
 const requiredEnv = ["JWT_SECRET", "MAIN_SERVER_URL", "DATABASE_URL"];
 const missingEnv = requiredEnv.filter((env) => !process.env[env]);
@@ -31,7 +39,7 @@ if (missingEnv.length > 0) {
   process.exit(1);
 }
 
-const server = app.listen(9090, () => {
+const server = app.listen(9090, "0.0.0.0", () => {
   const addressInfo = server.address();
   if (typeof addressInfo === "object" && addressInfo?.port) {
     const localIp = ip.address();
