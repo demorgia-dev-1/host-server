@@ -22,6 +22,14 @@ app.use("/auth", authRoutes);
 app.use("/assessor", assessorRoutes);
 app.use("/candidate", candidateRoutes);
 app.use(errorHandler);
+const requiredEnv = ["JWT_SECRET", "MAIN_SERVER_URL", "DATABASE_URL"];
+const missingEnv = requiredEnv.filter((env) => !process.env[env]);
+if (missingEnv.length > 0) {
+  console.error(
+    `❌ Missing required environment variables: ${missingEnv.join(", ")}`
+  );
+  process.exit(1);
+}
 
 const server = app.listen(9090, () => {
   const addressInfo = server.address();
