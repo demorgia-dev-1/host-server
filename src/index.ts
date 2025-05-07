@@ -40,11 +40,17 @@ if (missingEnv.length > 0) {
   );
   process.exit(1);
 }
-
 const server = app.listen(0, "0.0.0.0", () => {
   const addressInfo = server.address();
   if (typeof addressInfo === "object" && addressInfo?.port) {
-    const localIp = ip.address();
+    let localIp: string;
+    try {
+      localIp = ip.address(); // Attempt to get the local IP address
+    } catch (error) {
+      console.error("❌ Failed to retrieve local IP address. Using localhost.");
+      localIp = "localhost"; // Fallback to localhost
+    }
+
     const url = `http://${localIp}:${addressInfo.port}`;
 
     console.log(`\n✅ Server running at ${url}`);
