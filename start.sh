@@ -2,8 +2,9 @@
 set -e
 
 # Install Git and Node.js if not installed
-pkg update -y
-pkg install -y git nodejs
+sudo apt update -y
+sudo apt install -y git nodejs
+
 # Set variables
 REPO_URL="https://github.com/demorgia-dev-1/host-server.git"
 PROJECT_DIR="host-server"
