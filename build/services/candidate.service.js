@@ -15,11 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const client_1 = require("@prisma/client");
 const AppError_1 = require("../utils/AppError");
 const path_1 = __importDefault(require("path"));
-const adapter_better_sqlite3_1 = require("@prisma/adapter-better-sqlite3");
-const adapter = new adapter_better_sqlite3_1.PrismaBetterSQLite3({
-    url: process.env.DATABASE_URL,
-});
-const prisma = new client_1.PrismaClient({ adapter });
+const prisma = new client_1.PrismaClient();
 const uploadOnboardingEvidence = (candidateId, location, adhar, selfie) => __awaiter(void 0, void 0, void 0, function* () {
     const candidate = yield prisma.candidate.findFirst({
         where: { id: candidateId },

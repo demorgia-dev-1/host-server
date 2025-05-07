@@ -3,11 +3,8 @@ import { PrismaClient } from "@prisma/client";
 import { SubmitTheoryResponses } from "../schemas/candidate.schema";
 import { AppError } from "../utils/AppError";
 import path from "path";
-import { PrismaBetterSQLite3 } from "@prisma/adapter-better-sqlite3";
-const adapter = new PrismaBetterSQLite3({
-  url: process.env.DATABASE_URL!,
-});
-const prisma = new PrismaClient({ adapter });
+
+const prisma = new PrismaClient();
 const uploadOnboardingEvidence = async (
   candidateId: string,
   location: { long: number; lat: number },
