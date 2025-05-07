@@ -1,5 +1,5 @@
 import { UploadedFile } from "express-fileupload";
-import { PrismaClient } from "../../generated/prisma";
+import { PrismaClient } from "@prisma/client";
 import { SubmitTheoryResponses } from "../schemas/candidate.schema";
 import { AppError } from "../utils/AppError";
 import path from "path";

@@ -2,8 +2,8 @@ import { LoginAssessor } from "../schemas/assessor.schema";
 import axios from "axios";
 import { AppError } from "../utils/AppError";
 import { LoginCandidate } from "../schemas/candidate.schema";
-import { PrismaClient } from "../../generated/prisma";
-import { PrismaClientKnownRequestError } from "../../generated/prisma/runtime/library";
+import { PrismaClient } from "@prisma/client";
+import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 import jwt from "jsonwebtoken";
 import { PrismaBetterSQLite3 } from "@prisma/adapter-better-sqlite3";
 

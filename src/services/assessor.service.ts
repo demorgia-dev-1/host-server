@@ -2,8 +2,8 @@ import axios from "axios";
 import path from "path";
 import fs from "fs";
 import { AppError } from "../utils/AppError";
-import { PrismaClient } from "../../generated/prisma";
-import { PrismaClientKnownRequestError } from "../../generated/prisma/runtime/library";
+import { PrismaClient } from "@prisma/client";
+import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 import { UploadedFile } from "express-fileupload";
 import mime from "mime-types";
 import { PrismaBetterSQLite3 } from "@prisma/adapter-better-sqlite3";
@@ -285,7 +285,7 @@ const resetCandidates = async (
   if (batch.status !== "ongoing") {
     throw new AppError("Batch is not ongoing", 400);
   }
-  await prisma.$transaction(async (tx) => {
+  await prisma.$transaction(async (tx: any) => {
     const examFolders = [
       ["photos", "THEORY"],
       ["videos", "THEORY"],
@@ -428,7 +428,7 @@ const resetCandidatesPractical = async (
   if (batch.status !== "ongoing") {
     throw new AppError("Batch is not ongoing", 400);
   }
-  await prisma.$transaction(async (tx) => {
+  await prisma.$transaction(async (tx: any) => {
     await tx.examResponse.deleteMany({
       where: {
         candidateId: { in: candidateIds },
@@ -520,7 +520,7 @@ const resetCandidatesViva = async (
     );
     return examFolders.map((addOn) => path.join(basePath, ...addOn));
   });
-  await prisma.$transaction(async (tx) => {
+  await prisma.$transaction(async (tx: any) => {
     await tx.candidate.updateMany({
       where: {
         id: { in: candidateIds },
@@ -670,7 +670,7 @@ const deleteBatches = async (ids: string[], assessorId: string) => {
   if (ids.length !== batches.length) {
     throw new AppError("Batch not found", 404);
   }
-  await prisma.$transaction(async (tx) => {
+  await prisma.$transaction(async (tx: any) => {
     await Promise.all(
       ids.map((id) => {
         const folderPath = path.join(
@@ -1255,7 +1255,7 @@ const syncCandidate = async (
       practical: [],
       viva: [],
     };
-    theoryResponses.forEach((response) => {
+    theoryResponses.forEach((response: any) => {
       // @ts-ignore
       finalResponses.theory.push({
         questionId: response.questionId,
@@ -1264,7 +1264,7 @@ const syncCandidate = async (
         endedAt: response.endedAt,
       });
     });
-    practicalResponses.forEach((response) => {
+    practicalResponses.forEach((response: any) => {
       console.log("practical response = ", response);
       const obj = {
         questionId: response.questionId,
@@ -1285,7 +1285,7 @@ const syncCandidate = async (
       // @ts-ignore
       finalResponses.practical.push(obj);
     });
-    vivaResponses.forEach((response) => {
+    vivaResponses.forEach((response: any) => {
       // @ts-ignore
       finalResponses.viva.push({
         questionId: response.questionId,

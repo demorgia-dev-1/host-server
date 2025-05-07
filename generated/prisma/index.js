@@ -197,7 +197,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "/app/generated/prisma",
+      "value": "/Users/mipl/Desktop/host/generated/prisma",
       "fromEnvVar": null
     },
     "config": {
@@ -206,7 +206,7 @@ const config = {
     "binaryTargets": [
       {
         "fromEnvVar": null,
-        "value": "linux-arm64-openssl-3.0.x",
+        "value": "darwin",
         "native": true
       }
     ],
@@ -214,11 +214,11 @@ const config = {
       "driverAdapters",
       "queryCompiler"
     ],
-    "sourceFilePath": "/app/prisma/schema.prisma",
+    "sourceFilePath": "/Users/mipl/Desktop/host/prisma/schema.prisma",
     "isCustomOutput": true
   },
   "relativeEnvPaths": {
-    "rootEnvPath": "../../.env",
+    "rootEnvPath": null,
     "schemaEnvPath": "../../.env"
   },
   "relativePath": "../../prisma",
