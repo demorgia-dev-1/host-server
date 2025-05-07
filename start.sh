@@ -21,10 +21,11 @@ else
   git clone "$REPO_URL"
   cd "$PROJECT_DIR" || exit
 fi
-
+rm -rf node_modules
+rm -rf package-lock.json
+rm -rf generated
 echo "=== Installing dependencies ==="
 npm install
-npx prisma generate
 
 # Optional: if there's a build step (e.g., for TypeScript or bundling)
 if [ -f "tsconfig.json" ] || grep -q "\"build\"" package.json; then
