@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "rootDir": "./", // Set to the root of your project
+    "rootDir": "./src", // Set to the root of your project
     "outDir": "./build", // Ensure this matches your output directory
     "module": "commonjs",
     "target": "es6",
