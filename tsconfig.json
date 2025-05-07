@@ -1,12 +1,13 @@
 {
   "compilerOptions": {
-    "target": "es2016",
-    "module": "CommonJS",
-    "rootDir": "./src",
-    "outDir": "./build",
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
+    "rootDir": "./", // Set to the root of your project
+    "outDir": "./build", // Ensure this matches your output directory
+    "module": "commonjs",
+    "target": "es6",
     "strict": true,
+    "esModuleInterop": true,
     "skipLibCheck": true
-  }
+  },
+  "include": ["src/**/*"], // Ensure this matches your source files
+  "exclude": ["node_modules", "build"]
 }
