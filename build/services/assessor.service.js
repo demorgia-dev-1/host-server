@@ -16,12 +16,12 @@ const axios_1 = __importDefault(require("axios"));
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
 const AppError_1 = require("../utils/AppError");
-const prisma_1 = require("../../generated/prisma");
-const library_1 = require("../../generated/prisma/runtime/library");
+const client_1 = require("@prisma/client");
+const library_1 = require("@prisma/client/runtime/library");
 const mime_types_1 = __importDefault(require("mime-types"));
 const adapter_better_sqlite3_1 = require("@prisma/adapter-better-sqlite3");
 const adapter = new adapter_better_sqlite3_1.PrismaBetterSQLite3({ url: process.env.DATABASE_URL });
-const prisma = new prisma_1.PrismaClient({ adapter });
+const prisma = new client_1.PrismaClient({ adapter });
 const getAssignedBatches = (token) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {

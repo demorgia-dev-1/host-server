@@ -15,12 +15,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.loginCandidate = exports.loginAssessor = void 0;
 const axios_1 = __importDefault(require("axios"));
 const AppError_1 = require("../utils/AppError");
-const prisma_1 = require("../../generated/prisma");
-const library_1 = require("../../generated/prisma/runtime/library");
+const client_1 = require("@prisma/client");
+const library_1 = require("@prisma/client/runtime/library");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const adapter_better_sqlite3_1 = require("@prisma/adapter-better-sqlite3");
 const adapter = new adapter_better_sqlite3_1.PrismaBetterSQLite3({ url: process.env.DATABASE_URL });
-const prisma = new prisma_1.PrismaClient({ adapter });
+const prisma = new client_1.PrismaClient({ adapter });
 const loginAssessor = (data) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {
