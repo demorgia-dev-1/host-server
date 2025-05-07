@@ -9,7 +9,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start:dev": "npx nodemon",
     "build": "rimraf ./build && tsc",
-    "start": "npx prisma generate npm run build && cross-env DATABASE_URL=file:./dev.db JWT_SECRET=secret MAIN_SERVER_URL=http://82.112.235.197:8080/api/v1 node build/index.js"
+    "start": "npm run build && cross-env DATABASE_URL=file:./dev.db JWT_SECRET=secret MAIN_SERVER_URL=http://82.112.235.197:8080/api/v1 node build/index.js"
   },
   "dependencies": {
     "@prisma/client": "^6.6.0",
