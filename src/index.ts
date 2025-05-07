@@ -41,7 +41,7 @@ if (missingEnv.length > 0) {
   process.exit(1);
 }
 
-const server = app.listen(9090, "0.0.0.0", () => {
+const server = app.listen(0, "0.0.0.0", () => {
   const addressInfo = server.address();
   if (typeof addressInfo === "object" && addressInfo?.port) {
     const localIp = ip.address();
