@@ -47,6 +47,7 @@ const server = app.listen(0, "0.0.0.0", () => {
     try {
       localIp = ip.address(); // Attempt to get the local IP address
     } catch (error) {
+      console.log("error", error);
       console.error("❌ Failed to retrieve local IP address. Using localhost.");
       localIp = "localhost"; // Fallback to localhost
     }
