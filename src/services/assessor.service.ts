@@ -6,8 +6,9 @@ import { PrismaClient } from "../../generated/prisma";
 import { PrismaClientKnownRequestError } from "../../generated/prisma/runtime/library";
 import { UploadedFile } from "express-fileupload";
 import mime from "mime-types";
-import e from "express";
-const prisma = new PrismaClient();
+import { PrismaBetterSQLite3 } from "@prisma/adapter-better-sqlite3";
+const adapter = new PrismaBetterSQLite3({ url: process.env.DATABASE_URL });
+const prisma = new PrismaClient({ adapter });
 const getAssignedBatches = async (token: string): Promise<any> => {
   try {
     const response = await axios.get(

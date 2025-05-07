@@ -5,7 +5,10 @@ import { LoginCandidate } from "../schemas/candidate.schema";
 import { PrismaClient } from "../../generated/prisma";
 import { PrismaClientKnownRequestError } from "../../generated/prisma/runtime/library";
 import jwt from "jsonwebtoken";
-const prisma = new PrismaClient();
+import { PrismaBetterSQLite3 } from "@prisma/adapter-better-sqlite3";
+
+const adapter = new PrismaBetterSQLite3({ url: process.env.DATABASE_URL! });
+const prisma = new PrismaClient({ adapter });
 export const loginAssessor = async (
   data: LoginAssessor
 ): Promise<{ localToken: string; serverToken: string }> => {
