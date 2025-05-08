@@ -12,6 +12,7 @@
     "start": "npm run build && cross-env DATABASE_URL=file:./dev.db JWT_SECRET=secret MAIN_SERVER_URL=http://82.112.235.197:8080/api/v1 node build/index.js"
   },
   "dependencies": {
+    "@prisma/adapter-better-sqlite3": "^6.7.0",
     "@prisma/client": "^6.7.0",
     "axios": "^1.8.4",
     "cors": "^2.8.5",

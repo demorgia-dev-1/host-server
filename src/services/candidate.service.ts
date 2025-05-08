@@ -1,10 +1,11 @@
 import { UploadedFile } from "express-fileupload";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "../../generated/prisma";
 import { SubmitTheoryResponses } from "../schemas/candidate.schema";
 import { AppError } from "../utils/AppError";
 import path from "path";
-
-const prisma = new PrismaClient();
+import { PrismaBetterSQLite3 } from "@prisma/adapter-better-sqlite3";
+const adapter = new PrismaBetterSQLite3({ url: process.env.DATABASE_URL! });
+const prisma = new PrismaClient({ adapter });
 const uploadOnboardingEvidence = async (
   candidateId: string,
   location: { long: number; lat: number },

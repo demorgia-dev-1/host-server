@@ -2,12 +2,15 @@ import axios from "axios";
 import path from "path";
 import fs from "fs";
 import { AppError } from "../utils/AppError";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "./../../generated/prisma";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 import { UploadedFile } from "express-fileupload";
 import mime from "mime-types";
+import { PrismaBetterSQLite3 } from "@prisma/adapter-better-sqlite3";
 
-const prisma = new PrismaClient();
+const adapter = new PrismaBetterSQLite3({ url: process.env.DATABASE_URL });
+
+const prisma = new PrismaClient({ adapter });
 const getAssignedBatches = async (token: string): Promise<any> => {
   try {
     const response = await axios.get(
