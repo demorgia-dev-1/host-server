@@ -28,7 +28,6 @@ export const loginAssessor = async (
         throw new AppError("Invalid credentials", 401);
       }
     }
-    console.log("error", error);
     throw new AppError("internal server error", 500);
   }
 };

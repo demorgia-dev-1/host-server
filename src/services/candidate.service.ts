@@ -24,7 +24,6 @@ const uploadOnboardingEvidence = async (
     .select()
     .from(batchTable)
     .where(eq(batchTable.id, candidate[0].batchId));
-  console.log("location", location);
   if (!candidate) {
     throw new AppError("invalid credentials", 401, true);
   }
@@ -136,7 +135,6 @@ const getMyTheoryTest = async (candidateId: string) => {
     .select()
     .from(batchTable)
     .where(eq(batchTable.id, candidate[0].batchId));
-  console.log("batch", batch);
   const questionBank = batch[0].theoryQuestionBank
     ? JSON.parse(batch[0].theoryQuestionBank)
     : null;
@@ -170,7 +168,6 @@ const getMyTheoryTest = async (candidateId: string) => {
     }
   }
   questionBank[0].questions = questions;
-  console.log("questionBank", questionBank);
   return questionBank;
 };
 const getMyPracticalTest = async (candidateId: string) => {
@@ -431,7 +428,6 @@ const uploadRandomPhoto = async (
     (candidate[0].theoryExamStatus === "notStarted" ||
       candidate[0].theoryExamStatus === "submitted")
   ) {
-    console.log("candidate[0].theoryExamStatus", candidate[0].theoryExamStatus);
     throw new AppError("Your exam is not started or already submitted", 401);
   }
   if (

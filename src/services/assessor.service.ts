@@ -1207,7 +1207,7 @@ const syncCandidate = async (
       assessorReachedAt: batch[0]?.assessorReachedAt,
       assessorCoordinates: batch[0]?.assessorCoordinates
         ? // @ts-ignore
-          JSON.parse(candidate?.batch.assessorCoordinates)
+          JSON.parse(batch[0].assessorCoordinates)
         : {},
       assessorGroupPhoto: "",
     };

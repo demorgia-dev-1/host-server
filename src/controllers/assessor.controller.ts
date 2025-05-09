@@ -204,7 +204,6 @@ export const markAsReached = async (
     );
     res.status(200).json({});
   } catch (error) {
-    console.log("error", error);
     next(error);
   }
 };
@@ -219,7 +218,6 @@ export const startBatch = async (
     await assessorService.startBatch(batchId, assessorId);
     res.status(200).json({});
   } catch (error) {
-    console.log("error", error);
     next(error);
   }
 };
@@ -375,7 +373,6 @@ export const syncCandidate = async (
     );
     res.status(200).json({});
   } catch (error) {
-    console.log("error", error);
     next(error);
   }
 };

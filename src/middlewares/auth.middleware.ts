@@ -53,6 +53,7 @@ const isAuthenticatedAssessor = async (
     if (error instanceof jwt.NotBeforeError) {
       return next(new AppError("Token not active", 401, true));
     }
+
     next(error);
   }
 };
