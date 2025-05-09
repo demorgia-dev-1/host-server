@@ -1127,6 +1127,10 @@ const syncCandidate = async (
           eq(examResponseTable.type, "VIVA")
         )
       );
+    const batch = await db
+      .select()
+      .from(batchTable)
+      .where(eq(batchTable.id, batchId));
     const finalResponses = {
       assessorDetails: {},
       candidateDetails: {
@@ -1175,7 +1179,7 @@ const syncCandidate = async (
       };
       // @ts-ignore
 
-      if (candidate?.batch.isPracticalVisibleToCandidate) {
+      if (batch[0]?.isPracticalVisibleToCandidate) {
         // @ts-ignore
         obj["startedAt"] = response.startedAt;
         // @ts-ignore
@@ -1197,10 +1201,7 @@ const syncCandidate = async (
         marksObtained: response.marksObtained || 0,
       });
     });
-    const batch = await db
-      .select()
-      .from(batchTable)
-      .where(eq(batchTable.id, batchId));
+
     const assessorDetails = {
       isAssessorReached: batch[0]?.isAssessorReached,
       assessorReachedAt: batch[0]?.assessorReachedAt,
