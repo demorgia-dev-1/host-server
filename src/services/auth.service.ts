@@ -2,12 +2,10 @@ import { LoginAssessor } from "../schemas/assessor.schema";
 import axios from "axios";
 import { AppError } from "../utils/AppError";
 import { LoginCandidate } from "../schemas/candidate.schema";
-import { PrismaClient } from "../../generated/prisma";
-import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 import jwt from "jsonwebtoken";
-import { PrismaBetterSQLite3 } from "@prisma/adapter-better-sqlite3";
-const adapter = new PrismaBetterSQLite3({ url: process.env.DATABASE_URL! });
-const prisma = new PrismaClient({ adapter });
+import { eq, or, and } from "drizzle-orm";
+import db from "../db";
+import { candidates as candidatesTable } from "../db/schema";
 export const loginAssessor = async (
   data: LoginAssessor
 ): Promise<{ localToken: string; serverToken: string }> => {
@@ -36,21 +34,40 @@ export const loginAssessor = async (
 };
 export const loginCandidate = async (data: LoginCandidate) => {
   try {
-    const candidate = await prisma.candidate.findFirst({
-      where: {
-        OR: [{ id: data._id }, { enrollmentNo: data._id }],
-        password: data.password,
-      },
-      select: {
-        id: true,
-        batchId: true,
-      },
-    });
-    if (!candidate) {
-      throw new AppError("invalid  credentials", 401, true);
+    // const candidate = await prisma.candidate.findFirst({
+    //   where: {
+    //     OR: [{ id: data._id }, { enrollmentNo: data._id }],
+    //     password: data.password,
+    //   },
+    //   select: {
+    //     id: true,
+    //     batchId: true,
+    //   },
+    // });
+    // if (!candidate) {
+    //   throw new AppError("invalid  credentials", 401, true);
+    // }
+    const result = await db
+      .select({ id: candidatesTable.id, batchId: candidatesTable.batchId })
+      .from(candidatesTable)
+      .where(
+        and(
+          or(
+            eq(candidatesTable.id, data._id),
+            eq(candidatesTable.enrollmentNo, data._id)
+          ),
+          eq(candidatesTable.password, data.password)
+        )
+      )
+      .limit(1);
+
+    const foundCandidate = result[0];
+
+    if (!foundCandidate) {
+      throw new AppError("invalid credentials", 401, true);
     }
     const token = jwt.sign(
-      { _id: candidate.id, batchId: candidate.batchId },
+      { _id: foundCandidate.id, batchId: foundCandidate.batchId },
       process.env.JWT_SECRET!,
       {
         expiresIn: "1d",
@@ -58,14 +75,8 @@ export const loginCandidate = async (data: LoginCandidate) => {
     );
     return token;
   } catch (error) {
-    console.log("error", error);
     if (error instanceof AppError) {
       throw error;
-    }
-    if (error instanceof PrismaClientKnownRequestError) {
-      if (error.code === "P2002") {
-        throw new AppError("invalid  credentials", 401, true);
-      }
     }
     throw new AppError("internal server error", 500);
   }

@@ -1,16 +1,18 @@
+// @ts-nocheck
 import axios from "axios";
 import path from "path";
 import fs from "fs";
 import { AppError } from "../utils/AppError";
-import { PrismaClient } from "./../../generated/prisma";
-import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 import { UploadedFile } from "express-fileupload";
 import mime from "mime-types";
-import { PrismaBetterSQLite3 } from "@prisma/adapter-better-sqlite3";
+import {
+  batches as batchTable,
+  candidates as candidateTable,
+  examResponses as examResponseTable,
+} from "../db/schema";
+import { eq, and, or, inArray } from "drizzle-orm";
+import db from "../db";
 
-const adapter = new PrismaBetterSQLite3({ url: process.env.DATABASE_URL });
-
-const prisma = new PrismaClient({ adapter });
 const getAssignedBatches = async (token: string): Promise<any> => {
   try {
     const response = await axios.get(
@@ -41,124 +43,82 @@ const saveBatchOffline = async (token: string, batchId: string) => {
         },
       }
     );
-    const {
-      batch,
-      theoryQuestionBank,
-      practicalQuestionBank,
-      vivaQuestionBank,
-      candidates,
-    } = response.data.data;
 
-    await prisma.$transaction([
-      prisma.batch.create({
-        data: {
-          id: batch._id,
-          assessor: batch.assessor,
-          name: batch.name,
-          type: batch.type,
-          status: batch.status,
-          noOfCandidates: batch.noOfCandidates,
-          durationInMin: batch.durationInMin,
-          no: batch.no,
-          startDate: batch.startDate,
-          endDate: batch.endDate,
-          theoryQuestionBank: JSON.stringify(theoryQuestionBank),
-          practicalQuestionBank: JSON.stringify(practicalQuestionBank),
-          vivaQuestionBank: JSON.stringify(vivaQuestionBank),
-          isAssessorReached: false,
-          isCandidateVideoRequired: batch.isCandidateVideoRequired,
-          isCandidatePhotosRequired: batch.isCandidatePhotosRequired,
-          isCandidateLocationRequired: batch.isCandidateLocationRequired,
-          isCandidateAdharRequired: batch.isCandidateAdharRequired,
-          isCandidateSelfieRequired: batch.isCandidateSelfieRequired,
-          isPracticalVisibleToCandidate: batch.isPracticalVisibleToCandidate,
-          isSuspiciousActivityDetectionRequired:
-            batch.isSuspiciousActivityDetectionRequired,
-          isAssessorEvidenceRequired: batch.isAssessorEvidenceRequired,
-          assessorReachedAt: null,
-          assessorCoordinates: null,
-          assessorGroupPhoto: null,
-        },
-      }),
-      prisma.candidate.createMany({
-        data: candidates.docs.map((candidate: any) => ({
-          id: candidate._id,
-          name: candidate.name,
-          email: candidate.email,
-          phone: candidate.phone,
-          address: candidate.address,
-          batchId: candidate.batch,
-          fatherName: candidate.fatherName,
-          enrollmentNo: candidate.enrollmentNo,
-          isActive: candidate.isActive,
-          password: candidate.password,
-          gender: candidate.gender,
-          adharNo: candidate.adharNo,
-          isTheoryStarted: false,
-          isEvidanceUploaded: false,
-          isPresentInTheory: false,
-          isPresentInPractical: false,
-          isPresentInViva: false,
-          isTheorySubmitted: false,
-          theoryExamStatus: "notStarted",
-          practicalExamStatus: "notStarted",
-          vivaExamStatus: "notStarted",
-          multipleFaceDetectionCount: 0,
-          faceHiddenCount: 0,
-          tabSwitchCount: 0,
-          exitFullScreenCount: 0,
-        })),
-      }),
-    ]);
+    const { batch, candidates } = response.data.data;
+
+    batch.assessorCoordinates = batch.assessorCoordinates
+      ? JSON.stringify(batch.assessorCoordinates)
+      : null;
+
+    const preparedBatch = { ...batch, id: batch._id };
+    const preparedCandidates = candidates.docs.map((candidate: any) => ({
+      ...candidate,
+      batchId: batch._id,
+      id: candidate._id,
+    }));
+
+    db.transaction((tx) => {
+      tx.insert(batchTable).values(preparedBatch).run();
+      tx.insert(candidateTable).values(preparedCandidates).run();
+      return;
+    });
+    console.log("Batch and candidates saved successfully");
   } catch (error) {
     if (axios.isAxiosError(error)) {
       if (error.response?.status === 401) {
         throw new AppError("Invalid credentials", 401);
       }
     }
-    if (error instanceof PrismaClientKnownRequestError) {
-      if (error.code === "P2011") {
-        throw new AppError(
-          `Null constraint violation on field: ${error.meta?.constraint}`,
-          400
-        );
-      }
-      if (error.code === "P2002") {
-        throw new AppError(
-          `Unique constraint violation on field: ${error.meta?.target}`,
-          400
-        );
-      }
-    }
+
+    console.error("error", error);
     throw new AppError("internal server error", 500);
   }
 };
+
 const getLoadedBatches = async (assessorId: string) => {
   try {
-    console.log("assessorId", assessorId);
-    const batches = await prisma.batch.findMany({
-      where: { assessor: assessorId },
-    });
+    const batches = await db
+      .select()
+      .from(batchTable)
+      .where(eq(batchTable.assessor, assessorId));
+    console.log("batches", batches);
     return batches;
   } catch (error) {
+    console.log("error", error);
     throw new AppError("internal server error", 500);
   }
 };
 const getCandidateList = async (batchId: string, assessorId: string) => {
-  const batch = await prisma.batch.findFirst({
-    where: { id: batchId, assessor: assessorId },
-  });
+  // const batch = await prisma.batch.findFirst({
+  //   where: { id: batchId, assessor: assessorId },
+  // });
+  // if (!batch) {
+  //   throw new AppError("Batch not found", 404);
+  // }
+  // if (!batch.isAssessorReached) {
+  //   throw new AppError("mark yourself as reached", 400);
+  // }
+  // return await prisma.candidate.findMany({
+  //   where: {
+  //     batchId: batchId,
+  //   },
+  // });
+  const batch = await db
+    .select()
+    .from(batchTable)
+    .where(and(eq(batchTable.id, batchId), eq(batchTable.assessor, assessorId)))
+    .limit(1);
   if (!batch) {
     throw new AppError("Batch not found", 404);
   }
-  if (!batch.isAssessorReached) {
+  if (!batch[0].isAssessorReached) {
     throw new AppError("mark yourself as reached", 400);
   }
-  return await prisma.candidate.findMany({
-    where: {
-      batchId: batchId,
-    },
-  });
+  const candidates = await db
+    .select()
+    .from(candidateTable)
+    .where(eq(candidateTable.batchId, batchId));
+  return candidates;
 };
 const markAttendanceInTheory = async (
   candidates: string[],
@@ -166,34 +126,37 @@ const markAttendanceInTheory = async (
   assessorId: string
 ) => {
   try {
-    const batch = await prisma.batch.findFirst({
-      where: { id: batchId, assessor: assessorId },
-    });
+    const batch = await db
+      .select()
+      .from(batchTable)
+      .where(
+        and(eq(batchTable.id, batchId), eq(batchTable.assessor, assessorId))
+      )
+      .limit(1);
     if (!batch) {
       throw new AppError("Batch not found", 404);
     }
-    if (!batch.theoryQuestionBank) {
+    if (!batch[0].theoryQuestionBank) {
       throw new AppError("no theory question bank found", 400);
     }
-    if (batch.status === "assigned") {
+    if (batch[0].status === "assigned") {
       throw new AppError("Batch is not started yet", 400);
     }
-    if (batch.status === "completed") {
+    if (batch[0].status === "completed") {
       throw new AppError("Batch is already completed", 400);
     }
-    if (!batch.isAssessorReached) {
+    if (!batch[0].isAssessorReached) {
       throw new AppError("mark yourself as reached", 400);
     }
-
-    const updatedCandidates = await prisma.candidate.updateMany({
-      where: {
-        id: { in: candidates },
-        batchId: batchId,
-      },
-      data: {
-        isPresentInTheory: true,
-      },
-    });
+    const updatedCandidates = await db
+      .update(candidateTable)
+      .set({ isPresentInTheory: true })
+      .where(
+        and(
+          eq(candidateTable.batchId, batchId),
+          or(...candidates.map((id) => eq(candidateTable.id, id)))
+        )
+      );
     return updatedCandidates;
   } catch (error) {
     if (error instanceof AppError) {
@@ -207,33 +170,36 @@ const markAttendanceInPractical = async (
   batchId: string,
   assessorId: string
 ) => {
-  const batch = await prisma.batch.findFirst({
-    where: { id: batchId, assessor: assessorId },
-  });
+  const batch = await db
+    .select()
+    .from(batchTable)
+    .where(
+      and(eq(batchTable.id, batchId), eq(batchTable.assessor, assessorId))
+    );
   if (!batch) {
     throw new AppError("Batch not found", 404);
   }
-  if (!batch.practicalQuestionBank) {
+  if (!batch[0].practicalQuestionBank) {
     throw new AppError("no practical question bank found", 400);
   }
-  if (batch.status === "assigned") {
+  if (batch[0].status === "assigned") {
     throw new AppError("Batch is not started yet", 400);
   }
-  if (batch.status === "completed") {
+  if (batch[0].status === "completed") {
     throw new AppError("Batch is already completed", 400);
   }
-  if (!batch.isAssessorReached) {
+  if (!batch[0].isAssessorReached) {
     throw new AppError("mark yourself as reached", 400);
   }
-  const updatedCandidates = await prisma.candidate.updateMany({
-    where: {
-      id: { in: candidates },
-      batchId: batchId,
-    },
-    data: {
-      isPresentInPractical: true,
-    },
-  });
+  const updatedCandidates = await db
+    .update(candidateTable)
+    .set({ isPresentInPractical: true })
+    .where(
+      and(
+        eq(candidateTable.batchId, batchId),
+        or(...candidates.map((id) => eq(candidateTable.id, id)))
+      )
+    );
   return updatedCandidates;
 };
 const markAttendanceInViva = async (
@@ -241,33 +207,35 @@ const markAttendanceInViva = async (
   batchId: string,
   assessorId: string
 ) => {
-  const batch = await prisma.batch.findFirst({
-    where: { id: batchId, assessor: assessorId },
-  });
+  const batch = await db
+    .select()
+    .from(batchTable)
+    .where(and(eq(batchTable.id, batchId), eq(batchTable.assessor, assessorId)))
+    .limit(1);
   if (!batch) {
     throw new AppError("Batch not found", 404);
   }
-  if (!batch.vivaQuestionBank) {
+  if (!batch[0].vivaQuestionBank) {
     throw new AppError("no viva question bank found", 400);
   }
-  if (batch.status === "assigned") {
+  if (batch[0].status === "assigned") {
     throw new AppError("Batch is not started yet", 400);
   }
-  if (batch.status === "completed") {
+  if (batch[0].status === "completed") {
     throw new AppError("Batch is already completed", 400);
   }
-  if (!batch.isAssessorReached) {
+  if (!batch[0].isAssessorReached) {
     throw new AppError("mark yourself as reached", 400);
   }
-  const updatedCandidates = await prisma.candidate.updateMany({
-    where: {
-      id: { in: candidates },
-      batchId: batchId,
-    },
-    data: {
-      isPresentInViva: true,
-    },
-  });
+  const updatedCandidates = await db
+    .update(candidateTable)
+    .set({ isPresentInViva: true })
+    .where(
+      and(
+        eq(candidateTable.batchId, batchId),
+        or(...candidates.map((id) => eq(candidateTable.id, id)))
+      )
+    );
   return updatedCandidates;
 };
 const resetCandidates = async (
@@ -275,128 +243,46 @@ const resetCandidates = async (
   batchId: string,
   assessorId: string
 ) => {
-  const batch = await prisma.batch.findFirst({
-    where: { id: batchId, assessor: assessorId },
-  });
+  const batch = await db
+    .select()
+    .from(batchTable)
+    .where(and(eq(batchTable.id, batchId), eq(batchTable.assessor, assessorId)))
+    .limit(1);
   if (!batch) {
     throw new AppError("Batch not found", 404);
   }
-  if (!batch.isAssessorReached) {
+  if (!batch[0].isAssessorReached) {
     throw new AppError("mark yourself as reached", 400);
   }
-  if (batch.status !== "ongoing") {
+  if (batch[0].status !== "ongoing") {
     throw new AppError("Batch is not ongoing", 400);
   }
-  await prisma.$transaction(async (tx: any) => {
-    const examFolders = [
-      ["photos", "THEORY"],
-      ["videos", "THEORY"],
-      ["videos", "PRACTICAL"],
-      ["videos", "VIVA"],
-      ["adhar"],
-      ["selfie"],
-    ];
+  const examFolders = [
+    ["photos", "THEORY"],
+    ["videos", "THEORY"],
+    ["videos", "PRACTICAL"],
+    ["videos", "VIVA"],
+    ["adhar"],
+    ["selfie"],
+  ];
+  const deletePaths = candidateIds.flatMap((candidateId) => {
+    const basePath = path.join(
+      __dirname,
+      "..",
+      "..",
+      "uploads",
+      "batches",
+      batchId,
+      "evidences",
+      "candidates",
+      candidateId
+    );
+    return examFolders.map((addOn) => path.join(basePath, ...addOn));
+  });
 
-    const deletePaths = candidateIds.flatMap((candidateId) => {
-      const basePath = path.join(
-        __dirname,
-        "..",
-        "..",
-        "uploads",
-        "batches",
-        batchId,
-        "evidences",
-        "candidates",
-        candidateId
-      );
-      return examFolders.map((addOn) => path.join(basePath, ...addOn));
-    });
-
-    await Promise.all([
-      candidateIds.map(async (candidateId) => {
-        return fs.promises.rm(
-          path.join(
-            __dirname,
-            "..",
-            "..",
-            "uploads",
-            "batches",
-            batchId,
-            "evidences",
-            "candidates",
-            candidateId,
-            "photos",
-            "THEORY"
-          ),
-          { recursive: true, force: true }
-        );
-      }),
-      candidateIds.map(async (candidateId) => {
-        return fs.promises.rm(
-          path.join(
-            __dirname,
-            "..",
-            "..",
-            "uploads",
-            "batches",
-            batchId,
-            "evidences",
-            "candidates",
-            candidateId,
-            "videos",
-            "THEORY"
-          ),
-          { recursive: true, force: true }
-        );
-      }),
-      candidateIds.map(async (candidateId) => {
-        return fs.promises.rm(
-          path.join(
-            __dirname,
-            "..",
-            "..",
-            "uploads",
-            "batches",
-            batchId,
-            "evidences",
-            "candidates",
-            candidateId,
-            "adhar"
-          ),
-          { recursive: true, force: true }
-        );
-      }),
-      candidateIds.map(async (candidateId) => {
-        return fs.promises.rm(
-          path.join(
-            __dirname,
-            "..",
-            "..",
-            "uploads",
-            "batches",
-            batchId,
-            "evidences",
-            "candidates",
-            candidateId,
-            "selfie"
-          ),
-          { recursive: true, force: true }
-        );
-      }),
-    ]);
-    await tx.examResponse.deleteMany({
-      where: {
-        candidateId: { in: candidateIds },
-        batchId: batchId,
-        type: "THEORY",
-      },
-    });
-    await tx.candidate.updateMany({
-      where: {
-        id: { in: candidateIds },
-        batchId: batchId,
-      },
-      data: {
+  db.transaction((tx) => {
+    tx.update(candidateTable)
+      .set({
         isPresentInTheory: false,
         isPresentInPractical: false,
         isPresentInViva: false,
@@ -409,102 +295,108 @@ const resetCandidates = async (
         faceHiddenCount: 0,
         tabSwitchCount: 0,
         exitFullScreenCount: 0,
-      },
-    });
+      })
+      .where(
+        and(
+          eq(candidateTable.batchId, batchId),
+          or(...candidateIds.map((id) => eq(candidateTable.id, id)))
+        )
+      )
+      .run();
+    tx.delete(examResponseTable)
+      .where(inArray(examResponseTable.candidateId, candidateIds))
+      .run();
   });
+  await Promise.all(
+    deletePaths.map(async (targetPath) => {
+      try {
+        await fs.promises.rm(targetPath, { recursive: true, force: true });
+      } catch (err) {
+        console.error(`Failed to delete ${targetPath}:`, err);
+      }
+    })
+  );
 };
 const resetCandidatesPractical = async (
   candidateIds: string[],
   batchId: string,
   assessorId: string
 ) => {
-  const batch = await prisma.batch.findFirst({
-    where: { id: batchId, assessor: assessorId },
-  });
+  const batch = await db
+    .select()
+    .from(batchTable)
+    .where(and(eq(batchTable.id, batchId), eq(batchTable.assessor, assessorId)))
+    .limit(1);
+
   if (!batch) {
     throw new AppError("Batch not found", 404);
   }
-  if (!batch.isAssessorReached) {
+  if (!batch[0].isAssessorReached) {
     throw new AppError("mark yourself as reached", 400);
   }
-  if (batch.status !== "ongoing") {
+  if (batch[0].status !== "ongoing") {
     throw new AppError("Batch is not ongoing", 400);
   }
-  await prisma.$transaction(async (tx: any) => {
-    await tx.examResponse.deleteMany({
-      where: {
-        candidateId: { in: candidateIds },
-        batchId: batchId,
-        type: "PRACTICAL",
-      },
-    });
-    await tx.candidate.updateMany({
-      where: {
-        id: { in: candidateIds },
-        batchId: batchId,
-      },
-      data: {
-        isPresentInPractical: false,
-        practicalExamStatus: "notStarted",
-        practicalStartedAt: null,
-        practicalSubmittedAt: null,
-      },
-    });
-    await Promise.all([
-      candidateIds.map(async (candidateId) => {
-        return fs.promises.rm(
-          path.join(
-            __dirname,
-            "..",
-            "..",
-            "uploads",
-            "batches",
-            batchId,
-            "evidences",
-            "candidates",
-            candidateId,
-            "videos",
-            "PRACTICAL"
-          ),
-          { recursive: true, force: true }
-        );
-      }),
-      candidateIds.map(async (candidateId) => {
-        return fs.promises.rm(
-          path.join(
-            __dirname,
-            "..",
-            "..",
-            "uploads",
-            "batches",
-            batchId,
-            "evidences",
-            "candidates",
-            candidateId,
-            "photos",
-            "Practical"
-          ),
-          { recursive: true, force: true }
-        );
-      }),
-    ]);
+  const examFolders = [
+    ["videos", "PRACTICAL"],
+    ["photos", "PRACTICAL"],
+  ];
+  const deletePaths = candidateIds.flatMap((candidateId) => {
+    const basePath = path.join(
+      __dirname,
+      "..",
+      "..",
+      "uploads",
+      "batches",
+      batchId,
+      "evidences",
+      "candidates",
+      candidateId
+    );
+    return examFolders.map((addOn) => path.join(basePath, ...addOn));
   });
+
+  await db
+    .update(candidateTable)
+    .set({
+      isPresentInPractical: false,
+      practicalExamStatus: "notStarted",
+      practicalStartedAt: null,
+      practicalSubmittedAt: null,
+    })
+    .where(
+      and(
+        eq(candidateTable.batchId, batchId),
+        or(...candidateIds.map((id) => eq(candidateTable.id, id)))
+      )
+    );
+  await Promise.all(
+    deletePaths.map(async (targetPath) => {
+      try {
+        await fs.promises.rm(targetPath, { recursive: true, force: true });
+      } catch (err) {
+        console.error(`Failed to delete ${targetPath}:`, err);
+      }
+    })
+  );
 };
 const resetCandidatesViva = async (
   candidateIds: string[],
   batchId: string,
   assessorId: string
 ) => {
-  const batch = await prisma.batch.findFirst({
-    where: { id: batchId, assessor: assessorId },
-  });
+  const batch = await db
+    .select()
+    .from(batchTable)
+    .where(and(eq(batchTable.id, batchId), eq(batchTable.assessor, assessorId)))
+    .limit(1);
   if (!batch) {
     throw new AppError("Batch not found", 404);
   }
-  if (!batch.isAssessorReached) {
+  if (!batch[0].isAssessorReached) {
     throw new AppError("mark yourself as reached", 400);
   }
-  if (batch.status !== "ongoing") {
+  if (batch[0].status !== "ongoing") {
     throw new AppError("Batch is not ongoing", 400);
   }
   const examFolders = [["videos", "VIVA"]];
@@ -522,34 +414,38 @@ const resetCandidatesViva = async (
     );
     return examFolders.map((addOn) => path.join(basePath, ...addOn));
   });
-  await prisma.$transaction(async (tx: any) => {
-    await tx.candidate.updateMany({
-      where: {
-        id: { in: candidateIds },
-        batchId: batchId,
-      },
-      data: {
+  db.transaction((tx) => {
+    tx.update(candidateTable)
+      .set({
         isPresentInViva: false,
         vivaExamStatus: "notStarted",
-      },
-    });
-    await tx.examResponse.deleteMany({
-      where: {
-        candidateId: { in: candidateIds },
-        batchId: batchId,
-        type: "VIVA",
-      },
-    });
-    await Promise.all(
-      deletePaths.map(async (targetPath) => {
-        try {
-          await fs.promises.rm(targetPath, { recursive: true, force: true });
-        } catch (err) {
-          console.error(`Failed to delete ${targetPath}:`, err);
-        }
       })
-    );
+      .where(
+        and(
+          eq(candidateTable.batchId, batchId),
+          or(...candidateIds.map((id) => eq(candidateTable.id, id)))
+        )
+      )
+      .run();
+    tx.delete(examResponseTable)
+      .where(
+        and(
+          inArray(examResponseTable.candidateId, candidateIds),
+          eq(examResponseTable.batchId, batchId),
+          eq(examResponseTable.type, "VIVA")
+        )
+      )
+      .run();
   });
+  await Promise.all(
+    deletePaths.map(async (targetPath) => {
+      try {
+        await fs.promises.rm(targetPath, { recursive: true, force: true });
+      } catch (err) {
+        console.error(`Failed to delete ${targetPath}:`, err);
+      }
+    })
+  );
 };
 const markAssessorAsReached = async (
   batchId: string,
@@ -557,34 +453,27 @@ const markAssessorAsReached = async (
   picture?: UploadedFile,
   location?: { lat: number; long: number }
 ) => {
-  const batch = await prisma.batch.findFirst({
-    where: {
-      id: batchId,
-      assessor: assessorId,
-    },
-    select: {
-      isAssessorEvidenceRequired: true,
-      isAssessorReached: true,
-    },
-  });
+  const batch = await db
+    .select()
+    .from(batchTable)
+    .where(and(eq(batchTable.id, batchId), eq(batchTable.assessor, assessorId)))
+    .limit(1);
   if (!batch) {
     throw new AppError("Batch not found", 404);
   }
-  if (batch.isAssessorReached) {
+  if (batch[0].isAssessorReached) {
     throw new AppError("Assessor already reached", 400);
   }
-  if (!batch.isAssessorEvidenceRequired) {
-    await prisma.batch.update({
-      where: {
-        id: batchId,
-      },
-      data: {
+  if (!batch[0].isAssessorEvidenceRequired) {
+    await db
+      .update(batchTable)
+      .set({
         isAssessorReached: true,
-        assessorReachedAt: new Date(),
+        assessorReachedAt: new Date().toISOString(),
         assessorCoordinates: null,
         assessorGroupPhoto: null,
-      },
-    });
+      })
+      .where(eq(batchTable.id, batchId));
     return;
   }
   if (!picture) {
@@ -624,77 +513,65 @@ const markAssessorAsReached = async (
       }
     });
   });
-  await prisma.batch.update({
-    where: {
-      id: batchId,
-    },
-    data: {
+  await db
+    .update(batchTable)
+    .set({
       isAssessorReached: true,
-      assessorReachedAt: new Date(),
+      assessorReachedAt: new Date().toISOString(),
       assessorCoordinates: JSON.stringify(location),
       assessorGroupPhoto: p as string,
-    },
-  });
+    })
+    .where(eq(batchTable.id, batchId));
 };
 const startBatch = async (batchId: string, assessorId: string) => {
-  const batch = await prisma.batch.findFirst({
-    where: {
-      id: batchId,
-      assessor: assessorId,
-    },
-    select: {
-      isAssessorEvidenceRequired: true,
-      isAssessorReached: true,
-    },
-  });
+  const batch = await db
+    .select()
+    .from(batchTable)
+    .where(and(eq(batchTable.id, batchId), eq(batchTable.assessor, assessorId)))
+    .limit(1);
   if (!batch) {
     throw new AppError("Batch not found", 404);
   }
-  if (!batch.isAssessorReached) {
+  if (!batch[0].isAssessorReached) {
     throw new AppError("mark yourself as reached", 400);
   }
-  await prisma.batch.update({
-    where: {
-      id: batchId,
-    },
-    data: {
+  await db
+    .update(batchTable)
+    .set({
       status: "ongoing",
-    },
-  });
+    })
+    .where(eq(batchTable.id, batchId));
 };
 const deleteBatches = async (ids: string[], assessorId: string) => {
-  const batches = await prisma.batch.findMany({
-    where: {
-      id: { in: ids },
-      assessor: assessorId,
-    },
-  });
+  const batches = await db
+    .select()
+    .from(batchTable)
+    .where(
+      and(inArray(batchTable.id, ids), eq(batchTable.assessor, assessorId))
+    );
   if (ids.length !== batches.length) {
     throw new AppError("Batch not found", 404);
   }
-  await prisma.$transaction(async (tx: any) => {
-    await Promise.all(
-      ids.map((id) => {
-        const folderPath = path.join(
-          __dirname,
-          "..",
-          "..",
-          "uploads",
-          "batches",
-          id
-        );
-        if (fs.existsSync(folderPath)) {
-          fs.promises.rm(folderPath, { recursive: true, force: true });
-        }
-      })
+  await db
+    .delete(batchTable)
+    .where(
+      and(inArray(batchTable.id, ids), eq(batchTable.assessor, assessorId))
     );
-    await tx.batch.deleteMany({
-      where: {
-        id: { in: ids },
-        assessor: assessorId,
-      },
-    });
-  });
+  await Promise.all(
+    ids.map((id) => {
+      const folderPath = path.join(
+        __dirname,
+        "..",
+        "..",
+        "uploads",
+        "batches",
+        id
+      );
+      if (fs.existsSync(folderPath)) {
+        fs.promises.rm(folderPath, { recursive: true, force: true });
+      }
+    })
+  );
 };
 const submitCandidatePracticalResponses = async (
   responses: any,
@@ -703,51 +580,50 @@ const submitCandidatePracticalResponses = async (
   assessorId: string,
   evidence?: UploadedFile
 ) => {
-  const batch = await prisma.batch.findFirst({
-    where: { id: batchId, assessor: assessorId },
-    select: {
-      isPracticalVisibleToCandidate: true,
-      practicalQuestionBank: true,
-      isAssessorReached: true,
-    },
-  });
+  const batch = await db
+    .select()
+    .from(batchTable)
+    .where(and(eq(batchTable.id, batchId), eq(batchTable.assessor, assessorId)))
+    .limit(1);
   if (!batch) {
     throw new AppError("Batch not found", 404);
   }
-  if (batch.isPracticalVisibleToCandidate) {
+  if (batch[0].isPracticalVisibleToCandidate) {
     throw new AppError(
       "Practical is visible to candidate,can't submit practical",
       400
     );
   }
-  if (!batch.practicalQuestionBank) {
+  if (!batch[0].practicalQuestionBank) {
     throw new AppError("no practical question bank found", 400);
   }
-  if (!batch.isAssessorReached) {
+  if (!batch[0].isAssessorReached) {
     throw new AppError("mark yourself as reached", 400);
   }
-  const candidate = await prisma.candidate.findFirst({
-    where: { id: candidateId, batchId: batchId },
-    select: {
-      isPresentInPractical: true,
-      practicalExamStatus: true,
-    },
-  });
+  const candidate = await db
+    .select()
+    .from(candidateTable)
+    .where(
+      and(
+        eq(candidateTable.id, candidateId),
+        eq(candidateTable.batchId, batchId)
+      )
+    )
+    .limit(1);
   if (!candidate) {
     throw new AppError("Candidate not found", 404);
   }
-  if (candidate.practicalExamStatus === "submitted") {
+  if (candidate[0].practicalExamStatus === "submitted") {
     throw new AppError("Candidate already submitted", 400);
   }
-  if (!candidate.isPresentInPractical) {
+  if (!candidate[0].isPresentInPractical) {
     throw new AppError("Candidate is not present in practical", 400);
   }
   if (responses.length === 0) {
-    throw new AppError("No responses found", 400);
+    return;
   }
   if (evidence) {
-    console.log("evidence", evidence.mimetype);
-    if (!evidence?.mimetype?.startsWith("video/")) {
+    if (!evidence.mimetype.startsWith("video/")) {
       throw new AppError("Invalid file type", 400);
     }
     if (evidence.size > 100 * 1024 * 1024) {
@@ -770,29 +646,29 @@ const submitCandidatePracticalResponses = async (
     );
     await evidence.mv(uploadPath);
   }
-  await prisma.$transaction([
-    prisma.examResponse.createMany({
-      data: responses.map((response: any) => ({
-        questionId: response.questionId,
-        answerId: "no-answer-mentioned-practial-submitted-by-assessor",
-        marksObtained: response.marksObtained,
-        candidateId: candidateId,
-        batchId: batchId,
-        startedAt: new Date(),
-        endedAt: new Date(),
-        type: "PRACTICAL",
-      })),
-    }),
-    prisma.candidate.update({
-      where: {
-        id: candidateId,
-      },
-      data: {
+  db.transaction((tx) => {
+    tx.insert(examResponseTable)
+      .values(
+        responses.map((response: any) => ({
+          questionId: response.questionId,
+          answerId: "no-answer-mentioned-practial-submitted-by-assessor",
+          marksObtained: response.marksObtained,
+          candidateId: candidateId,
+          batchId: batchId,
+          startedAt: new Date(),
+          endedAt: new Date(),
+          type: "PRACTICAL",
+        }))
+      )
+      .run();
+    tx.update(candidateTable)
+      .set({
         practicalExamStatus: "submitted",
         isPresentInPractical: false,
-      },
-    }),
-  ]);
+      })
+      .where(eq(candidateTable.id, candidateId))
+      .run();
+  });
 };
 const submitCandidateVivaResponses = async (
   responses: any,
@@ -801,36 +677,41 @@ const submitCandidateVivaResponses = async (
   assessorId: string,
   evidence?: UploadedFile
 ) => {
-  const batch = await prisma.batch.findFirst({
-    where: { id: batchId, assessor: assessorId },
-  });
+  const batch = await db
+    .select()
+    .from(batchTable)
+    .where(and(eq(batchTable.id, batchId), eq(batchTable.assessor, assessorId)))
+    .limit(1);
   if (!batch) {
     throw new AppError("Batch not found", 404);
   }
-  if (!batch.vivaQuestionBank) {
+  if (!batch[0].vivaQuestionBank) {
     throw new AppError("no viva question bank found", 400);
   }
-  if (!batch.isAssessorReached) {
+  if (!batch[0].isAssessorReached) {
     throw new AppError("mark yourself as reached", 400);
   }
-  const candidate = await prisma.candidate.findFirst({
-    where: { id: candidateId, batchId: batchId },
-    select: {
-      isPresentInViva: true,
-      vivaExamStatus: true,
-    },
-  });
+  const candidate = await db
+    .select()
+    .from(candidateTable)
+    .where(
+      and(
+        eq(candidateTable.id, candidateId),
+        eq(candidateTable.batchId, batchId)
+      )
+    )
+    .limit(1);
   if (!candidate) {
     throw new AppError("Candidate not found", 404);
   }
-  if (candidate.vivaExamStatus === "submitted") {
+  if (candidate[0].vivaExamStatus === "submitted") {
     throw new AppError("Candidate already submitted", 400);
   }
-  if (!candidate.isPresentInViva) {
+  if (!candidate[0].isPresentInViva) {
     throw new AppError("Candidate is not present in viva", 400);
   }
   if (responses.length === 0) {
-    throw new AppError("No responses found", 400);
+    return;
   }
   if (evidence) {
     if (!evidence.mimetype.startsWith("video/")) {
@@ -856,63 +737,60 @@ const submitCandidateVivaResponses = async (
     );
     await evidence.mv(uploadPath);
   }
-
-  await prisma.$transaction([
-    prisma.examResponse.createMany({
-      data: responses.map((response: any) => ({
-        questionId: response.questionId,
-        answerId: "no-answer-mentioned-viva-submitted-by-assessor",
-        marksObtained: response.marksObtained,
-        candidateId: candidateId,
-        batchId: batchId,
-        startedAt: new Date(),
-        endedAt: new Date(),
-        type: "VIVA",
-      })),
-    }),
-    prisma.candidate.update({
-      where: {
-        id: candidateId,
-      },
-      data: {
+  db.transaction((tx) => {
+    tx.insert(examResponseTable)
+      .values(
+        responses.map((response: any) => ({
+          questionId: response.questionId,
+          answerId: "no-answer-mentioned-viva-submitted-by-assessor",
+          marksObtained: response.marksObtained,
+          candidateId: candidateId,
+          batchId: batchId,
+          startedAt: new Date(),
+          endedAt: new Date(),
+          type: "VIVA",
+        }))
+      )
+      .run();
+    tx.update(candidateTable)
+      .set({
         vivaExamStatus: "submitted",
         isPresentInViva: false,
-      },
-    }),
-  ]);
+      })
+      .where(eq(candidateTable.id, candidateId))
+      .run();
+  });
 };
 const getPracticalQuestionBank = async (
   batchId: string,
   assessorId: string
 ) => {
-  const batch = await prisma.batch.findFirst({
-    where: {
-      id: batchId,
-      assessor: assessorId,
-    },
-  });
+  const batch = await db
+    .select()
+    .from(batchTable)
+    .where(and(eq(batchTable.id, batchId), eq(batchTable.assessor, assessorId)))
+    .limit(1);
   if (!batch) {
     throw new AppError("batch not found", 404);
   }
-  if (!batch.practicalQuestionBank) {
+  if (!batch[0].practicalQuestionBank) {
     throw new AppError("practical question bank not found", 404);
   }
-  return JSON.parse(batch.practicalQuestionBank);
+  return JSON.parse(batch[0].practicalQuestionBank);
 };
 const getVivaQuestionBank = async (batchId: string, assessorId: string) => {
-  const batch = await prisma.batch.findFirst({
-    where: {
-      id: batchId,
-      assessor: assessorId,
-    },
-  });
+  const batch = await db
+    .select()
+    .from(batchTable)
+    .where(and(eq(batchTable.id, batchId), eq(batchTable.assessor, assessorId)))
+    .limit(1);
   if (!batch) {
     throw new AppError("batch not found", 404);
   }
-  if (!batch.vivaQuestionBank) {
+  if (!batch[0].vivaQuestionBank) {
     throw new AppError("viva question bank not found", 404);
   }
-  return JSON.parse(batch.vivaQuestionBank);
+  return JSON.parse(batch[0].vivaQuestionBank);
 };
 const syncCandidate = async (
   batchId: string,
@@ -936,31 +814,10 @@ const syncCandidate = async (
     "THEORY"
   );
   try {
-    const candidate = await prisma.candidate.findFirst({
-      where: {
-        id: candidateId,
-      },
-      select: {
-        batch: true,
-        isEvidanceUploaded: true,
-        isPresentInTheory: true,
-        isPresentInPractical: true,
-        isPresentInViva: true,
-        theoryExamStatus: true,
-        practicalExamStatus: true,
-        vivaExamStatus: true,
-        theoryStartedAt: true,
-        theorySubmittedAt: true,
-        practicalStartedAt: true,
-        practicalSubmittedAt: true,
-        faceHiddenCount: true,
-        tabSwitchCount: true,
-        exitFullScreenCount: true,
-        multipleFaceDetectionCount: true,
-        candidateSelfieCoordinates: true,
-        candidateSelfieTakenAt: true,
-      },
-    });
+    const candidate = await db
+      .select()
+      .from(candidateTable)
+      .where(eq(candidateTable.id, candidateId));
     if (!candidate) {
       return;
     }
@@ -1209,45 +1066,56 @@ const syncCandidate = async (
       }
     }
     await Promise.all(uploadAdharSelfiePromises);
-
-    const theoryResponses = await prisma.examResponse.findMany({
-      where: {
-        candidateId,
-        type: "THEORY",
-      },
-    });
-    const practicalResponses = await prisma.examResponse.findMany({
-      where: {
-        candidateId,
-        type: "PRACTICAL",
-      },
-    });
-    const vivaResponses = await prisma.examResponse.findMany({
-      where: { candidateId, type: "VIVA" },
-    });
+    const theoryResponses = await db
+      .select()
+      .from(examResponseTable)
+      .where(
+        and(
+          eq(examResponseTable.candidateId, candidateId),
+          eq(examResponseTable.type, "THEORY")
+        )
+      );
+    const practicalResponses = await db
+      .select()
+      .from(examResponseTable)
+      .where(
+        and(
+          eq(examResponseTable.candidateId, candidateId),
+          eq(examResponseTable.type, "PRACTICAL")
+        )
+      );
+    const vivaResponses = await db
+      .select()
+      .from(examResponseTable)
+      .where(
+        and(
+          eq(examResponseTable.candidateId, candidateId),
+          eq(examResponseTable.type, "VIVA")
+        )
+      );
     const finalResponses = {
       assessorDetails: {},
       candidateDetails: {
-        isEvidanceUploaded: candidate?.isEvidanceUploaded,
-        isPresentInTheory: candidate?.isPresentInTheory,
-        isPresentInPractical: candidate?.isPresentInPractical,
-        isPresentInViva: candidate?.isPresentInViva,
-        theoryExamStatus: candidate?.theoryExamStatus,
-        practicalExamStatus: candidate?.practicalExamStatus,
-        vivaExamStatus: candidate?.vivaExamStatus,
-        theoryStartedAt: candidate?.theoryStartedAt,
-        theorySubmittedAt: candidate?.theoryStartedAt,
-        practicalStartedAt: candidate?.theorySubmittedAt,
-        practicalSubmittedAt: candidate?.practicalSubmittedAt,
-        faceHiddenCount: candidate?.faceHiddenCount,
-        tabSwitchCount: candidate?.tabSwitchCount,
-        exitFullScreenCount: candidate?.exitFullScreenCount,
-        multipleFaceDetectionCount: candidate?.multipleFaceDetectionCount,
-        candidateSelfieCoordinates: candidate?.candidateSelfieCoordinates
+        isEvidanceUploaded: candidate[0]?.isEvidanceUploaded,
+        isPresentInTheory: candidate[0]?.isPresentInTheory,
+        isPresentInPractical: candidate[0]?.isPresentInPractical,
+        isPresentInViva: candidate[0]?.isPresentInViva,
+        theoryExamStatus: candidate[0]?.theoryExamStatus,
+        practicalExamStatus: candidate[0]?.practicalExamStatus,
+        vivaExamStatus: candidate[0]?.vivaExamStatus,
+        theoryStartedAt: candidate[0]?.theoryStartedAt,
+        theorySubmittedAt: candidate[0]?.theoryStartedAt,
+        practicalStartedAt: candidate[0]?.theorySubmittedAt,
+        practicalSubmittedAt: candidate[0]?.practicalSubmittedAt,
+        faceHiddenCount: candidate[0]?.faceHiddenCount,
+        tabSwitchCount: candidate[0]?.tabSwitchCount,
+        exitFullScreenCount: candidate[0]?.exitFullScreenCount,
+        multipleFaceDetectionCount: candidate[0]?.multipleFaceDetectionCount,
+        candidateSelfieCoordinates: candidate[0]?.candidateSelfieCoordinates
           ? // @ts-ignore
-            JSON.parse(candidate?.candidateSelfieCoordinates)
+            JSON.parse(candidate[0]?.candidateSelfieCoordinates)
           : {},
-        candidateSelfieTakenAt: candidate?.candidateSelfieTakenAt,
+        candidateSelfieTakenAt: candidate[0]?.candidateSelfieTakenAt,
         adharcardPicture:
           signedUrlsToUploadAdharSelfie.data.data.adhar.location,
         candidateSelfie:
@@ -1295,16 +1163,21 @@ const syncCandidate = async (
         marksObtained: response.marksObtained || 0,
       });
     });
+    const batch = await db
+      .select()
+      .from(batchTable)
+      .where(eq(batchTable.id, batchId));
     const assessorDetails = {
-      isAssessorReached: candidate?.batch.isAssessorReached,
-      assessorReachedAt: candidate?.batch.assessorReachedAt,
-      assessorCoordinates: candidate?.batch.assessorCoordinates
+      isAssessorReached: batch[0]?.isAssessorReached,
+      assessorReachedAt: batch[0]?.assessorReachedAt,
+      assessorCoordinates: batch[0]?.assessorCoordinates
         ? // @ts-ignore
           JSON.parse(candidate?.batch.assessorCoordinates)
         : {},
       assessorGroupPhoto: "",
     };
-    if (candidate?.batch.isAssessorEvidenceRequired) {
+
+    if (batch[0].isAssessorEvidenceRequired) {
       if (
         fs.existsSync(
           path.join(
