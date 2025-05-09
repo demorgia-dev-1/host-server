@@ -44,6 +44,15 @@ const isAuthenticatedAssessor = async (
     req.headers["x-assessor-id"] = decoded._id;
     next();
   } catch (error) {
+    if (error instanceof jwt.TokenExpiredError) {
+      return next(new AppError("Token expired", 401, true));
+    }
+    if (error instanceof jwt.JsonWebTokenError) {
+      return next(new AppError("Invalid token", 401, true));
+    }
+    if (error instanceof jwt.NotBeforeError) {
+      return next(new AppError("Token not active", 401, true));
+    }
     next(error);
   }
 };

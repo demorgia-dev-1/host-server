@@ -31,7 +31,6 @@ app.get("/health", (req, res) => {
     timestamp: new Date().toISOString(),
   });
 });
-app.use(errorHandler);
 const requiredEnv = ["JWT_SECRET", "MAIN_SERVER_URL", "DATABASE_URL"];
 const missingEnv = requiredEnv.filter((env) => !process.env[env]);
 if (missingEnv.length > 0) {
@@ -40,6 +39,7 @@ if (missingEnv.length > 0) {
   );
   process.exit(1);
 }
+app.use(errorHandler);
 
 const server = app.listen(9090, "0.0.0.0", () => {
   const addressInfo = server.address();
