@@ -15,6 +15,13 @@
       "when": 1746727035467,
       "tag": "0001_fresh_harrier",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1746788384511,
+      "tag": "0002_naive_ezekiel",
+      "breakpoints": true
     }
   ]
 }

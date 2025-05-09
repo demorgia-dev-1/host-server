@@ -303,7 +303,8 @@ export const submitCandidatePracticalResponses = async (
       candidateId,
       batchId,
       assessorId,
-      video
+      video,
+      req.body.comment
     );
     res.status(200).json({});
   } catch (error) {
@@ -348,7 +349,8 @@ export const submitCandidateVivaResponses = async (
       candidateId,
       batchId,
       assessorId,
-      video
+      video,
+      req.body.comment
     );
     res.status(200).json({});
   } catch (error) {

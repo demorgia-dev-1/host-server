@@ -274,7 +274,7 @@ const submitTheoryResponses = async (
       sql`(${r.questionId}, ${r.answerId}, ${batchId}, ${candidateId}, ${r.startedAt}, ${r.endedAt}, 'THEORY')`
   );
 
-  await db.run(sql`
+  db.run(sql`
     INSERT INTO exam_response (
       questionId, answerId, batchId, candidateId, startedAt, endedAt, type
     )

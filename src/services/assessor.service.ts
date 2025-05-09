@@ -9,6 +9,7 @@ import {
   batches as batchTable,
   candidates as candidateTable,
   examResponses as examResponseTable,
+  comments as commentTable,
 } from "../db/schema";
 import { eq, and, or, inArray } from "drizzle-orm";
 import db from "../db";
@@ -74,7 +75,6 @@ const saveBatchOffline = async (token: string, batchId: string) => {
       tx.insert(candidateTable).values(preparedCandidates).run();
       return;
     });
-    console.log("Batch and candidates saved successfully");
   } catch (error) {
     if (axios.isAxiosError(error)) {
       if (error.response?.status === 401) {
@@ -95,7 +95,6 @@ const getLoadedBatches = async (assessorId: string) => {
       .where(eq(batchTable.assessor, assessorId));
     return batches;
   } catch (error) {
-    console.log("error", error);
     throw new AppError("internal server error", 500);
   }
 };
@@ -276,7 +275,6 @@ const resetCandidates = async (
     );
     return examFolders.map((addOn) => path.join(basePath, ...addOn));
   });
-  console.log("candidateIds", candidateIds);
 
   db.transaction((tx) => {
     tx.update(candidateTable)
@@ -576,7 +574,8 @@ const submitCandidatePracticalResponses = async (
   candidateId: string,
   batchId: string,
   assessorId: string,
-  evidence?: UploadedFile
+  evidence?: UploadedFile,
+  comment?: string
 ) => {
   // Fetch batch details
   const batch = await db
@@ -680,10 +679,16 @@ const submitCandidatePracticalResponses = async (
     tx.update(candidateTable)
       .set({
         practicalExamStatus: "submitted",
-        isPresentInPractical: false,
+        isPresentInPractical: true,
       })
       .where(eq(candidateTable.id, candidateId))
       .run();
+    tx.insert(commentTable).values({
+      candidateId: candidateId,
+      batchId: batchId,
+      comment: comment,
+      type: "PRACTICAL",
+    });
   });
 };
 
@@ -692,7 +697,8 @@ const submitCandidateVivaResponses = async (
   candidateId: string,
   batchId: string,
   assessorId: string,
-  evidence?: UploadedFile
+  evidence?: UploadedFile,
+  comment?: string
 ) => {
   // Fetch batch details
   const batch = await db
@@ -770,6 +776,14 @@ const submitCandidateVivaResponses = async (
   // Execute database transaction
   db.transaction((tx) => {
     // Insert exam responses
+    if (comment) {
+      tx.insert(commentTable).values({
+        candidateId: candidateId,
+        batchId: batchId,
+        comment: comment,
+        type: "VIVA",
+      });
+    }
     tx.insert(examResponseTable)
       .values(
         responses.map((response: any) => ({
@@ -789,7 +803,7 @@ const submitCandidateVivaResponses = async (
     tx.update(candidateTable)
       .set({
         vivaExamStatus: "submitted",
-        isPresentInViva: false,
+        isPresentInViva: true,
       })
       .where(eq(candidateTable.id, candidateId))
       .run();
@@ -1032,10 +1046,8 @@ const syncCandidate = async (
         path.join(randomPhotos, "..", "..", "adhar")
       );
       if (adhar.length === 0) {
-        console.log("No files in folder");
       } else {
         adharName = adhar[0];
-        console.log("adharName", adharName);
         adharContentType = mime.lookup(adharName) || "application/octet-stream";
       }
     }
@@ -1044,7 +1056,6 @@ const syncCandidate = async (
         path.join(randomPhotos, "..", "..", "selfie")
       );
       if (selfie.length === 0) {
-        console.log("No files in folder");
       } else {
         selfieName = selfie[0];
         selfieContentType =
@@ -1066,7 +1077,6 @@ const syncCandidate = async (
       );
       if (fs.existsSync(adharFilePath)) {
         const buffer = fs.readFileSync(adharFilePath);
-        console.log("buffer", buffer);
         uploadAdharSelfiePromises.push(
           axios.put(signedUrlsToUploadAdharSelfie.data.data.adhar.url, buffer, {
             headers: {
@@ -1173,7 +1183,6 @@ const syncCandidate = async (
       });
     });
     practicalResponses.forEach((response: any) => {
-      console.log("practical response = ", response);
       const obj = {
         questionId: response.questionId,
       };
@@ -1290,13 +1299,11 @@ const syncCandidate = async (
       }
     );
   } catch (error) {
-    console.log("error", error);
     if (axios.isAxiosError(error)) {
       if (error.response?.status === 401) {
         throw new AppError("Invalid credentials", 401);
       }
       if (error.response?.status === 404) {
-        // console.log("error.response?.data", error.response?.data);
         throw new AppError("resource not found", 404);
       }
       if (error.response?.status === 400) {

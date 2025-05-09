@@ -155,6 +155,28 @@ export const examResponses = sqliteTable(
   })
 );
 
+export const comments = sqliteTable(
+  "comments",
+  {
+    batchId: text("batchId")
+      .notNull()
+      .references(() => batches.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    candidateId: text("candidateId")
+      .notNull()
+      .references(() => candidates.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    comment: text("comment").notNull(),
+    testType: text("testType", { enum: examTypeEnum }).notNull(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.batchId, table.candidateId] }),
+  })
+);
 // Relations
 export const candidateRelations = relations(candidates, ({ one, many }) => ({
   batch: one(batches, {
@@ -176,6 +198,17 @@ export const examResponseRelations = relations(examResponses, ({ one }) => ({
   }),
   batch: one(batches, {
     fields: [examResponses.batchId],
+    references: [batches.id],
+  }),
+}));
+
+export const commentRelations = relations(comments, ({ one }) => ({
+  candidate: one(candidates, {
+    fields: [comments.candidateId],
+    references: [candidates.id],
+  }),
+  batch: one(batches, {
+    fields: [comments.batchId],
     references: [batches.id],
   }),
 }));
