@@ -781,8 +781,8 @@ const submitCandidateVivaResponses = async (
           marksObtained: response.marksObtained,
           candidateId: candidateId,
           batchId: batchId,
-          startedAt: new Date(),
-          endedAt: new Date(),
+          startedAt: new Date().toISOString(),
+          endedAt: new Date().toISOString(),
           type: "VIVA",
         }))
       )
