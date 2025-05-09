@@ -15,9 +15,6 @@ const uploadOnboardingEvidence = async (
   adhar: UploadedFile,
   selfie: UploadedFile
 ) => {
-  console.log("adhar", adhar);
-  console.log("selfie", selfie);
-  console.log("location", location);
   const candidate = await db
     .select()
     .from(candidatesTable)
@@ -108,7 +105,7 @@ const uploadOnboardingEvidence = async (
 
     await selfie.mv(selfiePath);
     updatedCandidateData["candidateSelfie"] = selfiePath;
-    updatedCandidateData["candidateSelfieTakenAt"] = new Date();
+    updatedCandidateData["candidateSelfieTakenAt"] = new Date().toISOString();
   }
 
   await db
@@ -116,6 +113,7 @@ const uploadOnboardingEvidence = async (
     .set(updatedCandidateData)
     .where(eq(candidatesTable.id, candidateId));
 };
+
 const getMyTheoryTest = async (candidateId: string) => {
   const candidate = await db
     .select()
@@ -138,7 +136,7 @@ const getMyTheoryTest = async (candidateId: string) => {
     .select()
     .from(batchTable)
     .where(eq(batchTable.id, candidate[0].batchId));
-
+  console.log("batch", batch);
   const questionBank = batch[0].theoryQuestionBank
     ? JSON.parse(batch[0].theoryQuestionBank)
     : null;
@@ -172,6 +170,7 @@ const getMyTheoryTest = async (candidateId: string) => {
     }
   }
   questionBank[0].questions = questions;
+  console.log("questionBank", questionBank);
   return questionBank;
 };
 const getMyPracticalTest = async (candidateId: string) => {
@@ -246,66 +245,50 @@ const submitTheoryResponses = async (
     .select()
     .from(candidatesTable)
     .where(eq(candidatesTable.id, candidateId));
-  if (!candidate) {
+
+  if (!candidate || candidate.length === 0) {
     throw new AppError("invalid credentials", 401, true);
   }
-  if (!candidate[0].isPresentInTheory) {
+
+  const candidateData = candidate[0];
+
+  if (!candidateData.isPresentInTheory) {
     throw new AppError(
       "Your attendance is not marked in theory exam",
       401,
       true
     );
   }
-  if (candidate[0].theoryExamStatus !== "started") {
+
+  if (candidateData.theoryExamStatus !== "started") {
     const msg =
-      candidate[0].theoryExamStatus === "submitted"
+      candidateData.theoryExamStatus === "submitted"
         ? "Your exam is already submitted"
         : "Your exam is not started";
     throw new AppError(msg, 401, true);
   }
+
   if (responses.responses.length === 0) {
     throw new AppError("No responses found", 400);
   }
-  const placeholders = responses.responses
-    .map(() => "(?, ?, ?, ?, ?, ?, ?)")
-    .join(", ");
-  const values = responses.responses.flatMap((r) => [
-    r.questionId,
-    r.answerId,
-    batchId,
-    candidateId,
-    r.startedAt,
-    r.endedAt,
-    "THEORY",
-  ]);
 
-  const query = `
-  INSERT INTO exam_response
-  (questionId, answerId, batchId, candidateId, startedAt, endedAt, type)
-  VALUES ${placeholders}
-  ON CONFLICT(questionId, candidateId) DO UPDATE SET
-    answerId = excluded.answerId,
-    batchId = excluded.batchId,
-    startedAt = excluded.startedAt,
-    endedAt = excluded.endedAt,
-    type = excluded.type;
-`;
-  db.run(
-    sql.raw(
-      `
-    INSERT INTO exam_response
-    (questionId, answerId, batchId, candidateId, startedAt, endedAt, type)
-    VALUES ${placeholders}
+  const valuesSql = responses.responses.map(
+    (r) =>
+      sql`(${r.questionId}, ${r.answerId}, ${batchId}, ${candidateId}, ${r.startedAt}, ${r.endedAt}, 'THEORY')`
+  );
+
+  await db.run(sql`
+    INSERT INTO exam_response (
+      questionId, answerId, batchId, candidateId, startedAt, endedAt, type
+    )
+    VALUES ${sql.join(valuesSql, sql`, `)}
     ON CONFLICT(questionId, candidateId) DO UPDATE SET
       answerId = excluded.answerId,
       batchId = excluded.batchId,
       startedAt = excluded.startedAt,
       endedAt = excluded.endedAt,
       type = excluded.type;
-    ${values}
-    `
-    )
-  );
+  `);
 };
 const submitTheoryTest = async (candidateId: string, batchId: string) => {
   const candidate = await db
@@ -487,13 +470,18 @@ const submitPracticalResponses = async (
   candidateId: string,
   batchId: string
 ) => {
+  // Fetch the candidate info
   const candidate = await db
     .select()
     .from(candidatesTable)
     .where(eq(candidatesTable.id, candidateId));
-  if (!candidate) {
+
+  // Ensure the candidate exists
+  if (!candidate || candidate.length === 0) {
     throw new AppError("invalid credentials", 401, true);
   }
+
+  // Ensure the candidate is marked as present in practical exam
   if (!candidate[0].isPresentInPractical) {
     throw new AppError(
       "Your attendance is not marked in practical exam",
@@ -501,6 +489,8 @@ const submitPracticalResponses = async (
       true
     );
   }
+
+  // Ensure the exam status is neither submitted nor not started
   if (
     candidate[0].practicalExamStatus === "submitted" ||
     candidate[0].practicalExamStatus === "notStarted"
@@ -512,16 +502,29 @@ const submitPracticalResponses = async (
     throw new AppError(msg, 401, true);
   }
 
-  const values = responses.responses.map((response) => {
-    return `('${response.questionId}', '${response.answerId}','${batchId}', '${candidateId}','${response.startedAt}', '${response.endedAt}', 'PRACTICAL')`;
-  });
+  // Ensure there are practical responses to submit
+  if (!responses.responses || responses.responses.length === 0) {
+    throw new AppError("No responses provided", 400, true);
+  }
+
+  // Prepare the SQL query values for batch insertion
+  const values = responses.responses
+    .map((response) => {
+      return `('${response.questionId}', '${response.answerId}','${batchId}', '${candidateId}','${response.startedAt}', '${response.endedAt}', 'PRACTICAL')`;
+    })
+    .join(", "); // Join them into a single string for the query
+
+  // Insert or replace the responses into the `exam_response` table
   const query = `
     INSERT OR REPLACE INTO exam_response 
-    (questionId, answerId, batchId, candidateId, startedAt, endedAt,type) 
+    (questionId, answerId, batchId, candidateId, startedAt, endedAt, type) 
     VALUES ${values}
   `;
-  db.run(sql.raw(query));
+
+  // Run the query asynchronously and await its completion
+  await db.run(sql.raw(query));
 };
+
 const submitPracticalTest = async (candidateId: string, batchId: string) => {
   const candidate = await db
     .select()
