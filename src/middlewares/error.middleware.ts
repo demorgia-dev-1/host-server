@@ -39,34 +39,34 @@ export const errorHandler = (
   if (err instanceof SqliteError) {
     switch (err.code) {
       case "SQLITE_CONSTRAINT_PRIMARYKEY":
-        res.status(400).json({ message: "Primary key constraint failed" });
+        res.status(400).json({ error: "Primary key constraint failed" });
         break;
       case "SQLITE_CONSTRAINT_UNIQUE":
-        res.status(409).json({ message: "Duplicate entry not allowed" });
+        res.status(409).json({ error: "Duplicate entry not allowed" });
         break;
       case "SQLITE_BUSY":
-        res.status(503).json({ message: "Database is busy. Try again later." });
+        res.status(503).json({ error: "Database is busy. Try again later." });
         break;
       case "SQLITE_READONLY":
-        res.status(500).json({ message: "Database is read-only" });
+        res.status(500).json({ error: "Database is read-only" });
         break;
       case "SQLITE_CONSTRAINT_NOTNULL":
-        res.status(400).json({ message: "Not null constraint failed" });
+        res.status(400).json({ error: "Not null constraint failed" });
         break;
       case "SQLITE_CONSTRAINT_CHECK":
-        res.status(400).json({ message: "Check constraint failed" });
+        res.status(400).json({ error: "Check constraint failed" });
         break;
       case "SQLITE_CONSTRAINT_TRIGGER":
-        res.status(400).json({ message: "Trigger constraint failed" });
+        res.status(400).json({ error: "Trigger constraint failed" });
         break;
       case "SQLITE_CONSTRAINT_UNIQUE_VIOLATION":
-        res.status(409).json({ message: "Unique constraint failed" });
+        res.status(409).json({ error: "Unique constraint failed" });
         break;
       case "SQLITE_CONSTRAINT_FOREIGN_KEY":
-        res.status(400).json({ message: "Foreign key constraint failed" });
+        res.status(400).json({ error: "Foreign key constraint failed" });
         break;
       default:
-        res.status(500).json({ message: "SQLite error", detail: err.message });
+        res.status(500).json({ error: "SQLite error", detail: err.message });
         break;
     }
     return;
