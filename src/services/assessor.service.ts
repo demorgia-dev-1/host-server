@@ -659,10 +659,9 @@ const submitCandidatePracticalResponses = async (
   }
 
   // Execute database transaction
-  await db.transaction(async (tx) => {
+  db.transaction((tx) => {
     // Insert exam responses
-    await tx
-      .insert(examResponseTable)
+    tx.insert(examResponseTable)
       .values(
         responses.map((response: any) => ({
           questionId: response.questionId,
@@ -678,8 +677,7 @@ const submitCandidatePracticalResponses = async (
       .run();
 
     // Update candidate exam status
-    await tx
-      .update(candidateTable)
+    tx.update(candidateTable)
       .set({
         practicalExamStatus: "submitted",
         isPresentInPractical: false,
@@ -770,10 +768,9 @@ const submitCandidateVivaResponses = async (
   }
 
   // Execute database transaction
-  await db.transaction(async (tx) => {
+  db.transaction((tx) => {
     // Insert exam responses
-    await tx
-      .insert(examResponseTable)
+    tx.insert(examResponseTable)
       .values(
         responses.map((response: any) => ({
           questionId: response.questionId,
@@ -789,8 +786,7 @@ const submitCandidateVivaResponses = async (
       .run();
 
     // Update candidate exam status
-    await tx
-      .update(candidateTable)
+    tx.update(candidateTable)
       .set({
         vivaExamStatus: "submitted",
         isPresentInViva: false,
@@ -799,195 +795,6 @@ const submitCandidateVivaResponses = async (
       .run();
   });
 };
-
-// const submitCandidatePracticalResponses = async (
-//   responses: any,
-//   candidateId: string,
-//   batchId: string,
-//   assessorId: string,
-//   evidence?: UploadedFile
-// ) => {
-//   const batch = await db
-//     .select()
-//     .from(batchTable)
-//     .where(and(eq(batchTable.id, batchId), eq(batchTable.assessor, assessorId)))
-//     .limit(1);
-//   if (!batch) {
-//     throw new AppError("Batch not found", 404);
-//   }
-//   if (batch[0].isPracticalVisibleToCandidate) {
-//     throw new AppError(
-//       "Practical is visible to candidate,can't submit practical",
-//       400
-//     );
-//   }
-//   if (!batch[0].practicalQuestionBank) {
-//     throw new AppError("no practical question bank found", 400);
-//   }
-//   if (!batch[0].isAssessorReached) {
-//     throw new AppError("mark yourself as reached", 400);
-//   }
-//   const candidate = await db
-//     .select()
-//     .from(candidateTable)
-//     .where(
-//       and(
-//         eq(candidateTable.id, candidateId),
-//         eq(candidateTable.batchId, batchId)
-//       )
-//     )
-//     .limit(1);
-//   if (!candidate) {
-//     throw new AppError("Candidate not found", 404);
-//   }
-//   if (candidate[0].practicalExamStatus === "submitted") {
-//     throw new AppError("Candidate already submitted", 400);
-//   }
-//   if (!candidate[0].isPresentInPractical) {
-//     throw new AppError("Candidate is not present in practical", 400);
-//   }
-//   if (responses.length === 0) {
-//     return;
-//   }
-//   if (evidence) {
-//     if (!evidence.mimetype.startsWith("video/")) {
-//       throw new AppError("Invalid file type", 400);
-//     }
-//     if (evidence.size > 100 * 1024 * 1024) {
-//       throw new AppError("File size exceeds 100MB", 400);
-//     }
-//     const ext = evidence.name.split(".").pop();
-//     const uploadPath = path.join(
-//       __dirname,
-//       "..",
-//       "..",
-//       "uploads",
-//       "batches",
-//       batchId,
-//       "evidences",
-//       "candidates",
-//       candidateId,
-//       "videos",
-//       "PRACTICAL",
-//       `evidence.${ext}`
-//     );
-//     await evidence.mv(uploadPath);
-//   }
-//   db.transaction((tx) => {
-//     tx.insert(examResponseTable)
-//       .values(
-//         responses.map((response: any) => ({
-//           questionId: response.questionId,
-//           answerId: "no-answer-mentioned-practial-submitted-by-assessor",
-//           marksObtained: response.marksObtained,
-//           candidateId: candidateId,
-//           batchId: batchId,
-//           startedAt: new Date(),
-//           endedAt: new Date(),
-//           type: "PRACTICAL",
-//         }))
-//       )
-//       .run();
-//     tx.update(candidateTable)
-//       .set({
-//         practicalExamStatus: "submitted",
-//         isPresentInPractical: false,
-//       })
-//       .where(eq(candidateTable.id, candidateId))
-//       .run();
-//   });
-// };
-// const submitCandidateVivaResponses = async (
-//   responses: any,
-//   candidateId: string,
-//   batchId: string,
-//   assessorId: string,
-//   evidence?: UploadedFile
-// ) => {
-//   const batch = await db
-//     .select()
-//     .from(batchTable)
-//     .where(and(eq(batchTable.id, batchId), eq(batchTable.assessor, assessorId)))
-//     .limit(1);
-//   if (!batch) {
-//     throw new AppError("Batch not found", 404);
-//   }
-//   if (!batch[0].vivaQuestionBank) {
-//     throw new AppError("no viva question bank found", 400);
-//   }
-//   if (!batch[0].isAssessorReached) {
-//     throw new AppError("mark yourself as reached", 400);
-//   }
-//   const candidate = await db
-//     .select()
-//     .from(candidateTable)
-//     .where(
-//       and(
-//         eq(candidateTable.id, candidateId),
-//         eq(candidateTable.batchId, batchId)
-//       )
-//     )
-//     .limit(1);
-//   if (!candidate) {
-//     throw new AppError("Candidate not found", 404);
-//   }
-//   if (candidate[0].vivaExamStatus === "submitted") {
-//     throw new AppError("Candidate already submitted", 400);
-//   }
-//   if (!candidate[0].isPresentInViva) {
-//     throw new AppError("Candidate is not present in viva", 400);
-//   }
-//   if (responses.length === 0) {
-//     return;
-//   }
-//   if (evidence) {
-//     if (!evidence.mimetype.startsWith("video/")) {
-//       throw new AppError("Invalid file type", 400);
-//     }
-//     if (evidence.size > 100 * 1024 * 1024) {
-//       throw new AppError("File size exceeds 100MB", 400);
-//     }
-//     const ext = evidence.name.split(".").pop();
-//     const uploadPath = path.join(
-//       __dirname,
-//       "..",
-//       "..",
-//       "uploads",
-//       "batches",
-//       batchId,
-//       "evidences",
-//       "candidates",
-//       candidateId,
-//       "videos",
-//       "VIVA",
-//       `evidence.${ext}`
-//     );
-//     await evidence.mv(uploadPath);
-//   }
-//   db.transaction((tx) => {
-//     tx.insert(examResponseTable)
-//       .values(
-//         responses.map((response: any) => ({
-//           questionId: response.questionId,
-//           answerId: "no-answer-mentioned-viva-submitted-by-assessor",
-//           marksObtained: response.marksObtained,
-//           candidateId: candidateId,
-//           batchId: batchId,
-//           startedAt: new Date(),
-//           endedAt: new Date(),
-//           type: "VIVA",
-//         }))
-//       )
-//       .run();
-//     tx.update(candidateTable)
-//       .set({
-//         vivaExamStatus: "submitted",
-//         isPresentInViva: false,
-//       })
-//       .where(eq(candidateTable.id, candidateId))
-//       .run();
-//   });
-// };
 const getPracticalQuestionBank = async (
   batchId: string,
   assessorId: string
