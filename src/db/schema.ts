@@ -6,6 +6,7 @@ import {
   unique,
 } from "drizzle-orm/sqlite-core";
 import { relations, sql } from "drizzle-orm";
+import { boolean } from "drizzle-orm/gel-core";
 
 // Enums
 export const examTypeEnum = ["THEORY", "PRACTICAL", "VIVA"] as const;
@@ -74,6 +75,12 @@ export const batches = sqliteTable("batches", {
   assessorReachedAt: text("assessorReachedAt"),
   assessorCoordinates: text("assessorCoordinates"),
   assessorGroupPhoto: text("assessorGroupPhoto"),
+  isPmkyCheckListRequired: integer("isPmkyCheckListRequired", {
+    mode: "boolean",
+  })
+    .notNull()
+    .default(false),
+  sscLogo: text("sscLogo"),
 });
 
 export const candidates = sqliteTable("candidates", {

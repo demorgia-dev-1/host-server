@@ -5,6 +5,8 @@ import fs from "fs";
 import { AppError } from "../utils/AppError";
 import { UploadedFile } from "express-fileupload";
 import mime from "mime-types";
+import ip from "ip";
+import { v4 as uuid } from "uuid";
 import {
   batches as batchTable,
   candidates as candidateTable,
@@ -52,7 +54,27 @@ const saveBatchOffline = async (token: string, batchId: string) => {
       theoryQuestionBank,
       practicalQuestionBank,
       vivaQuestionBank,
+      sectorLogo,
     } = response.data.data;
+    let uploadLogoUrl = "";
+    if (sectorLogo) {
+      console.log("logo url", sectorLogo);
+      const LOCAL_SERVER_BASE_URL = "/static/assets";
+      const LOCAL_ASSET_DIR = path.join(__dirname, "..", "..", "public/assets");
+      const ext = path.extname(sectorLogo);
+      const filename = uuid() + ext;
+      const localPath = path.join(LOCAL_ASSET_DIR, filename);
+      if (!fs.existsSync(LOCAL_ASSET_DIR)) {
+        fs.mkdirSync(LOCAL_ASSET_DIR, { recursive: true });
+      }
+      const response = await axios.get(sectorLogo, {
+        responseType: "arraybuffer",
+      });
+      console.log("Downloading:", sectorLogo, "to", localPath);
+      fs.writeFileSync(localPath, response.data);
+      uploadLogoUrl = LOCAL_SERVER_BASE_URL + "/" + filename;
+    }
+
     if (theoryQuestionBank) {
       const questionBank = theoryQuestionBank[0];
       for (const question of questionBank.questions) {
@@ -120,33 +142,31 @@ const saveBatchOffline = async (token: string, batchId: string) => {
     batch.assessorCoordinates = batch.assessorCoordinates
       ? JSON.stringify(batch.assessorCoordinates)
       : null;
-
     const preparedBatch = {
       ...batch,
       id: batch._id,
       theoryQuestionBank: JSON.stringify(theoryQuestionBank),
       practicalQuestionBank: JSON.stringify(practicalQuestionBank),
       vivaQuestionBank: JSON.stringify(vivaQuestionBank),
+      sscLogo: uploadLogoUrl,
     };
     const preparedCandidates = candidates.docs.map((candidate: any) => ({
       ...candidate,
       batchId: batch._id,
       id: candidate._id,
     }));
-
     db.transaction((tx) => {
       tx.insert(batchTable).values(preparedBatch).run();
       tx.insert(candidateTable).values(preparedCandidates).run();
       return;
     });
   } catch (error) {
+    console.error("Error saving batch offline:", error);
     if (axios.isAxiosError(error)) {
       if (error.response?.status === 401) {
         throw new AppError("Invalid credentials", 401);
       }
     }
-
-    console.error("error", error);
     throw new AppError("internal server error", 500);
   }
 };

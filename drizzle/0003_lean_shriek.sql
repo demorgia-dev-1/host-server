@@ -1,0 +1,1 @@
+ALTER TABLE `batches` ADD `isPmkyCheckListRequired` integer DEFAULT false NOT NULL;
