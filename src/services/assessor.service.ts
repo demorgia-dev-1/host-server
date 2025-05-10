@@ -58,7 +58,6 @@ const saveBatchOffline = async (token: string, batchId: string) => {
     } = response.data.data;
     let uploadLogoUrl = "";
     if (sectorLogo) {
-      console.log("logo url", sectorLogo);
       const LOCAL_SERVER_BASE_URL = "{{BASE_URL}}/static/assets";
       const LOCAL_ASSET_DIR = path.join(__dirname, "..", "..", "public/assets");
       const ext = path.extname(sectorLogo);
