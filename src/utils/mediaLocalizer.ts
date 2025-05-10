@@ -27,7 +27,7 @@ export async function downloadMediaAndReplaceUrls(
       if (!fs.existsSync(LOCAL_ASSET_DIR)) {
         fs.mkdirSync(LOCAL_ASSET_DIR, { recursive: true });
       }
-      const localUrl = `${LOCAL_SERVER_BASE_URL}/${filename}`;
+      const localUrl = `/static/assets/${filename}`;
       const response = await axios.get(url, { responseType: "arraybuffer" });
       console.log("Downloading:", url, "to", localPath);
       fs.writeFileSync(localPath, response.data);
