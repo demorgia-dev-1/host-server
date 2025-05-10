@@ -1,6 +1,7 @@
 import express from "express";
 const router = express.Router();
 import assessorController, {
+  getCandidateListFromMainServer,
   submitCandidatePracticalResponses,
   submitCandidateVivaResponses,
 } from "../controllers/assessor.controller";
@@ -11,6 +12,7 @@ import {
   resetCandidateTheoryTestSchema,
 } from "../schemas/assessor.schema";
 import authMiddleware from "../middlewares/auth.middleware";
+import { is } from "drizzle-orm";
 router.route("/offline-batches").get(assessorController.getOfflineBatches);
 router
   .route("/offline-batches")
@@ -39,6 +41,9 @@ router
     authMiddleware.isAuthenticatedAssessor,
     assessorController.candidateList
   );
+router
+  .route("/offline-batches/:batchId/list-from-server")
+  .get(authMiddleware.isAuthenticatedAssessor, getCandidateListFromMainServer);
 router
   .route("/offline-batches/:batchId/reset-theory")
   .post(

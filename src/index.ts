@@ -8,6 +8,7 @@ import assessorRoutes from "./routes/assessor.routes";
 import candidateRoutes from "./routes/candidate.routes";
 import { errorHandler } from "./middlewares/error.middleware";
 import cors from "cors";
+import path from "path";
 
 dotenv.config();
 const app = express();
@@ -20,6 +21,8 @@ app.use(
 );
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+console.log(path.join(__dirname, "..", "public"));
+app.use("/static", express.static(path.join(__dirname, "..", "public")));
 
 app.use("/auth", authRoutes);
 app.use("/assessor", assessorRoutes);

@@ -13,6 +13,7 @@ import {
 } from "../db/schema";
 import { eq, and, or, inArray } from "drizzle-orm";
 import db from "../db";
+import { downloadMediaAndReplaceUrls } from "../utils/mediaLocalizer";
 
 const getAssignedBatches = async (token: string): Promise<any> => {
   try {
@@ -52,6 +53,69 @@ const saveBatchOffline = async (token: string, batchId: string) => {
       practicalQuestionBank,
       vivaQuestionBank,
     } = response.data.data;
+    if (theoryQuestionBank) {
+      const questionBank = theoryQuestionBank[0];
+      for (const question of questionBank.questions) {
+        const options = await Promise.all(
+          question.options.map((option: any) => {
+            return downloadMediaAndReplaceUrls(option.option);
+          })
+        );
+        question.options.forEach((option: any, index: number) => {
+          option.option = options[index];
+        });
+      }
+      const localizeQuestions = await Promise.all(
+        questionBank.questions.map((q) => {
+          return downloadMediaAndReplaceUrls(q.title);
+        })
+      );
+      questionBank.questions.forEach((q: any, index: number) => {
+        q.title = localizeQuestions[index];
+      });
+    }
+    if (practicalQuestionBank) {
+      const questionBank = practicalQuestionBank[0];
+      for (const question of questionBank.questions) {
+        const options = await Promise.all(
+          question.options.map((option: any) => {
+            return downloadMediaAndReplaceUrls(option.option);
+          })
+        );
+        question.options.forEach((option: any, index: number) => {
+          option.option = options[index];
+        });
+      }
+      const localizeQuestions = await Promise.all(
+        questionBank.questions.map((q) => {
+          return downloadMediaAndReplaceUrls(q.title);
+        })
+      );
+      questionBank.questions.forEach((q: any, index: number) => {
+        q.title = localizeQuestions[index];
+      });
+    }
+    if (vivaQuestionBank) {
+      const questionBank = vivaQuestionBank[0];
+      for (const question of questionBank.questions) {
+        const options = await Promise.all(
+          question.options.map((option: any) => {
+            return downloadMediaAndReplaceUrls(option.option);
+          })
+        );
+        question.options.forEach((option: any, index: number) => {
+          option.option = options[index];
+        });
+      }
+      const localizeQuestions = await Promise.all(
+        questionBank.questions.map((q) => {
+          return downloadMediaAndReplaceUrls(q.title);
+        })
+      );
+      questionBank.questions.forEach((q: any, index: number) => {
+        q.title = localizeQuestions[index];
+      });
+    }
 
     batch.assessorCoordinates = batch.assessorCoordinates
       ? JSON.stringify(batch.assessorCoordinates)
@@ -115,6 +179,29 @@ const getCandidateList = async (batchId: string, assessorId: string) => {
     .from(candidateTable)
     .where(eq(candidateTable.batchId, batchId));
   return candidates;
+};
+const getCandidateListFromMainServer = async (
+  batchId: string,
+  token: string
+) => {
+  try {
+    const response = await axios.get(
+      `${process.env.MAIN_SERVER_URL}/assessor/batches/${batchId}/candidates`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response.data.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      if (error.response?.status === 401) {
+        throw new AppError("Invalid credentials", 401);
+      }
+    }
+    throw new AppError("internal server error", 500);
+  }
 };
 const markAttendanceInTheory = async (
   candidates: string[],
@@ -674,8 +761,6 @@ const submitCandidatePracticalResponses = async (
         }))
       )
       .run();
-
-    // Update candidate exam status
     tx.update(candidateTable)
       .set({
         practicalExamStatus: "submitted",
@@ -1173,6 +1258,24 @@ const syncCandidate = async (
       practical: [],
       viva: [],
     };
+    const practicalComment = await db
+      .select()
+      .from(commentTable)
+      .where(eq(commentTable.candidateId, candidateId))
+      .andWhere(eq(commentTable.batchId, batchId))
+      .andWhere(eq(commentTable.type, "PRACTICAL"));
+    const vivaComment = await db
+      .select()
+      .from(commentTable)
+      .where(eq(commentTable.candidateId, candidateId))
+      .andWhere(eq(commentTable.batchId, batchId))
+      .andWhere(eq(commentTable.type, "VIVA"));
+    if (practicalComment.length > 0) {
+      finalResponses.practicalComment = practicalComment[0].comment;
+    }
+    if (vivaComment.length > 0) {
+      finalResponses.vivaComment = vivaComment[0].comment;
+    }
     theoryResponses.forEach((response: any) => {
       // @ts-ignore
       finalResponses.theory.push({
@@ -1334,4 +1437,5 @@ export default {
   syncCandidate,
   getPracticalQuestionBank,
   getVivaQuestionBank,
+  getCandidateListFromMainServer,
 };

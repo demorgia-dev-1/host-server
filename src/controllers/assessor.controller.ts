@@ -378,6 +378,22 @@ export const syncCandidate = async (
     next(error);
   }
 };
+export const getCandidateListFromMainServer = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const batchId = req.params.batchId;
+    const list = await assessorService.getCandidateListFromMainServer(
+      batchId,
+      req.headers["x-server-auth-token"] as string
+    );
+    res.status(200).json(list);
+  } catch (error) {
+    return next(error);
+  }
+};
 export default {
   getOfflineBatches,
   saveBatchOffline,
@@ -397,4 +413,5 @@ export default {
   syncCandidate,
   getPracticalQuestionBank,
   getVivaQuestionBank,
+  getCandidateListFromMainServer,
 };
