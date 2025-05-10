@@ -1211,6 +1211,7 @@ const syncCandidate = async (
         );
       }
     }
+
     await Promise.all(uploadAdharSelfiePromises);
     const theoryResponses = await db
       .select()
@@ -1278,15 +1279,26 @@ const syncCandidate = async (
     const practicalComment = await db
       .select()
       .from(commentTable)
-      .where(eq(commentTable.candidateId, candidateId))
-      .andWhere(eq(commentTable.batchId, batchId))
-      .andWhere(eq(commentTable.type, "PRACTICAL"));
+      .where(
+        and(
+          eq(commentTable.candidateId, candidateId),
+          eq(commentTable.batchId, batchId),
+          eq(commentTable.testType, "PRACTICAL")
+        )
+      );
+
+    console.log("finalResponses", finalResponses);
     const vivaComment = await db
       .select()
       .from(commentTable)
-      .where(eq(commentTable.candidateId, candidateId))
-      .andWhere(eq(commentTable.batchId, batchId))
-      .andWhere(eq(commentTable.type, "VIVA"));
+      .where(
+        and(
+          eq(commentTable.candidateId, candidateId),
+          eq(commentTable.batchId, batchId),
+          eq(commentTable.testType, "VIVA")
+        )
+      );
+
     if (practicalComment.length > 0) {
       finalResponses.practicalComment = practicalComment[0].comment;
     }
@@ -1330,7 +1342,6 @@ const syncCandidate = async (
         marksObtained: response.marksObtained || 0,
       });
     });
-
     const assessorDetails = {
       isAssessorReached: batch[0]?.isAssessorReached,
       assessorReachedAt: batch[0]?.assessorReachedAt,
@@ -1340,7 +1351,6 @@ const syncCandidate = async (
         : {},
       assessorGroupPhoto: "",
     };
-
     if (batch[0].isAssessorEvidenceRequired) {
       if (
         fs.existsSync(
@@ -1418,6 +1428,7 @@ const syncCandidate = async (
         },
       }
     );
+    console.log("sync candidate response");
   } catch (error) {
     if (axios.isAxiosError(error)) {
       if (error.response?.status === 401) {
@@ -1432,6 +1443,7 @@ const syncCandidate = async (
           400
         );
       }
+      throw error;
     }
   }
 };
