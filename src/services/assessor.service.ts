@@ -59,7 +59,7 @@ const saveBatchOffline = async (token: string, batchId: string) => {
     let uploadLogoUrl = "";
     if (sectorLogo) {
       console.log("logo url", sectorLogo);
-      const LOCAL_SERVER_BASE_URL = "/static/assets";
+      const LOCAL_SERVER_BASE_URL = "{{BASE_URL}}/static/assets";
       const LOCAL_ASSET_DIR = path.join(__dirname, "..", "..", "public/assets");
       const ext = path.extname(sectorLogo);
       const filename = uuid() + ext;
@@ -70,11 +70,9 @@ const saveBatchOffline = async (token: string, batchId: string) => {
       const response = await axios.get(sectorLogo, {
         responseType: "arraybuffer",
       });
-      console.log("Downloading:", sectorLogo, "to", localPath);
       fs.writeFileSync(localPath, response.data);
       uploadLogoUrl = LOCAL_SERVER_BASE_URL + "/" + filename;
     }
-
     if (theoryQuestionBank) {
       const questionBank = theoryQuestionBank[0];
       for (const question of questionBank.questions) {
