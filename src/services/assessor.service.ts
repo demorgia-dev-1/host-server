@@ -76,6 +76,7 @@ const saveBatchOffline = async (token: string, batchId: string) => {
       fs.writeFileSync(localPath, response.data);
       uploadLogoUrl = LOCAL_SERVER_BASE_URL + "/" + filename;
     }
+
     if (theoryQuestionBank) {
       const questionBank = theoryQuestionBank[0];
       for (const question of questionBank.questions) {
@@ -89,11 +90,12 @@ const saveBatchOffline = async (token: string, batchId: string) => {
             option.option,
             options[index]
           );
+
           if (option?.translations) {
             for (const [key, value] of Object.entries(option.translations)) {
               const replacement = replaceMediaUrlsWithArray(
                 option.translations[key],
-                options[index].localUrls
+                options[index]
               );
               option.translations[key] = replacement;
             }
@@ -136,7 +138,7 @@ const saveBatchOffline = async (token: string, batchId: string) => {
               // option.translations[key] = options[index];
               const replacement = replaceMediaUrlsWithArray(
                 option.translations[key],
-                options[index].localUrls
+                options[index]
               );
               option.translations[key] = replacement;
             }
@@ -182,7 +184,7 @@ const saveBatchOffline = async (token: string, batchId: string) => {
               // option.translations[key] = options[index];
               const replacement = replaceMediaUrlsWithArray(
                 option.translations[key],
-                options[index].localUrls
+                options[index]
               );
               option.translations[key] = replacement;
             }
@@ -233,7 +235,6 @@ const saveBatchOffline = async (token: string, batchId: string) => {
     db.transaction((tx) => {
       tx.insert(batchTable).values(preparedBatch).run();
       tx.insert(candidateTable).values(preparedCandidates).run();
-      return;
     });
   } catch (error) {
     console.error("Error saving batch offline:", error);

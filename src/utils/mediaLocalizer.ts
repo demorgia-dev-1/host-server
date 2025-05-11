@@ -14,7 +14,7 @@ export async function downloadMediaAndReplaceUrls(
     /https:\/\/s3\.ap-south-1\.amazonaws\.com\/[^"]+\.(jpg|jpeg|png|gif|mp4|webm|pdf)/gi;
   const matches = content.match(urlRegex);
 
-  if (!matches) return content;
+  if (!matches) return [];
   const localUrls = [];
   for (const url of matches) {
     try {
