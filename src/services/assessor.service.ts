@@ -82,6 +82,9 @@ const saveBatchOffline = async (token: string, batchId: string) => {
         );
         question.options.forEach((option: any, index: number) => {
           option.option = options[index];
+          for (const [key, value] of Object.entries(option.translations)) {
+            option.translations[key] = options[index];
+          }
         });
       }
       const localizeQuestions = await Promise.all(
@@ -91,6 +94,9 @@ const saveBatchOffline = async (token: string, batchId: string) => {
       );
       questionBank.questions.forEach((q: any, index: number) => {
         q.title = localizeQuestions[index];
+        for (const [key, value] of Object.entries(q.translations)) {
+          q.translations[key] = localizeQuestions[index];
+        }
       });
     }
     if (practicalQuestionBank) {
@@ -103,6 +109,9 @@ const saveBatchOffline = async (token: string, batchId: string) => {
         );
         question.options.forEach((option: any, index: number) => {
           option.option = options[index];
+          for (const [key, value] of Object.entries(option.translations)) {
+            option.translations[key] = options[index];
+          }
         });
       }
       const localizeQuestions = await Promise.all(
@@ -112,6 +121,9 @@ const saveBatchOffline = async (token: string, batchId: string) => {
       );
       questionBank.questions.forEach((q: any, index: number) => {
         q.title = localizeQuestions[index];
+        for (const [key, value] of Object.entries(q.translations)) {
+          q.translations[key] = localizeQuestions[index];
+        }
       });
     }
     if (vivaQuestionBank) {
@@ -124,6 +136,9 @@ const saveBatchOffline = async (token: string, batchId: string) => {
         );
         question.options.forEach((option: any, index: number) => {
           option.option = options[index];
+          for (const [key, value] of Object.entries(option.translations)) {
+            option.translations[key] = options[index];
+          }
         });
       }
       const localizeQuestions = await Promise.all(
@@ -133,6 +148,9 @@ const saveBatchOffline = async (token: string, batchId: string) => {
       );
       questionBank.questions.forEach((q: any, index: number) => {
         q.title = localizeQuestions[index];
+        for (const [key, value] of Object.entries(q.translations)) {
+          q.translations[key] = localizeQuestions[index];
+        }
       });
     }
 
@@ -1286,8 +1304,6 @@ const syncCandidate = async (
           eq(commentTable.testType, "PRACTICAL")
         )
       );
-
-    console.log("finalResponses", finalResponses);
     const vivaComment = await db
       .select()
       .from(commentTable)
