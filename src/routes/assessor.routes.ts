@@ -27,9 +27,6 @@ router
 router
   .route("/offline-batches/:batchId/upload-pmky-checklist")
   .post(authMiddleware.isAuthenticatedAssessor, uploadPmkyChecklistFiles);
-router
-  .route("/offline-batches/:batchId/upload-attachments")
-  .post(authMiddleware.isAuthenticatedAssessor);
 router.route("/offline-batches/:batchId/mark-assessor-as-reached").post(
   authMiddleware.isAuthenticatedAssessor,
   (req, res, next) => {
