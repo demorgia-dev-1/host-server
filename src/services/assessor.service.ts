@@ -15,7 +15,11 @@ import {
 } from "../db/schema";
 import { eq, and, or, inArray } from "drizzle-orm";
 import db from "../db";
-import { downloadMediaAndReplaceUrls } from "../utils/mediaLocalizer";
+import {
+  downloadMediaAndReplaceUrls,
+  replaceMediaUrlsWithArray,
+} from "../utils/mediaLocalizer";
+import { NextFunction } from "express";
 
 const getAssignedBatches = async (token: string): Promise<any> => {
   try {
@@ -81,10 +85,17 @@ const saveBatchOffline = async (token: string, batchId: string) => {
           })
         );
         question.options.forEach((option: any, index: number) => {
-          option.option = options[index];
+          option.option = replaceMediaUrlsWithArray(
+            option.option,
+            options[index]
+          );
           if (option?.translations) {
             for (const [key, value] of Object.entries(option.translations)) {
-              option.translations[key] = options[index];
+              const replacement = replaceMediaUrlsWithArray(
+                option.translations[key],
+                options[index].localUrls
+              );
+              option.translations[key] = replacement;
             }
           }
         });
@@ -95,10 +106,13 @@ const saveBatchOffline = async (token: string, batchId: string) => {
         })
       );
       questionBank.questions.forEach((q: any, index: number) => {
-        q.title = localizeQuestions[index];
+        q.title = replaceMediaUrlsWithArray(q.title, localizeQuestions[index]);
         if (q.translations) {
           for (const [key, value] of Object.entries(q?.translations)) {
-            q.translations[key] = localizeQuestions[index];
+            q.translations[key] = replaceMediaUrlsWithArray(
+              q.translations[key],
+              localizeQuestions[index]
+            );
           }
         }
       });
@@ -112,10 +126,19 @@ const saveBatchOffline = async (token: string, batchId: string) => {
           })
         );
         question.options.forEach((option: any, index: number) => {
-          option.option = options[index];
+          option.option = replaceMediaUrlsWithArray(
+            option.option,
+            options[index]
+          );
+
           if (option?.translations) {
             for (const [key, value] of Object.entries(option.translations)) {
-              option.translations[key] = options[index];
+              // option.translations[key] = options[index];
+              const replacement = replaceMediaUrlsWithArray(
+                option.translations[key],
+                options[index].localUrls
+              );
+              option.translations[key] = replacement;
             }
           }
         });
@@ -126,10 +149,16 @@ const saveBatchOffline = async (token: string, batchId: string) => {
         })
       );
       questionBank.questions.forEach((q: any, index: number) => {
-        q.title = localizeQuestions[index];
+        // q.title = localizeQuestions[index];
+        q.title = replaceMediaUrlsWithArray(q.title, localizeQuestions[index]);
         if (q.translations) {
           for (const [key, value] of Object.entries(q?.translations)) {
-            q.translations[key] = localizeQuestions[index];
+            // q.translations[key] = localizeQuestions[index];
+            const replacement = replaceMediaUrlsWithArray(
+              q.translations[key],
+              localizeQuestions[index]
+            );
+            q.translations[key] = replacement;
           }
         }
       });
@@ -143,10 +172,19 @@ const saveBatchOffline = async (token: string, batchId: string) => {
           })
         );
         question.options.forEach((option: any, index: number) => {
-          option.option = options[index];
+          // option.option = options[index];
+          option.option = replaceMediaUrlsWithArray(
+            option.option,
+            options[index]
+          );
           if (question.translations) {
             for (const [key, value] of Object.entries(option?.translations)) {
-              option.translations[key] = options[index];
+              // option.translations[key] = options[index];
+              const replacement = replaceMediaUrlsWithArray(
+                option.translations[key],
+                options[index].localUrls
+              );
+              option.translations[key] = replacement;
             }
           }
         });
@@ -157,12 +195,22 @@ const saveBatchOffline = async (token: string, batchId: string) => {
         })
       );
       questionBank.questions.forEach((q: any, index: number) => {
-        q.title = localizeQuestions[index];
+        // q.title = localizeQuestions[index];
+        q.title = replaceMediaUrlsWithArray(q.title, localizeQuestions[index]);
         if (q.translations) {
           for (const [key, value] of Object.entries(q?.translations)) {
-            q.translations[key] = localizeQuestions[index];
+            // q.translations[key] = localizeQuestions[index];
+            const replacement = replaceMediaUrlsWithArray(
+              q.translations[key],
+              localizeQuestions[index]
+            );
           }
         }
+        // if (q.translations) {
+        //   for (const [key, value] of Object.entries(q?.translations)) {
+        //     q.translations[key] = localizeQuestions[index];
+        //   }
+        // }
       });
     }
 
@@ -194,7 +242,7 @@ const saveBatchOffline = async (token: string, batchId: string) => {
         throw new AppError("Invalid credentials", 401);
       }
     }
-    throw new AppError("internal server error", 500);
+    throw error;
   }
 };
 
@@ -1379,6 +1427,70 @@ const syncCandidate = async (
         : {},
       assessorGroupPhoto: "",
     };
+    if (batch[0].isPmkyCheckListRequired) {
+      if (
+        fs.existsSync(
+          path.join(
+            __dirname,
+            "..",
+            "..",
+            "uploads",
+            "batches",
+            batchId,
+            "evidences",
+            "assessor",
+            "pmky-checklist"
+          )
+        )
+      ) {
+        const evidences = await fs.promises.readdir(
+          path.join(
+            __dirname,
+            "..",
+            "..",
+            "uploads",
+            "batches",
+            batchId,
+            "evidences",
+            "assessor",
+            "pmky-checklist"
+          )
+        );
+        const responses = await Promise.all(
+          evidences.map((evidence) => {
+            return axios.get(
+              `${process.env.MAIN_SERVER_URL}/assessor/offline-batches/${batchId}/pmky-checklist-presigned-url`,
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+          })
+        );
+        const uploadPromises = evidences.map((evidence, index) => {
+          const filePath = path.join(
+            __dirname,
+            "..",
+            "..",
+            "uploads",
+            "batches",
+            batchId,
+            "evidences",
+            "assessor",
+            "pmky-checklist",
+            evidence
+          );
+          if (!fs.existsSync(filePath)) {
+            throw new AppError("File does not exist: " + filePath, 404);
+          }
+          const buffer = fs.readFileSync(filePath);
+          return axios.put(responses[index].data.data.url, buffer, {
+            headers: {
+              "Content-Type":
+                mime.lookup(evidence) || "application/octet-stream",
+            },
+          });
+        });
+        await Promise.all(uploadPromises);
+      }
+    }
     if (batch[0].isAssessorEvidenceRequired) {
       if (
         fs.existsSync(
@@ -1475,6 +1587,53 @@ const syncCandidate = async (
     }
   }
 };
+
+const uploadPmkyChecklistFiles = async (
+  assessorId: string,
+  batchId: string,
+  files: UploadedFile[]
+) => {
+  const batch = await db
+    .select()
+    .from(batchTable)
+    .where(
+      and(eq(batchTable.id, batchId), eq(batchTable.assessor, assessorId))
+    );
+  if (!batch) {
+    throw new AppError("Batch not found", 404);
+  }
+  if (!batch[0].isPmkyCheckListRequired) {
+    throw new AppError("Pmky checklist is not required", 400);
+  }
+  await Promise.all(
+    files.map(async (file) => {
+      if (!file.mimetype.startsWith("image/")) {
+        throw new AppError("Invalid file type", 400);
+      }
+      if (file.size > 2 * 1024 * 1024) {
+        throw new AppError("File size exceeds 2MB", 400);
+      }
+      const ext = file.name.split(".").pop();
+      if (!ext) {
+        throw new AppError("Invalid file name", 400);
+      }
+      const uploadPath = path.join(
+        __dirname,
+        "..",
+        "..",
+        "uploads",
+        "batches",
+        batchId,
+        "evidences",
+        "assessor",
+        "pmky-checklist",
+        `${Date.now()}.${ext}`
+      );
+      await file.mv(uploadPath);
+    })
+  );
+};
+
 export default {
   getAssignedBatches,
   saveBatchOffline,
@@ -1495,4 +1654,5 @@ export default {
   getPracticalQuestionBank,
   getVivaQuestionBank,
   getCandidateListFromMainServer,
+  uploadPmkyChecklistFiles,
 };

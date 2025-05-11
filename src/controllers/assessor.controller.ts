@@ -394,6 +394,26 @@ export const getCandidateListFromMainServer = async (
     return next(error);
   }
 };
+export const uploadPmkyChecklistFiles = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const files = req?.files?.files as UploadedFile[];
+    if (!files || !Array.isArray(files) || files.length === 0) {
+      return next(new AppError("No files uploaded", 400, true));
+    }
+    await assessorService.uploadPmkyChecklistFiles(
+      req.headers["x-assessor-id"] as string,
+      req.params.batchId,
+      files
+    );
+    res.status(200).json({});
+  } catch (error) {
+    return next(error);
+  }
+};
 export default {
   getOfflineBatches,
   saveBatchOffline,
@@ -414,4 +434,5 @@ export default {
   getPracticalQuestionBank,
   getVivaQuestionBank,
   getCandidateListFromMainServer,
+  uploadPmkyChecklistFiles,
 };

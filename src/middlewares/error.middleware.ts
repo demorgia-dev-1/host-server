@@ -13,6 +13,7 @@ export const errorHandler = (
   res: Response,
   next: NextFunction
 ) => {
+  console.log("global error handler", err);
   if (err instanceof AppError) {
     res.status(err.statusCode).json({ error: err.message });
     return;
