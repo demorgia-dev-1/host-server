@@ -82,8 +82,10 @@ const saveBatchOffline = async (token: string, batchId: string) => {
         );
         question.options.forEach((option: any, index: number) => {
           option.option = options[index];
-          for (const [key, value] of Object.entries(option.translations)) {
-            option.translations[key] = options[index];
+          if (option?.translations) {
+            for (const [key, value] of Object.entries(option.translations)) {
+              option.translations[key] = options[index];
+            }
           }
         });
       }
@@ -94,8 +96,10 @@ const saveBatchOffline = async (token: string, batchId: string) => {
       );
       questionBank.questions.forEach((q: any, index: number) => {
         q.title = localizeQuestions[index];
-        for (const [key, value] of Object.entries(q.translations)) {
-          q.translations[key] = localizeQuestions[index];
+        if (q.translations) {
+          for (const [key, value] of Object.entries(q?.translations)) {
+            q.translations[key] = localizeQuestions[index];
+          }
         }
       });
     }
@@ -109,8 +113,10 @@ const saveBatchOffline = async (token: string, batchId: string) => {
         );
         question.options.forEach((option: any, index: number) => {
           option.option = options[index];
-          for (const [key, value] of Object.entries(option.translations)) {
-            option.translations[key] = options[index];
+          if (option?.translations) {
+            for (const [key, value] of Object.entries(option.translations)) {
+              option.translations[key] = options[index];
+            }
           }
         });
       }
@@ -121,8 +127,10 @@ const saveBatchOffline = async (token: string, batchId: string) => {
       );
       questionBank.questions.forEach((q: any, index: number) => {
         q.title = localizeQuestions[index];
-        for (const [key, value] of Object.entries(q.translations)) {
-          q.translations[key] = localizeQuestions[index];
+        if (q.translations) {
+          for (const [key, value] of Object.entries(q?.translations)) {
+            q.translations[key] = localizeQuestions[index];
+          }
         }
       });
     }
@@ -136,8 +144,10 @@ const saveBatchOffline = async (token: string, batchId: string) => {
         );
         question.options.forEach((option: any, index: number) => {
           option.option = options[index];
-          for (const [key, value] of Object.entries(option.translations)) {
-            option.translations[key] = options[index];
+          if (question.translations) {
+            for (const [key, value] of Object.entries(option?.translations)) {
+              option.translations[key] = options[index];
+            }
           }
         });
       }
@@ -148,8 +158,10 @@ const saveBatchOffline = async (token: string, batchId: string) => {
       );
       questionBank.questions.forEach((q: any, index: number) => {
         q.title = localizeQuestions[index];
-        for (const [key, value] of Object.entries(q.translations)) {
-          q.translations[key] = localizeQuestions[index];
+        if (q.translations) {
+          for (const [key, value] of Object.entries(q?.translations)) {
+            q.translations[key] = localizeQuestions[index];
+          }
         }
       });
     }
