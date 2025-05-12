@@ -7,6 +7,7 @@ import authRoutes from "./routes/auth.routes";
 import assessorRoutes from "./routes/assessor.routes";
 import candidateRoutes from "./routes/candidate.routes";
 import { errorHandler } from "./middlewares/error.middleware";
+import fs from "fs";
 import cors from "cors";
 import path from "path";
 
@@ -46,6 +47,11 @@ app.use(errorHandler);
 
 const server = app.listen(9090, "0.0.0.0", () => {
   const addressInfo = server.address();
+  if (!fs.existsSync(path.join(__dirname, "..", "public/assets"))) {
+    fs.mkdirSync(path.join(__dirname, "..", "public/assets"), {
+      recursive: true,
+    });
+  }
   if (typeof addressInfo === "object" && addressInfo?.port) {
     const localIp = ip.address();
     const url = `http://${localIp}:${addressInfo.port}`;
