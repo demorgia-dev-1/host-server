@@ -13,13 +13,14 @@ import {
   examResponses as examResponseTable,
   comments as commentTable,
 } from "../db/schema";
-import { eq, and, or, inArray } from "drizzle-orm";
+import { eq, and, or, inArray, is } from "drizzle-orm";
 import db from "../db";
 import {
   downloadMediaAndReplaceUrls,
   replaceMediaUrlsWithArray,
 } from "../utils/mediaLocalizer";
 import { NextFunction } from "express";
+import { exit } from "process";
 
 const getAssignedBatches = async (token: string): Promise<any> => {
   try {
@@ -227,14 +228,80 @@ const saveBatchOffline = async (token: string, batchId: string) => {
       vivaQuestionBank: JSON.stringify(vivaQuestionBank),
       sscLogo: uploadLogoUrl,
     };
+
     const preparedCandidates = candidates.docs.map((candidate: any) => ({
-      ...candidate,
-      batchId: batch._id,
       id: candidate._id,
+      name: candidate.name,
+      email: candidate.email,
+      phone: candidate.phone,
+      address: candidate.address,
+      batchId: batch._id,
+      fatherName: candidate.fatherName,
+      enrollmentNo: candidate.enrollmentNo,
+      isActive: candidate.isActive,
+      password: candidate.password,
+      gender: candidate.gender,
+      adharNo: candidate.adharNo,
+      isTheoryStarted: false,
+      isEvidenceUploaded: false,
+      isPresentInTheory: false,
+      isPresentInPractical: false,
+      isPresentInViva: false,
+      isTheorySubmitted: false,
+      theoryExamStatus: "notStarted",
+      practicalExamStatus: "notStarted",
+      vivaExamStatus: "notStarted",
+      multipleFaceDetectionCount: 0,
+      faceHiddenCount: 0,
+      tabSwitchCount: 0,
+      exitFullScreenCount: 0,
+      theoryStartedAt: null,
+      theorySubmittedAt: null,
+      candidateSelfieCoordinates: null,
+      candidateSelfieTakenAt: null,
+      candidateSelfie: null,
+      adharPicture: null,
+      resetedAt: null,
+      practicalStartedAt: null,
+      practicalSubmittedAt: null,
     }));
     db.transaction((tx) => {
-      tx.insert(batchTable).values(preparedBatch).run();
+      tx.insert(batchTable)
+        .values({
+          id: preparedBatch.id,
+          assessor: preparedBatch.assessor,
+          name: preparedBatch.name,
+          type: preparedBatch.type,
+          status: preparedBatch.status,
+          noOfCandidates: preparedBatch.noOfCandidates,
+          durationInMin: preparedBatch.durationInMin,
+          no: preparedBatch.no,
+          startDate: preparedBatch.startDate,
+          endDate: preparedBatch.endDate,
+          theoryQuestionBank: preparedBatch.theoryQuestionBank,
+          practicalQuestionBank: preparedBatch.practicalQuestionBank,
+          vivaQuestionBank: preparedBatch.vivaQuestionBank,
+          isAssessorReached: preparedBatch.isAssessorReached,
+          isCandidateVideoRequired: preparedBatch.isCandidateVideoRequired,
+          isCandidatePhotosRequired: preparedBatch.isCandidatePhotosRequired,
+          isCandidateLocationRequired:
+            preparedBatch.isCandidateLocationRequired,
+          isCandidateAdharRequired: preparedBatch.isCandidateAdharRequired,
+          isCandidateSelfieRequired: preparedBatch.isCandidateSelfieRequired,
+          isPracticalVisibleToCandidate:
+            preparedBatch.isPracticalVisibleToCandidate,
+          isSuspiciousActivityDetectionRequired:
+            preparedBatch.isSuspiciousActivityDetectionRequired,
+          isAssessorEvidenceRequired: preparedBatch.isAssessorEvidenceRequired,
+          assessorReachedAt: preparedBatch.assessorReachedAt,
+          assessorCoordinates: preparedBatch.assessorCoordinates,
+          assessorGroupPhoto: preparedBatch.assessorGroupPhoto,
+          isPmkyCheckListRequired: preparedBatch.isPmkyCheckListRequired,
+          sscLogo: preparedBatch.sscLogo,
+        })
+        .run();
       tx.insert(candidateTable).values(preparedCandidates).run();
+      return;
     });
   } catch (error) {
     console.error("Error saving batch offline:", error);
@@ -470,7 +537,7 @@ const resetCandidates = async (
         practicalExamStatus: "notStarted",
         vivaExamStatus: "notStarted",
         multipleFaceDetectionCount: 0,
-        isEvidanceUploaded: false,
+        isEvidenceUploaded: false,
         faceHiddenCount: 0,
         tabSwitchCount: 0,
         exitFullScreenCount: 0,
@@ -1328,7 +1395,7 @@ const syncCandidate = async (
     const finalResponses = {
       assessorDetails: {},
       candidateDetails: {
-        isEvidanceUploaded: candidate[0]?.isEvidanceUploaded,
+        isEvidanceUploaded: candidate[0]?.isEvidenceUploaded,
         isPresentInTheory: candidate[0]?.isPresentInTheory,
         isPresentInPractical: candidate[0]?.isPresentInPractical,
         isPresentInViva: candidate[0]?.isPresentInViva,

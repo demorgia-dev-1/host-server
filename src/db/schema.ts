@@ -100,7 +100,7 @@ export const candidates = sqliteTable("candidates", {
   gender: text("gender"),
   adharNo: text("adharNo"),
   isTheoryStarted: integer("isTheoryStarted", { mode: "boolean" }).notNull(),
-  isEvidanceUploaded: integer("isEvidanceUploaded", {
+  isEvidenceUploaded: integer("isEvidenceUploaded", {
     mode: "boolean",
   }).notNull(),
   isPresentInTheory: integer("isPresentInTheory", {

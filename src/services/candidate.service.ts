@@ -35,7 +35,7 @@ const uploadOnboardingEvidence = async (
     );
   }
   const updatedCandidateData: any = {
-    isEvidanceUploaded: true,
+    isEvidenceUploaded: true,
   };
   if (batch[0].isCandidateLocationRequired) {
     if (!location) {
@@ -121,7 +121,7 @@ const getMyTheoryTest = async (candidateId: string) => {
   if (!candidate) {
     throw new AppError("invalid credentials", 401, true);
   }
-  if (!candidate[0].isEvidanceUploaded) {
+  if (!candidate[0].isEvidenceUploaded) {
     throw new AppError("Your evidence is not uploaded", 401, true);
   }
   if (candidate[0].theoryExamStatus !== "notStarted") {
