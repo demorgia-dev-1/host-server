@@ -1060,11 +1060,13 @@ const syncCandidate = async (
           )
         )
       );
+
       await Promise.all(
         photos.map((photo, index) => {
           const filePath = path.join(randomPhotos, photo);
           if (fs.existsSync(filePath)) {
             const buffer = fs.readFileSync(filePath);
+            console.log(signedUrlsToUploadRandomPhotos[index].data.data.url);
             return axios.put(
               signedUrlsToUploadRandomPhotos[index].data.data.url,
               buffer,
@@ -1569,7 +1571,6 @@ const syncCandidate = async (
         },
       }
     );
-    console.log("sync candidate response");
   } catch (error) {
     if (axios.isAxiosError(error)) {
       if (error.response?.status === 401) {

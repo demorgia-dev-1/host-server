@@ -37,7 +37,6 @@ export const saveBatchOffline = async (
 ) => {
   try {
     const authHeader = req.headers.authorization;
-    console.log("authHeader", authHeader);
     if (!authHeader) {
       next(new AppError("Authorization header is missing", 401, true));
       return;
@@ -400,7 +399,10 @@ export const uploadPmkyChecklistFiles = async (
   next: NextFunction
 ) => {
   try {
-    const files = req?.files?.files as UploadedFile[];
+    let files = req?.files?.files as UploadedFile[];
+    if (!files || !Array.isArray(files)) {
+      files = [files];
+    }
     if (!files || !Array.isArray(files) || files.length === 0) {
       return next(new AppError("No files uploaded", 400, true));
     }
