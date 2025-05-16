@@ -399,20 +399,31 @@ export const uploadPmkyChecklistFiles = async (
   next: NextFunction
 ) => {
   try {
-    let files = req?.files?.files as UploadedFile[];
-    if (!files || !Array.isArray(files)) {
-      files = [files];
+    let files: any = req?.files;
+    if (!files) {
+      return next(new AppError("files are required", 400, true));
     }
-    if (!files || !Array.isArray(files) || files.length === 0) {
-      return next(new AppError("No files uploaded", 400, true));
+    const data = Object.keys(files).map((key) => {
+      return {
+        files: Array.isArray(files[key]) ? files[key] : [files[key]],
+        questionId: key,
+      };
+    });
+    if (data.length === 0) {
+      return next(new AppError("files are required", 400, true));
+    }
+    if (data.length > 1) {
+      return next(new AppError("only one file is allowed", 400, true));
     }
     await assessorService.uploadPmkyChecklistFiles(
       req.headers["x-assessor-id"] as string,
       req.params.batchId,
-      files
+      // @ts-ignore
+      data[0]
     );
     res.status(200).json({});
   } catch (error) {
+    console.log("error", error);
     return next(error);
   }
 };
@@ -431,6 +442,18 @@ export const getPmkyChecklist = async (
     res.status(200).json(pmkyChecklist);
   } catch (error) {
     console.log("error", error);
+    return next(error);
+  }
+};
+export const submitPmkyChecklist = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const batchId = req.params.batchId;
+    const assessorId = req.headers["x-assessor-id"] as string;
+  } catch (error) {
     return next(error);
   }
 };

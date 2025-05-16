@@ -1147,6 +1147,7 @@ const syncCandidate = async (
   if (!token) {
     throw new AppError("server token is required", 401);
   }
+
   const randomPhotos = path.join(
     __dirname,
     "..",
@@ -1161,6 +1162,104 @@ const syncCandidate = async (
     "THEORY"
   );
   try {
+    const batch = await db
+      .select()
+      .from(batchTable)
+      .where(eq(batchTable.id, batchId));
+
+    if (batch[0].isPmkyCheckListRequired) {
+      console.log("axkqnwxlknj");
+      if (
+        fs.existsSync(
+          path.join(
+            __dirname,
+            "..",
+            "..",
+            "uploads",
+            "batches",
+            batchId,
+            "evidences",
+            "assessor",
+            "pmky-checklist"
+          )
+        )
+      ) {
+        console.log("pmky checklist found");
+        const dirPath = path.join(
+          __dirname,
+          "..",
+          "..",
+          "uploads",
+          "batches",
+          batchId,
+          "evidences",
+          "assessor",
+          "pmky-checklist"
+        );
+        if (!fs.existsSync(dirPath)) {
+          throw new AppError("Directory does not exist: " + dirPath, 404);
+        } else {
+          console.log("Directory exists: " + dirPath);
+        }
+
+        const entries = await fs.promises.readdir(dirPath, {
+          withFileTypes: true,
+        });
+        const dirs = entries
+          .filter((entry) => entry.isDirectory())
+          .map((entry) => entry.name);
+        for (const dir of dirs) {
+          const evidences = await fs.promises.readdir(
+            path.join(
+              __dirname,
+              "..",
+              "..",
+              "uploads",
+              "batches",
+              batchId,
+              "evidences",
+              "assessor",
+              "pmky-checklist",
+              dir.split("/").pop()
+            )
+          );
+          const responses = await axios.get(
+            `${
+              process.env.MAIN_SERVER_URL
+            }/assessor/offline-batches/${batchId}/pmky-checklist-presigned-url?fileNames=${evidences.join(
+              ","
+            )}&questionId=${dir}`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          const uploadPromises = evidences.map((evidence, index) => {
+            const filePath = path.join(
+              __dirname,
+              "..",
+              "..",
+              "uploads",
+              "batches",
+              batchId,
+              "evidences",
+              "assessor",
+              "pmky-checklist",
+              dir.split("/").pop(),
+              evidence
+            );
+            if (!fs.existsSync(filePath)) {
+              throw new AppError("File does not exist: " + filePath, 404);
+            }
+            const buffer = fs.readFileSync(filePath);
+            return axios.put(responses.data.data[index], buffer, {
+              headers: {
+                "Content-Type":
+                  mime.lookup(evidence) || "application/octet-stream",
+              },
+            });
+          });
+          await Promise.all(uploadPromises);
+        }
+      }
+    }
     const candidate = await db
       .select()
       .from(candidateTable)
@@ -1338,6 +1437,7 @@ const syncCandidate = async (
         })
       );
     }
+
     let adharName = "";
     let selfieName = "";
     let adharContentType = "";
@@ -1439,10 +1539,7 @@ const syncCandidate = async (
           eq(examResponseTable.type, "VIVA")
         )
       );
-    const batch = await db
-      .select()
-      .from(batchTable)
-      .where(eq(batchTable.id, batchId));
+
     const finalResponses = {
       assessorDetails: {},
       candidateDetails: {
@@ -1548,70 +1645,6 @@ const syncCandidate = async (
         : {},
       assessorGroupPhoto: "",
     };
-    if (batch[0].isPmkyCheckListRequired) {
-      if (
-        fs.existsSync(
-          path.join(
-            __dirname,
-            "..",
-            "..",
-            "uploads",
-            "batches",
-            batchId,
-            "evidences",
-            "assessor",
-            "pmky-checklist"
-          )
-        )
-      ) {
-        const evidences = await fs.promises.readdir(
-          path.join(
-            __dirname,
-            "..",
-            "..",
-            "uploads",
-            "batches",
-            batchId,
-            "evidences",
-            "assessor",
-            "pmky-checklist"
-          )
-        );
-        const responses = await Promise.all(
-          evidences.map((evidence) => {
-            return axios.get(
-              `${process.env.MAIN_SERVER_URL}/assessor/offline-batches/${batchId}/pmky-checklist-presigned-url`,
-              { headers: { Authorization: `Bearer ${token}` } }
-            );
-          })
-        );
-        const uploadPromises = evidences.map((evidence, index) => {
-          const filePath = path.join(
-            __dirname,
-            "..",
-            "..",
-            "uploads",
-            "batches",
-            batchId,
-            "evidences",
-            "assessor",
-            "pmky-checklist",
-            evidence
-          );
-          if (!fs.existsSync(filePath)) {
-            throw new AppError("File does not exist: " + filePath, 404);
-          }
-          const buffer = fs.readFileSync(filePath);
-          return axios.put(responses[index].data.data.url, buffer, {
-            headers: {
-              "Content-Type":
-                mime.lookup(evidence) || "application/octet-stream",
-            },
-          });
-        });
-        await Promise.all(uploadPromises);
-      }
-    }
     if (batch[0].isAssessorEvidenceRequired) {
       if (
         fs.existsSync(
@@ -1703,6 +1736,7 @@ const syncCandidate = async (
           400
         );
       }
+      console.error("Error in syncCandidate:", error);
       throw error;
     }
   }
@@ -1710,7 +1744,10 @@ const syncCandidate = async (
 const uploadPmkyChecklistFiles = async (
   assessorId: string,
   batchId: string,
-  files: UploadedFile[]
+  data: {
+    files: UploadedFile[];
+    questionId: string;
+  }
 ) => {
   const batch = await db
     .select()
@@ -1718,18 +1755,50 @@ const uploadPmkyChecklistFiles = async (
     .where(
       and(eq(batchTable.id, batchId), eq(batchTable.assessor, assessorId))
     );
-  if (!batch) {
+  if (!batch || batch.length === 0) {
     throw new AppError("Batch not found", 404);
   }
   if (!batch[0].isPmkyCheckListRequired) {
     throw new AppError("Pmky checklist is not required", 400);
   }
+  if (
+    fs.existsSync(
+      path.join(
+        __dirname,
+        "..",
+        "..",
+        "uploads",
+        "batches",
+        batchId,
+        "evidences",
+        "assessor",
+        "pmky-checklist",
+        data.questionId
+      )
+    )
+  ) {
+    await fs.promises.rm(
+      path.join(
+        __dirname,
+        "..",
+        "..",
+        "uploads",
+        "batches",
+        batchId,
+        "evidences",
+        "assessor",
+        "pmky-checklist",
+        data.questionId
+      ),
+      { recursive: true, force: true }
+    );
+  }
   await Promise.all(
-    files.map(async (file) => {
+    data.files.map(async (file) => {
       if (!file.mimetype.startsWith("image/")) {
         throw new AppError("Invalid file type", 400);
       }
-      if (file.size > 2 * 1024 * 1024) {
+      if (file.size > 50 * 1024 * 1024) {
         throw new AppError("File size exceeds 2MB", 400);
       }
       const ext = file.name.split(".").pop();
@@ -1746,6 +1815,7 @@ const uploadPmkyChecklistFiles = async (
         "evidences",
         "assessor",
         "pmky-checklist",
+        data.questionId,
         `${Date.now()}.${ext}`
       );
       await file.mv(uploadPath);
@@ -1772,6 +1842,51 @@ const getPmkyChecklist = async (batchId: string, assessorId: string) => {
   }
   checklist = typeof checklist === "string" ? JSON.parse(checklist) : checklist;
   return checklist;
+};
+const submitPmkyChecklist = async (
+  batchId: string,
+  assessorId: string,
+  responses: { questionId: string; yesOrNo: boolean; attachments: string[] }[]
+) => {
+  const batch = await db
+    .select()
+    .from(batchTable)
+    .where(
+      and(eq(batchTable.id, batchId), eq(batchTable.assessor, assessorId))
+    );
+  if (!batch || batch.length === 0) {
+    throw new AppError("Batch not found", 404);
+  }
+  if (!batch[0].isPmkyCheckListRequired) {
+    throw new AppError("Pmky checklist is not required", 400);
+  }
+  if (!batch[0].pmkyChecklist) {
+    throw new AppError("Pmky checklist not found", 404);
+  }
+  let checklist = batch[0].pmkyChecklist;
+  if (typeof checklist === "string") {
+    checklist = JSON.parse(checklist);
+  }
+  checklist = checklist.questions.map((question: any) => {
+    responses.forEach((response) => {
+      if (question.id === response.questionId) {
+        question.yesOrNo = response.yesOrNo;
+        question.remarks = response.remarks;
+      }
+    });
+  });
+  if (checklist.submitted) {
+    throw new AppError("Pmky checklist already submitted", 400);
+  }
+  checklist.submitted = true;
+  await db
+    .update(batchTable)
+    .set({
+      pmkyChecklist: JSON.stringify(checklist),
+    })
+    .where(
+      and(eq(batchTable.id, batchId), eq(batchTable.assessor, assessorId))
+    );
 };
 export default {
   getAssignedBatches,
