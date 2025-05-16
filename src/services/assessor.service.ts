@@ -1845,7 +1845,7 @@ const getPmkyChecklist = async (batchId: string, assessorId: string) => {
 const submitPmkyChecklist = async (
   batchId: string,
   assessorId: string,
-  responses: { questionId: string; yesOrNo: boolean }[]
+  responses: { questionId: string; yesOrNo: boolean; remarks?: string }[]
 ) => {
   if (responses.length === 0) {
     console.log("No responses provided");

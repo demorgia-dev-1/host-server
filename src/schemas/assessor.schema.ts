@@ -29,7 +29,11 @@ export const resetCandidateTheoryTestSchema = z.object({
 export const submitPmkyChecklistSchema = z.object({
   body: z.object({
     responses: z.array(
-      z.object({ questionId: z.string(), yesOrNo: z.boolean() })
+      z.object({
+        questionId: z.string(),
+        yesOrNo: z.boolean(),
+        remarks: z.string().optional(),
+      })
     ),
   }),
 });
