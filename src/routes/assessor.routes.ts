@@ -2,6 +2,7 @@ import express from "express";
 const router = express.Router();
 import assessorController, {
   getCandidateListFromMainServer,
+  getPmkyChecklist,
   submitCandidatePracticalResponses,
   submitCandidateVivaResponses,
   uploadPmkyChecklistFiles,
@@ -13,7 +14,6 @@ import {
   resetCandidateTheoryTestSchema,
 } from "../schemas/assessor.schema";
 import authMiddleware from "../middlewares/auth.middleware";
-import { is } from "drizzle-orm";
 router.route("/offline-batches").get(assessorController.getOfflineBatches);
 router
   .route("/offline-batches")
@@ -24,6 +24,9 @@ router
 router
   .route("/offline-batches/:batchId")
   .get(assessorController.saveBatchOffline);
+router
+  .route("/offline-batches/:batchId/pmky-checklist")
+  .get(authMiddleware.isAuthenticatedAssessor, getPmkyChecklist);
 router
   .route("/offline-batches/:batchId/upload-pmky-checklist")
   .post(authMiddleware.isAuthenticatedAssessor, uploadPmkyChecklistFiles);

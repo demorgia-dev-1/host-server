@@ -60,7 +60,9 @@ const saveBatchOffline = async (token: string, batchId: string) => {
       practicalQuestionBank,
       vivaQuestionBank,
       sectorLogo,
+      pmkyChecklist,
     } = response.data.data;
+
     let uploadLogoUrl = "";
     if (sectorLogo) {
       const LOCAL_SERVER_BASE_URL = "{{BASE_URL}}/static/assets";
@@ -226,6 +228,7 @@ const saveBatchOffline = async (token: string, batchId: string) => {
       theoryQuestionBank: JSON.stringify(theoryQuestionBank),
       practicalQuestionBank: JSON.stringify(practicalQuestionBank),
       vivaQuestionBank: JSON.stringify(vivaQuestionBank),
+      pmkyChecklist: JSON.stringify(pmkyChecklist),
       sscLogo: uploadLogoUrl,
     };
 
@@ -298,6 +301,7 @@ const saveBatchOffline = async (token: string, batchId: string) => {
           assessorGroupPhoto: preparedBatch.assessorGroupPhoto,
           isPmkyCheckListRequired: preparedBatch.isPmkyCheckListRequired,
           sscLogo: preparedBatch.sscLogo,
+          pmkyChecklist: preparedBatch.pmkyChecklist,
         })
         .run();
       tx.insert(candidateTable).values(preparedCandidates).run();
@@ -825,7 +829,9 @@ const submitCandidatePracticalResponses = async (
   batchId: string,
   assessorId: string,
   evidence?: UploadedFile,
-  comment?: string
+  comment?: string,
+  candidatePhoto?: UploadedFile,
+  document?: UploadedFile
 ) => {
   // Fetch batch details
   const batch = await db
@@ -906,6 +912,52 @@ const submitCandidatePracticalResponses = async (
     );
     await evidence.mv(uploadPath);
   }
+  if (candidatePhoto) {
+    if (!candidatePhoto.mimetype.startsWith("image/")) {
+      throw new AppError("Invalid file type", 400);
+    }
+    if (candidatePhoto.size > 2 * 1024 * 1024) {
+      throw new AppError("File size exceeds 2MB", 400);
+    }
+    const ext = candidatePhoto.name.split(".").pop();
+    const uploadPath = path.join(
+      __dirname,
+      "..",
+      "..",
+      "uploads",
+      "batches",
+      batchId,
+      "evidences",
+      "candidates",
+      candidateId,
+      "photos",
+      `photo.${ext}`
+    );
+    await candidatePhoto.mv(uploadPath);
+  }
+  if (document) {
+    if (!document.mimetype.startsWith("application/pdf")) {
+      throw new AppError("Invalid file type", 400);
+    }
+    if (document.size > 2 * 1024 * 1024) {
+      throw new AppError("File size exceeds 2MB", 400);
+    }
+    const ext = document.name.split(".").pop();
+    const uploadPath = path.join(
+      __dirname,
+      "..",
+      "..",
+      "uploads",
+      "batches",
+      batchId,
+      "evidences",
+      "candidates",
+      candidateId,
+      "photos",
+      `document.${ext}`
+    );
+    await document.mv(uploadPath);
+  }
 
   // Execute database transaction
   db.transaction((tx) => {
@@ -939,7 +991,6 @@ const submitCandidatePracticalResponses = async (
     });
   });
 };
-
 const submitCandidateVivaResponses = async (
   responses: any,
   candidateId: string,
@@ -1656,7 +1707,6 @@ const syncCandidate = async (
     }
   }
 };
-
 const uploadPmkyChecklistFiles = async (
   assessorId: string,
   batchId: string,
@@ -1702,7 +1752,27 @@ const uploadPmkyChecklistFiles = async (
     })
   );
 };
+const getPmkyChecklist = async (batchId: string, assessorId: string) => {
+  const batch = await db
+    .select()
+    .from(batchTable)
+    .where(
+      and(eq(batchTable.id, batchId), eq(batchTable.assessor, assessorId))
+    );
+  if (!batch || batch.length === 0) {
+    throw new AppError("Batch not found", 404);
+  }
 
+  if (!batch[0].isPmkyCheckListRequired) {
+    throw new AppError("Pmky checklist is not required", 400);
+  }
+  let checklist = batch[0].pmkyChecklist;
+  if (!checklist) {
+    throw new AppError("Pmky checklist not found", 404);
+  }
+  checklist = typeof checklist === "string" ? JSON.parse(checklist) : checklist;
+  return checklist;
+};
 export default {
   getAssignedBatches,
   saveBatchOffline,
@@ -1724,4 +1794,5 @@ export default {
   getVivaQuestionBank,
   getCandidateListFromMainServer,
   uploadPmkyChecklistFiles,
+  getPmkyChecklist,
 };

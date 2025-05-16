@@ -3,6 +3,7 @@ import { AppError } from "../utils/AppError";
 import assessorService from "../services/assessor.service";
 import { MarkCandidateAttendance } from "../schemas/assessor.schema";
 import { UploadedFile } from "express-fileupload";
+import { get } from "http";
 // will fetch the batches from main server
 export const getOfflineBatches = async (
   req: Request,
@@ -251,7 +252,6 @@ export const getPracticalQuestionBank = async (
     next(error);
   }
 };
-
 export const getVivaQuestionBank = async (
   req: Request,
   res: Response,
@@ -416,6 +416,24 @@ export const uploadPmkyChecklistFiles = async (
     return next(error);
   }
 };
+export const getPmkyChecklist = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const batchId = req.params.batchId;
+    const assessorId = req.headers["x-assessor-id"] as string;
+    const pmkyChecklist = await assessorService.getPmkyChecklist(
+      batchId,
+      assessorId
+    );
+    res.status(200).json(pmkyChecklist);
+  } catch (error) {
+    console.log("error", error);
+    return next(error);
+  }
+};
 export default {
   getOfflineBatches,
   saveBatchOffline,
@@ -437,4 +455,5 @@ export default {
   getVivaQuestionBank,
   getCandidateListFromMainServer,
   uploadPmkyChecklistFiles,
+  getPmkyChecklist,
 };

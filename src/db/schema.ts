@@ -25,6 +25,7 @@ export const batches = sqliteTable("batches", {
   theoryQuestionBank: text("theoryQuestionBank"),
   practicalQuestionBank: text("practicalQuestionBank"),
   vivaQuestionBank: text("vivaQuestionBank"),
+  pmkyChecklist: text("pmkyChecklist"),
   isAssessorReached: integer("isAssessorReached", {
     mode: "boolean",
   })
