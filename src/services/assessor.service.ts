@@ -317,7 +317,6 @@ const saveBatchOffline = async (token: string, batchId: string) => {
     throw error;
   }
 };
-
 const getLoadedBatches = async (assessorId: string) => {
   try {
     const batches = await db
@@ -1891,6 +1890,7 @@ const submitPmkyChecklist = async (
       and(eq(batchTable.id, batchId), eq(batchTable.assessor, assessorId))
     );
 };
+
 export default {
   getAssignedBatches,
   saveBatchOffline,

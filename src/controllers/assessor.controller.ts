@@ -460,6 +460,7 @@ export const submitPmkyChecklist = async (
     );
     res.status(200).json({});
   } catch (error) {
+    console.log("error", error);
     return next(error);
   }
 };
