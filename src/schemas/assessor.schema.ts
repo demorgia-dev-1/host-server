@@ -26,6 +26,13 @@ export const resetCandidateTheoryTestSchema = z.object({
     candidates: z.array(z.string()),
   }),
 });
+export const submitPmkyChecklistSchema = z.object({
+  body: z.object({
+    responses: z.array(
+      z.object({ questionId: z.string(), yesOrNo: z.boolean() })
+    ),
+  }),
+});
 export type LoginAssessor = z.infer<typeof loginAssessorSchema>["body"];
 export type MarkAssessorAsReached = z.infer<
   typeof markAssessorAsReachedSchema
@@ -35,4 +42,7 @@ export type MarkCandidateAttendance = z.infer<
 >["body"];
 export type ResetCandidateTheoryTest = z.infer<
   typeof resetCandidateTheoryTestSchema
+>["body"];
+export type SubmitPmkyChecklist = z.infer<
+  typeof submitPmkyChecklistSchema
 >["body"];

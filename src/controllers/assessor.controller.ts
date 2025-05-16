@@ -453,6 +453,12 @@ export const submitPmkyChecklist = async (
   try {
     const batchId = req.params.batchId;
     const assessorId = req.headers["x-assessor-id"] as string;
+    await assessorService.submitPmkyChecklist(
+      batchId,
+      assessorId,
+      req.body.responses
+    );
+    res.status(200).json({});
   } catch (error) {
     return next(error);
   }

@@ -1147,7 +1147,6 @@ const syncCandidate = async (
   if (!token) {
     throw new AppError("server token is required", 401);
   }
-
   const randomPhotos = path.join(
     __dirname,
     "..",
@@ -1846,8 +1845,12 @@ const getPmkyChecklist = async (batchId: string, assessorId: string) => {
 const submitPmkyChecklist = async (
   batchId: string,
   assessorId: string,
-  responses: { questionId: string; yesOrNo: boolean; attachments: string[] }[]
+  responses: { questionId: string; yesOrNo: boolean }[]
 ) => {
+  if (responses.length === 0) {
+    console.log("No responses provided");
+    return;
+  }
   const batch = await db
     .select()
     .from(batchTable)
@@ -1910,4 +1913,5 @@ export default {
   getCandidateListFromMainServer,
   uploadPmkyChecklistFiles,
   getPmkyChecklist,
+  submitPmkyChecklist,
 };

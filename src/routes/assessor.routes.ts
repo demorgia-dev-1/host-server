@@ -5,6 +5,7 @@ import assessorController, {
   getPmkyChecklist,
   submitCandidatePracticalResponses,
   submitCandidateVivaResponses,
+  submitPmkyChecklist,
   uploadPmkyChecklistFiles,
 } from "../controllers/assessor.controller";
 import validateRequest from "../middlewares/validateRequest";
@@ -12,6 +13,7 @@ import {
   markAssessorAsReachedSchema,
   markCandidateAttendanceSchema,
   resetCandidateTheoryTestSchema,
+  submitPmkyChecklistSchema,
 } from "../schemas/assessor.schema";
 import authMiddleware from "../middlewares/auth.middleware";
 router.route("/offline-batches").get(assessorController.getOfflineBatches);
@@ -27,6 +29,13 @@ router
 router
   .route("/offline-batches/:batchId/pmky-checklist")
   .get(authMiddleware.isAuthenticatedAssessor, getPmkyChecklist);
+router
+  .route("/offline-batches/:batchId/submit-pmky-checklist")
+  .post(
+    authMiddleware.isAuthenticatedAssessor,
+    validateRequest(submitPmkyChecklistSchema),
+    submitPmkyChecklist
+  );
 router
   .route("/offline-batches/:batchId/upload-pmky-checklist-file")
   .post(authMiddleware.isAuthenticatedAssessor, uploadPmkyChecklistFiles);
