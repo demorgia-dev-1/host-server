@@ -479,12 +479,13 @@ export const uploadCandidatePracticalOnboadingFiles = async (
       candidateId,
       assessorId,
       // @ts-ignore
-      req.files.adhar,
+      req?.files?.adhar,
       // @ts-ignore
-      req.files.phoyo
+      req?.files?.photo
     );
     res.status(200).json({});
   } catch (error) {
+    console.log("error", error);
     return next(error);
   }
 };

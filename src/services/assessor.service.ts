@@ -1145,6 +1145,9 @@ const uploadCandidatePracticalOnboardingFiles = async (
   adhar?: UploadedFile,
   photo?: UploadedFile
 ) => {
+  if (!adhar || !photo) {
+    throw new AppError("Adhar and photo are required", 400);
+  }
   const batch = await db
     .select()
     .from(batchTable)
@@ -1154,6 +1157,19 @@ const uploadCandidatePracticalOnboardingFiles = async (
   if (!batch || batch.length === 0) {
     throw new AppError("Batch not found", 404);
   }
+  const candidate = await db
+    .select()
+    .from(candidateTable)
+    .where(
+      and(
+        eq(candidateTable.id, candidateId),
+        eq(candidateTable.batchId, batchId)
+      )
+    );
+  if (!candidate || candidate.length === 0) {
+    throw new AppError("Candidate not found", 404);
+  }
+
   if (adhar) {
     if (!adhar.mimetype.startsWith("image/")) {
       throw new AppError("Invalid file type", 400);
@@ -1328,6 +1344,76 @@ const syncCandidate = async (
     if (!candidate) {
       return;
     }
+
+    if (
+      fs.existsSync(
+        path.join(
+          __dirname,
+          "..",
+          "..",
+          "uploads",
+          "batches",
+          batchId,
+          "evidences",
+          "candidates",
+          candidateId,
+          "practical-onboarding"
+        )
+      )
+    ) {
+      const practicalOnboarding = await fs.promises.readdir(
+        path.join(
+          __dirname,
+          "..",
+          "..",
+          "uploads",
+          "batches",
+          batchId,
+          "evidences",
+          "candidates",
+          candidateId,
+          "practical-onboarding"
+        )
+      );
+      const response = await axios.get(
+        `${process.env.MAIN_SERVER_URL}/assessor/batches/${batchId}/candidates/${candidateId}/presigned-url-to-candidate-practical-onboarding-files`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const adhar = response.data.data.adhar;
+      const photo = response.data.data.photo;
+      for (const file of practicalOnboarding) {
+        const filePath = path.join(
+          __dirname,
+          "..",
+          "..",
+          "uploads",
+          "batches",
+          batchId,
+          "evidences",
+          "candidates",
+          candidateId,
+          "practical-onboarding",
+          file
+        );
+        // console.log(filePath);
+        if (fs.existsSync(filePath)) {
+          const buffer = fs.readFileSync(filePath);
+          if (file.startsWith("adhar")) {
+            await axios.put(adhar, buffer, {
+              headers: {
+                "Content-Type": mime.lookup(file) || "application/octet-stream",
+              },
+            });
+          } else if (file.startsWith("photo")) {
+            await axios.put(photo, buffer, {
+              headers: {
+                "Content-Type": mime.lookup(file) || "application/octet-stream",
+              },
+            });
+          }
+        }
+      }
+    }
     if (fs.existsSync(randomPhotos)) {
       const photos = await fs.promises.readdir(randomPhotos);
       const signedUrlsToUploadRandomPhotos = await Promise.all(
@@ -1498,74 +1584,7 @@ const syncCandidate = async (
         })
       );
     }
-    if (
-      fs.existsSync(
-        path.join(
-          __dirname,
-          "..",
-          "..",
-          "uploads",
-          "batches",
-          batchId,
-          "evidences",
-          "candidates",
-          candidate,
-          "practical-onboarding"
-        )
-      )
-    ) {
-      const practicalOnboarding = await fs.promises.readdir(
-        path.join(
-          __dirname,
-          "..",
-          "..",
-          "uploads",
-          "batches",
-          batchId,
-          "evidences",
-          "candidates",
-          candidateId,
-          "practical-onboarding"
-        )
-      );
-      const response = await axios.get(
-        `${process.env.MAIN_SERVER_URL}/assessor/batches/${batchId}/candidates/${candidateId}/presigned-url-to-candidate-practical-onboarding-files`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      const adhar = response.data.data.adhar;
-      const photo = response.data.data.photo;
-      for (const file of practicalOnboarding) {
-        const filePath = path.join(
-          __dirname,
-          "..",
-          "..",
-          "uploads",
-          "batches",
-          batchId,
-          "evidences",
-          "candidates",
-          candidateId,
-          "practical-onboarding",
-          file
-        );
-        if (fs.existsSync(filePath)) {
-          const buffer = fs.readFileSync(filePath);
-          if (file.startsWith("adhar")) {
-            await axios.put(adhar, buffer, {
-              headers: {
-                "Content-Type": mime.lookup(file) || "application/octet-stream",
-              },
-            });
-          } else if (file.startsWith("photo")) {
-            await axios.put(photo, buffer, {
-              headers: {
-                "Content-Type": mime.lookup(file) || "application/octet-stream",
-              },
-            });
-          }
-        }
-      }
-    }
+
     let adharName = "";
     let selfieName = "";
     let adharContentType = "";
