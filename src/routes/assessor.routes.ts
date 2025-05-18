@@ -6,6 +6,7 @@ import assessorController, {
   submitCandidatePracticalResponses,
   submitCandidateVivaResponses,
   submitPmkyChecklist,
+  uploadCandidatePracticalOnboadingFiles,
   uploadPmkyChecklistFiles,
 } from "../controllers/assessor.controller";
 import validateRequest from "../middlewares/validateRequest";
@@ -16,6 +17,7 @@ import {
   submitPmkyChecklistSchema,
 } from "../schemas/assessor.schema";
 import authMiddleware from "../middlewares/auth.middleware";
+import authService from "../services/auth.service";
 router.route("/offline-batches").get(assessorController.getOfflineBatches);
 router
   .route("/offline-batches")
@@ -128,6 +130,14 @@ router
   .post(
     authMiddleware.isAuthenticatedAssessor,
     submitCandidatePracticalResponses
+  );
+router
+  .route(
+    "/offline-batches/:batchId/candidates/:candidateId/upload-practical-onboarding-files"
+  )
+  .post(
+    authMiddleware.isAuthenticatedAssessor,
+    uploadCandidatePracticalOnboadingFiles
   );
 router
   .route("/offline-batches/:batchId/candidates/:candidateId/submit-viva")

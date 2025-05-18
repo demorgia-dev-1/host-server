@@ -464,6 +464,30 @@ export const submitPmkyChecklist = async (
     return next(error);
   }
 };
+export const uploadCandidatePracticalOnboadingFiles = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const batchId = req.params.batchId;
+    const candidateId = req.params.candidateId;
+    const assessorId = req.headers["x-assessor-id"] as string;
+
+    await assessorService.uploadCandidatePracticalOnboardingFiles(
+      batchId,
+      candidateId,
+      assessorId,
+      // @ts-ignore
+      req.files.adhar,
+      // @ts-ignore
+      req.files.phoyo
+    );
+    res.status(200).json({});
+  } catch (error) {
+    return next(error);
+  }
+};
 export default {
   getOfflineBatches,
   saveBatchOffline,
@@ -486,4 +510,5 @@ export default {
   getCandidateListFromMainServer,
   uploadPmkyChecklistFiles,
   getPmkyChecklist,
+  uploadCandidatePracticalOnboadingFiles,
 };

@@ -1138,6 +1138,69 @@ const getVivaQuestionBank = async (batchId: string, assessorId: string) => {
   }
   return JSON.parse(batch[0].vivaQuestionBank);
 };
+const uploadCandidatePracticalOnboardingFiles = async (
+  batchId: string,
+  candidateId: string,
+  assessorId: string,
+  adhar?: UploadedFile,
+  photo?: UploadedFile
+) => {
+  const batch = await db
+    .select()
+    .from(batchTable)
+    .where(
+      and(eq(batchTable.id, batchId), eq(batchTable.assessor, assessorId))
+    );
+  if (!batch || batch.length === 0) {
+    throw new AppError("Batch not found", 404);
+  }
+  if (adhar) {
+    if (!adhar.mimetype.startsWith("image/")) {
+      throw new AppError("Invalid file type", 400);
+    }
+    if (adhar.size > 5 * 1024 * 1024) {
+      throw new AppError("File size exceeds 5MB", 400);
+    }
+    const adharExt = adhar.name.split(".").pop();
+    const adharUploadPath = path.join(
+      __dirname,
+      "..",
+      "..",
+      "uploads",
+      "batches",
+      batchId,
+      "evidences",
+      "candidates",
+      candidateId,
+      "practical-onboarding",
+      `adhar.${adharExt}`
+    );
+    await adhar.mv(adharUploadPath);
+  }
+  if (photo) {
+    if (!photo.mimetype.startsWith("image/")) {
+      throw new AppError("Invalid file type", 400);
+    }
+    if (photo.size > 2 * 1024 * 1024) {
+      throw new AppError("File size exceeds 2MB", 400);
+    }
+    const photoExt = photo.name.split(".").pop();
+    const photoUploadPath = path.join(
+      __dirname,
+      "..",
+      "..",
+      "uploads",
+      "batches",
+      batchId,
+      "evidences",
+      "candidates",
+      candidateId,
+      "practical-onboarding",
+      `photo.${photoExt}`
+    );
+    await photo.mv(photoUploadPath);
+  }
+};
 const syncCandidate = async (
   batchId: string,
   candidateId: string,
@@ -1435,7 +1498,74 @@ const syncCandidate = async (
         })
       );
     }
-
+    if (
+      fs.existsSync(
+        path.join(
+          __dirname,
+          "..",
+          "..",
+          "uploads",
+          "batches",
+          batchId,
+          "evidences",
+          "candidates",
+          candidate,
+          "practical-onboarding"
+        )
+      )
+    ) {
+      const practicalOnboarding = await fs.promises.readdir(
+        path.join(
+          __dirname,
+          "..",
+          "..",
+          "uploads",
+          "batches",
+          batchId,
+          "evidences",
+          "candidates",
+          candidateId,
+          "practical-onboarding"
+        )
+      );
+      const response = await axios.get(
+        `${process.env.MAIN_SERVER_URL}/assessor/batches/${batchId}/candidates/${candidateId}/presigned-url-to-candidate-practical-onboarding-files`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const adhar = response.data.data.adhar;
+      const photo = response.data.data.photo;
+      for (const file of practicalOnboarding) {
+        const filePath = path.join(
+          __dirname,
+          "..",
+          "..",
+          "uploads",
+          "batches",
+          batchId,
+          "evidences",
+          "candidates",
+          candidateId,
+          "practical-onboarding",
+          file
+        );
+        if (fs.existsSync(filePath)) {
+          const buffer = fs.readFileSync(filePath);
+          if (file.startsWith("adhar")) {
+            await axios.put(adhar, buffer, {
+              headers: {
+                "Content-Type": mime.lookup(file) || "application/octet-stream",
+              },
+            });
+          } else if (file.startsWith("photo")) {
+            await axios.put(photo, buffer, {
+              headers: {
+                "Content-Type": mime.lookup(file) || "application/octet-stream",
+              },
+            });
+          }
+        }
+      }
+    }
     let adharName = "";
     let selfieName = "";
     let adharContentType = "";
@@ -1869,18 +1999,20 @@ const submitPmkyChecklist = async (
   if (typeof checklist === "string") {
     checklist = JSON.parse(checklist);
   }
-  checklist = checklist.questions.map((question: any) => {
-    responses.forEach((response) => {
-      if (question.id === response.questionId) {
+  if (!checklist) {
+    throw new AppError("Pmky checklist not found", 404);
+  }
+  checklist.questions.forEach((question: any) => {
+    for (const response of responses) {
+      if (question._id === response.questionId) {
         question.yesOrNo = response.yesOrNo;
         question.remarks = response.remarks;
+        break;
       }
-    });
+    }
   });
-  if (checklist.submitted) {
-    throw new AppError("Pmky checklist already submitted", 400);
-  }
   checklist.submitted = true;
+  checklist.submittedAt = new Date().toISOString();
   await db
     .update(batchTable)
     .set({
@@ -1914,4 +2046,5 @@ export default {
   uploadPmkyChecklistFiles,
   getPmkyChecklist,
   submitPmkyChecklist,
+  uploadCandidatePracticalOnboardingFiles,
 };
