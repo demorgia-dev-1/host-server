@@ -287,8 +287,17 @@ export const submitCandidatePracticalResponses = async (
     const video: UploadedFile = req?.files?.video;
     const responses = req.body.responses.map(
       (response: Record<string, any>) => {
-        if (!response.questionId || !response.marksObtained) {
-          throw new AppError("questionId and answerId are required", 400, true);
+        if (
+          !response.questionId ||
+          response.marksObtained === undefined ||
+          response.marksObtained === null ||
+          response.marksObtained < 0
+        ) {
+          throw new AppError(
+            "questionId and marksObtained are required",
+            400,
+            true
+          );
         }
         return {
           questionId: response.questionId,
@@ -328,7 +337,12 @@ export const submitCandidateVivaResponses = async (
     }
     const responses = req.body.responses.map(
       (response: Record<string, any>) => {
-        if (!response.questionId || !response.marksObtained) {
+        if (
+          !response.questionId ||
+          response.marksObtained === undefined ||
+          response.marksObtained === null ||
+          response.marksObtained < 0
+        ) {
           throw new AppError(
             "questionId and marksObtained are required",
             400,
