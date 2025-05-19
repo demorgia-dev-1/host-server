@@ -1225,6 +1225,7 @@ const syncCandidate = async (
   if (!token) {
     throw new AppError("server token is required", 401);
   }
+
   const randomPhotos = path.join(
     __dirname,
     "..",
@@ -1239,104 +1240,115 @@ const syncCandidate = async (
     "THEORY"
   );
   try {
+    const isSyncedResponse = await axios.get(
+      `${process.env.MAIN_SERVER_URL}/assessor/batches/${batchId}/candidates/${candidateId}/is-synced`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    if (isSyncedResponse.status !== 200) {
+      return;
+    }
+
     const batch = await db
       .select()
       .from(batchTable)
       .where(eq(batchTable.id, batchId));
 
-    if (batch[0].isPmkyCheckListRequired) {
-      console.log("axkqnwxlknj");
-      if (
-        fs.existsSync(
-          path.join(
-            __dirname,
-            "..",
-            "..",
-            "uploads",
-            "batches",
-            batchId,
-            "evidences",
-            "assessor",
-            "pmky-checklist"
-          )
-        )
-      ) {
-        console.log("pmky checklist found");
-        const dirPath = path.join(
-          __dirname,
-          "..",
-          "..",
-          "uploads",
-          "batches",
-          batchId,
-          "evidences",
-          "assessor",
-          "pmky-checklist"
-        );
-        if (!fs.existsSync(dirPath)) {
-          throw new AppError("Directory does not exist: " + dirPath, 404);
-        } else {
-          console.log("Directory exists: " + dirPath);
-        }
+    // if (batch[0].isPmkyCheckListRequired) {
+    //   if (
+    //     fs.existsSync(
+    //       path.join(
+    //         __dirname,
+    //         "..",
+    //         "..",
+    //         "uploads",
+    //         "batches",
+    //         batchId,
+    //         "evidences",
+    //         "assessor",
+    //         "pmky-checklist"
+    //       )
+    //     )
+    //   ) {
+    //     console.log("pmky checklist found");
+    //     const dirPath = path.join(
+    //       __dirname,
+    //       "..",
+    //       "..",
+    //       "uploads",
+    //       "batches",
+    //       batchId,
+    //       "evidences",
+    //       "assessor",
+    //       "pmky-checklist"
+    //     );
+    //     if (!fs.existsSync(dirPath)) {
+    //       throw new AppError("Directory does not exist: " + dirPath, 404);
+    //     } else {
+    //       console.log("Directory exists: " + dirPath);
+    //     }
 
-        const entries = await fs.promises.readdir(dirPath, {
-          withFileTypes: true,
-        });
-        const dirs = entries
-          .filter((entry) => entry.isDirectory())
-          .map((entry) => entry.name);
-        for (const dir of dirs) {
-          const evidences = await fs.promises.readdir(
-            path.join(
-              __dirname,
-              "..",
-              "..",
-              "uploads",
-              "batches",
-              batchId,
-              "evidences",
-              "assessor",
-              "pmky-checklist",
-              dir.split("/").pop()
-            )
-          );
-          const responses = await axios.get(
-            `${
-              process.env.MAIN_SERVER_URL
-            }/assessor/offline-batches/${batchId}/pmky-checklist-presigned-url?fileNames=${evidences.join(
-              ","
-            )}&questionId=${dir}`,
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-          const uploadPromises = evidences.map((evidence, index) => {
-            const filePath = path.join(
-              __dirname,
-              "..",
-              "..",
-              "uploads",
-              "batches",
-              batchId,
-              "evidences",
-              "assessor",
-              "pmky-checklist",
-              dir.split("/").pop(),
-              evidence
-            );
-            if (!fs.existsSync(filePath)) {
-              throw new AppError("File does not exist: " + filePath, 404);
-            }
-            const buffer = fs.readFileSync(filePath);
-            return axios.put(responses.data.data[index], buffer, {
-              headers: {
-                "Content-Type":
-                  mime.lookup(evidence) || "application/octet-stream",
-              },
-            });
-          });
-          await Promise.all(uploadPromises);
-        }
-      }
-    }
+    //     const entries = await fs.promises.readdir(dirPath, {
+    //       withFileTypes: true,
+    //     });
+    //     const dirs = entries
+    //       .filter((entry) => entry.isDirectory())
+    //       .map((entry) => entry.name);
+    //     for (const dir of dirs) {
+    //       const evidences = await fs.promises.readdir(
+    //         path.join(
+    //           __dirname,
+    //           "..",
+    //           "..",
+    //           "uploads",
+    //           "batches",
+    //           batchId,
+    //           "evidences",
+    //           "assessor",
+    //           "pmky-checklist",
+    //           dir.split("/").pop()
+    //         )
+    //       );
+    //       const responses = await axios.get(
+    //         `${
+    //           process.env.MAIN_SERVER_URL
+    //         }/assessor/offline-batches/${batchId}/pmky-checklist-presigned-url?fileNames=${evidences.join(
+    //           ","
+    //         )}&questionId=${dir}`,
+    //         { headers: { Authorization: `Bearer ${token}` } }
+    //       );
+    //       const uploadPromises = evidences.map((evidence, index) => {
+    //         const filePath = path.join(
+    //           __dirname,
+    //           "..",
+    //           "..",
+    //           "uploads",
+    //           "batches",
+    //           batchId,
+    //           "evidences",
+    //           "assessor",
+    //           "pmky-checklist",
+    //           dir.split("/").pop(),
+    //           evidence
+    //         );
+    //         if (!fs.existsSync(filePath)) {
+    //           throw new AppError("File does not exist: " + filePath, 404);
+    //         }
+    //         const buffer = fs.readFileSync(filePath);
+    //         return axios.put(responses.data.data[index], buffer, {
+    //           headers: {
+    //             "Content-Type":
+    //               mime.lookup(evidence) || "application/octet-stream",
+    //           },
+    //         });
+    //       });
+    //       await Promise.all(uploadPromises);
+    //     }
+    //   }
+    // }
     const candidate = await db
       .select()
       .from(candidateTable)
@@ -1345,138 +1357,139 @@ const syncCandidate = async (
       return;
     }
 
-    if (
-      fs.existsSync(
-        path.join(
-          __dirname,
-          "..",
-          "..",
-          "uploads",
-          "batches",
-          batchId,
-          "evidences",
-          "candidates",
-          candidateId,
-          "practical-onboarding"
-        )
-      )
-    ) {
-      const practicalOnboarding = await fs.promises.readdir(
-        path.join(
-          __dirname,
-          "..",
-          "..",
-          "uploads",
-          "batches",
-          batchId,
-          "evidences",
-          "candidates",
-          candidateId,
-          "practical-onboarding"
-        )
-      );
-      const response = await axios.get(
-        `${process.env.MAIN_SERVER_URL}/assessor/batches/${batchId}/candidates/${candidateId}/presigned-url-to-candidate-practical-onboarding-files`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      const adhar = response.data.data.adhar;
-      const photo = response.data.data.photo;
-      for (const file of practicalOnboarding) {
-        const filePath = path.join(
-          __dirname,
-          "..",
-          "..",
-          "uploads",
-          "batches",
-          batchId,
-          "evidences",
-          "candidates",
-          candidateId,
-          "practical-onboarding",
-          file
-        );
-        // console.log(filePath);
-        if (fs.existsSync(filePath)) {
-          const buffer = fs.readFileSync(filePath);
-          if (file.startsWith("adhar")) {
-            await axios.put(adhar, buffer, {
-              headers: {
-                "Content-Type": mime.lookup(file) || "application/octet-stream",
-              },
-            });
-          } else if (file.startsWith("photo")) {
-            await axios.put(photo, buffer, {
-              headers: {
-                "Content-Type": mime.lookup(file) || "application/octet-stream",
-              },
-            });
-          }
-        }
-      }
-    }
-    if (fs.existsSync(randomPhotos)) {
-      const photos = await fs.promises.readdir(randomPhotos);
-      const signedUrlsToUploadRandomPhotos = await Promise.all(
-        photos.map((photo) =>
-          axios.get(
-            `${process.env.MAIN_SERVER_URL}/assessor/offline-batches/${batchId}/candidates/${candidateId}/sync-random-evidences?testType=theory&evidenceType=image&fileName=${photo}`,
-            { headers: { Authorization: `Bearer ${token}` } }
-          )
-        )
-      );
+    // if (
+    //   fs.existsSync(
+    //     path.join(
+    //       __dirname,
+    //       "..",
+    //       "..",
+    //       "uploads",
+    //       "batches",
+    //       batchId,
+    //       "evidences",
+    //       "candidates",
+    //       candidateId,
+    //       "practical-onboarding"
+    //     )
+    //   )
+    // ) {
+    //   const practicalOnboarding = await fs.promises.readdir(
+    //     path.join(
+    //       __dirname,
+    //       "..",
+    //       "..",
+    //       "uploads",
+    //       "batches",
+    //       batchId,
+    //       "evidences",
+    //       "candidates",
+    //       candidateId,
+    //       "practical-onboarding"
+    //     )
+    //   );
+    //   const response = await axios.get(
+    //     `${process.env.MAIN_SERVER_URL}/assessor/batches/${batchId}/candidates/${candidateId}/presigned-url-to-candidate-practical-onboarding-files`,
+    //     { headers: { Authorization: `Bearer ${token}` } }
+    //   );
+    //   const adhar = response.data.data.adhar;
+    //   const photo = response.data.data.photo;
+    //   for (const file of practicalOnboarding) {
+    //     const filePath = path.join(
+    //       __dirname,
+    //       "..",
+    //       "..",
+    //       "uploads",
+    //       "batches",
+    //       batchId,
+    //       "evidences",
+    //       "candidates",
+    //       candidateId,
+    //       "practical-onboarding",
+    //       file
+    //     );
+    //     // console.log(filePath);
+    //     if (fs.existsSync(filePath)) {
+    //       const buffer = fs.readFileSync(filePath);
+    //       if (file.startsWith("adhar")) {
+    //         await axios.put(adhar, buffer, {
+    //           headers: {
+    //             "Content-Type": mime.lookup(file) || "application/octet-stream",
+    //           },
+    //         });
+    //       } else if (file.startsWith("photo")) {
+    //         await axios.put(photo, buffer, {
+    //           headers: {
+    //             "Content-Type": mime.lookup(file) || "application/octet-stream",
+    //           },
+    //         });
+    //       }
+    //     }
+    //   }
+    // }
 
-      await Promise.all(
-        photos.map((photo, index) => {
-          const filePath = path.join(randomPhotos, photo);
-          if (fs.existsSync(filePath)) {
-            const buffer = fs.readFileSync(filePath);
-            console.log(signedUrlsToUploadRandomPhotos[index].data.data.url);
-            return axios.put(
-              signedUrlsToUploadRandomPhotos[index].data.data.url,
-              buffer,
-              {
-                headers: {
-                  "Content-Type":
-                    mime.lookup(photo) || "application/octet-stream",
-                },
-              }
-            );
-          }
-        })
-      );
-    }
-    if (fs.existsSync(path.join(randomPhotos, "..", "PRACTICAL"))) {
-      const practicalPhotos = await fs.promises.readdir(
-        path.join(randomPhotos, "..", "PRACTICAL")
-      );
-      const signedUrlsToUploadPracticalPhotos = await Promise.all(
-        practicalPhotos.map((photo) =>
-          axios.get(
-            `${process.env.MAIN_SERVER_URL}/assessor/offline-batches/${batchId}/candidates/${candidateId}/sync-random-evidences?testType=practical&evidenceType=image&fileName=${photo}`,
-            { headers: { Authorization: `Bearer ${token}` } }
-          )
-        )
-      );
-      await Promise.all(
-        practicalPhotos.map((photo, index) => {
-          const filePath = path.join(randomPhotos, "..", "PRACTICAL", photo);
-          if (!fs.existsSync(filePath)) {
-            throw new AppError("File does not exist: " + filePath, 404);
-          }
-          const buffer = fs.readFileSync(filePath);
-          return axios.put(
-            signedUrlsToUploadPracticalPhotos[index].data.data.url,
-            buffer,
-            {
-              headers: {
-                "Content-Type":
-                  mime.lookup(photo) || "application/octet-stream",
-              },
-            }
-          );
-        })
-      );
-    }
+    // if (fs.existsSync(randomPhotos)) {
+    //   const photos = await fs.promises.readdir(randomPhotos);
+    //   const signedUrlsToUploadRandomPhotos = await Promise.all(
+    //     photos.map((photo) =>
+    //       axios.get(
+    //         `${process.env.MAIN_SERVER_URL}/assessor/offline-batches/${batchId}/candidates/${candidateId}/sync-random-evidences?testType=theory&evidenceType=image&fileName=${photo}`,
+    //         { headers: { Authorization: `Bearer ${token}` } }
+    //       )
+    //     )
+    //   );
+
+    //   await Promise.all(
+    //     photos.map((photo, index) => {
+    //       const filePath = path.join(randomPhotos, photo);
+    //       if (fs.existsSync(filePath)) {
+    //         const buffer = fs.readFileSync(filePath);
+    //         console.log(signedUrlsToUploadRandomPhotos[index].data.data.url);
+    //         return axios.put(
+    //           signedUrlsToUploadRandomPhotos[index].data.data.url,
+    //           buffer,
+    //           {
+    //             headers: {
+    //               "Content-Type":
+    //                 mime.lookup(photo) || "application/octet-stream",
+    //             },
+    //           }
+    //         );
+    //       }
+    //     })
+    //   );
+    // }
+    // if (fs.existsSync(path.join(randomPhotos, "..", "PRACTICAL"))) {
+    //   const practicalPhotos = await fs.promises.readdir(
+    //     path.join(randomPhotos, "..", "PRACTICAL")
+    //   );
+    //   const signedUrlsToUploadPracticalPhotos = await Promise.all(
+    //     practicalPhotos.map((photo) =>
+    //       axios.get(
+    //         `${process.env.MAIN_SERVER_URL}/assessor/offline-batches/${batchId}/candidates/${candidateId}/sync-random-evidences?testType=practical&evidenceType=image&fileName=${photo}`,
+    //         { headers: { Authorization: `Bearer ${token}` } }
+    //       )
+    //     )
+    //   );
+    //   await Promise.all(
+    //     practicalPhotos.map((photo, index) => {
+    //       const filePath = path.join(randomPhotos, "..", "PRACTICAL", photo);
+    //       if (!fs.existsSync(filePath)) {
+    //         throw new AppError("File does not exist: " + filePath, 404);
+    //       }
+    //       const buffer = fs.readFileSync(filePath);
+    //       return axios.put(
+    //         signedUrlsToUploadPracticalPhotos[index].data.data.url,
+    //         buffer,
+    //         {
+    //           headers: {
+    //             "Content-Type":
+    //               mime.lookup(photo) || "application/octet-stream",
+    //           },
+    //         }
+    //       );
+    //     })
+    //   );
+    // }
     const randomVideos = path.join(
       __dirname,
       "..",
@@ -1490,100 +1503,100 @@ const syncCandidate = async (
       "videos",
       "THEORY"
     );
-    if (fs.existsSync(path.join(randomVideos, "..", "PRACTICAL"))) {
-      const practicalVideos = await fs.promises.readdir(
-        path.join(randomVideos, "..", "PRACTICAL")
-      );
-      const signedUrlsToUploadPracticalVideos = await Promise.all(
-        practicalVideos.map((video) =>
-          axios.get(
-            `${process.env.MAIN_SERVER_URL}/assessor/offline-batches/${batchId}/candidates/${candidateId}/sync-random-evidences?testType=practical&evidenceType=video&fileName=${video}`,
-            { headers: { Authorization: `Bearer ${token}` } }
-          )
-        )
-      );
-      await Promise.all(
-        practicalVideos.map((video, index) => {
-          const filePath = path.join(randomVideos, "..", "PRACTICAL", video);
-          if (!fs.existsSync(filePath)) {
-            throw new AppError("File does not exist: " + filePath, 404);
-          }
-          const buffer = fs.readFileSync(filePath);
-          return axios.put(
-            signedUrlsToUploadPracticalVideos[index].data.data.url,
-            buffer,
-            {
-              headers: {
-                "Content-Type":
-                  mime.lookup(video) || "application/octet-stream",
-              },
-            }
-          );
-        })
-      );
-    }
-    if (fs.existsSync(path.join(randomVideos, "..", "VIVA"))) {
-      const vivaVideos = await fs.promises.readdir(
-        path.join(randomVideos, "..", "VIVA")
-      );
-      const signedUrlsToUploadVivaVideos = await Promise.all(
-        vivaVideos.map((video) =>
-          axios.get(
-            `${process.env.MAIN_SERVER_URL}/assessor/offline-batches/${batchId}/candidates/${candidateId}/sync-random-evidences?testType=viva&evidenceType=video&fileName=${video}`,
-            { headers: { Authorization: `Bearer ${token}` } }
-          )
-        )
-      );
-      await Promise.all(
-        vivaVideos.map((video, index) => {
-          const filePath = path.join(randomVideos, "..", "VIVA", video);
-          if (!fs.existsSync(filePath)) {
-            throw new AppError("File does not exist: " + filePath, 404);
-          }
-          const buffer = fs.readFileSync(filePath);
-          return axios.put(
-            signedUrlsToUploadVivaVideos[index].data.data.url,
-            buffer,
-            {
-              headers: {
-                "Content-Type":
-                  mime.lookup(video) || "application/octet-stream",
-              },
-            }
-          );
-        })
-      );
-    }
-    if (fs.existsSync(randomVideos)) {
-      const videos = await fs.promises.readdir(randomVideos);
-      const signedUrlsToUploadRandomVideos = await Promise.all(
-        videos.map((video) =>
-          axios.get(
-            `${process.env.MAIN_SERVER_URL}/assessor/offline-batches/${batchId}/candidates/${candidateId}/sync-random-evidences?testType=theory&evidenceType=video&fileName=${video}`,
-            { headers: { Authorization: `Bearer ${token}` } }
-          )
-        )
-      );
+    // if (fs.existsSync(path.join(randomVideos, "..", "PRACTICAL"))) {
+    //   const practicalVideos = await fs.promises.readdir(
+    //     path.join(randomVideos, "..", "PRACTICAL")
+    //   );
+    //   const signedUrlsToUploadPracticalVideos = await Promise.all(
+    //     practicalVideos.map((video) =>
+    //       axios.get(
+    //         `${process.env.MAIN_SERVER_URL}/assessor/offline-batches/${batchId}/candidates/${candidateId}/sync-random-evidences?testType=practical&evidenceType=video&fileName=${video}`,
+    //         { headers: { Authorization: `Bearer ${token}` } }
+    //       )
+    //     )
+    //   );
+    //   await Promise.all(
+    //     practicalVideos.map((video, index) => {
+    //       const filePath = path.join(randomVideos, "..", "PRACTICAL", video);
+    //       if (!fs.existsSync(filePath)) {
+    //         throw new AppError("File does not exist: " + filePath, 404);
+    //       }
+    //       const buffer = fs.readFileSync(filePath);
+    //       return axios.put(
+    //         signedUrlsToUploadPracticalVideos[index].data.data.url,
+    //         buffer,
+    //         {
+    //           headers: {
+    //             "Content-Type":
+    //               mime.lookup(video) || "application/octet-stream",
+    //           },
+    //         }
+    //       );
+    //     })
+    //   );
+    // }
+    // if (fs.existsSync(path.join(randomVideos, "..", "VIVA"))) {
+    //   const vivaVideos = await fs.promises.readdir(
+    //     path.join(randomVideos, "..", "VIVA")
+    //   );
+    //   const signedUrlsToUploadVivaVideos = await Promise.all(
+    //     vivaVideos.map((video) =>
+    //       axios.get(
+    //         `${process.env.MAIN_SERVER_URL}/assessor/offline-batches/${batchId}/candidates/${candidateId}/sync-random-evidences?testType=viva&evidenceType=video&fileName=${video}`,
+    //         { headers: { Authorization: `Bearer ${token}` } }
+    //       )
+    //     )
+    //   );
+    //   await Promise.all(
+    //     vivaVideos.map((video, index) => {
+    //       const filePath = path.join(randomVideos, "..", "VIVA", video);
+    //       if (!fs.existsSync(filePath)) {
+    //         throw new AppError("File does not exist: " + filePath, 404);
+    //       }
+    //       const buffer = fs.readFileSync(filePath);
+    //       return axios.put(
+    //         signedUrlsToUploadVivaVideos[index].data.data.url,
+    //         buffer,
+    //         {
+    //           headers: {
+    //             "Content-Type":
+    //               mime.lookup(video) || "application/octet-stream",
+    //           },
+    //         }
+    //       );
+    //     })
+    //   );
+    // }
+    // if (fs.existsSync(randomVideos)) {
+    //   const videos = await fs.promises.readdir(randomVideos);
+    //   const signedUrlsToUploadRandomVideos = await Promise.all(
+    //     videos.map((video) =>
+    //       axios.get(
+    //         `${process.env.MAIN_SERVER_URL}/assessor/offline-batches/${batchId}/candidates/${candidateId}/sync-random-evidences?testType=theory&evidenceType=video&fileName=${video}`,
+    //         { headers: { Authorization: `Bearer ${token}` } }
+    //       )
+    //     )
+    //   );
 
-      await Promise.all(
-        videos.map((video, index) => {
-          const filePath = path.join(randomVideos, video);
-          if (fs.existsSync(filePath)) {
-            const buffer = fs.readFileSync(filePath);
-            return axios.put(
-              signedUrlsToUploadRandomVideos[index].data.data.url,
-              buffer,
-              {
-                headers: {
-                  "Content-Type":
-                    mime.lookup(video) || "application/octet-stream",
-                },
-              }
-            );
-          }
-        })
-      );
-    }
+    //   await Promise.all(
+    //     videos.map((video, index) => {
+    //       const filePath = path.join(randomVideos, video);
+    //       if (fs.existsSync(filePath)) {
+    //         const buffer = fs.readFileSync(filePath);
+    //         return axios.put(
+    //           signedUrlsToUploadRandomVideos[index].data.data.url,
+    //           buffer,
+    //           {
+    //             headers: {
+    //               "Content-Type":
+    //                 mime.lookup(video) || "application/octet-stream",
+    //             },
+    //           }
+    //         );
+    //       }
+    //     })
+    //   );
+    // }
 
     let adharName = "";
     let selfieName = "";
@@ -1791,6 +1804,9 @@ const syncCandidate = async (
           JSON.parse(batch[0].assessorCoordinates)
         : {},
       assessorGroupPhoto: "",
+      pmkyChecklist: batch[0]?.isPmkyCheckListRequired
+        ? batch[0].pmkyChecklist
+        : null,
     };
     if (batch[0].isAssessorEvidenceRequired) {
       if (
@@ -1883,7 +1899,7 @@ const syncCandidate = async (
           400
         );
       }
-      console.error("Error in syncCandidate:", error);
+      console.log("error ", error);
       throw error;
     }
   }

@@ -112,7 +112,6 @@ const uploadOnboardingEvidence = async (
     .set(updatedCandidateData)
     .where(eq(candidatesTable.id, candidateId));
 };
-
 const getMyTheoryTest = async (candidateId: string) => {
   const candidate = await db
     .select()
@@ -520,7 +519,6 @@ const submitPracticalResponses = async (
   // Run the query asynchronously and await its completion
   await db.run(sql.raw(query));
 };
-
 const submitPracticalTest = async (candidateId: string, batchId: string) => {
   const candidate = await db
     .select()

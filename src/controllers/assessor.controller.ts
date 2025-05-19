@@ -3,7 +3,7 @@ import { AppError } from "../utils/AppError";
 import assessorService from "../services/assessor.service";
 import { MarkCandidateAttendance } from "../schemas/assessor.schema";
 import { UploadedFile } from "express-fileupload";
-import { get } from "http";
+
 // will fetch the batches from main server
 export const getOfflineBatches = async (
   req: Request,
@@ -388,6 +388,7 @@ export const syncCandidate = async (
     );
     res.status(200).json({});
   } catch (error) {
+    console.log("error", error);
     next(error);
   }
 };

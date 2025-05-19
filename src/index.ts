@@ -10,6 +10,7 @@ import { errorHandler } from "./middlewares/error.middleware";
 import fs from "fs";
 import cors from "cors";
 import path from "path";
+import startJob from "./jobs/sync-assets";
 
 dotenv.config();
 const app = express();
@@ -60,6 +61,7 @@ const server = app.listen(9090, "0.0.0.0", () => {
     console.log("📱 Scan the QR code below to access it:\n");
 
     qr.generate(url, { small: true });
+    startJob();
   } else {
     console.error("❌ Could not determine server address");
   }

@@ -47,7 +47,6 @@ router.route("/offline-batches/:batchId/mark-assessor-as-reached").post(
     if (req?.body?.location) {
       req.body.location = JSON.parse(req.body.location);
     }
-    console.log("req body", typeof req.body);
     next();
   },
   validateRequest(markAssessorAsReachedSchema),

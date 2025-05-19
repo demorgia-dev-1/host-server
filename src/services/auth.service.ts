@@ -6,6 +6,8 @@ import jwt from "jsonwebtoken";
 import { eq, or, and } from "drizzle-orm";
 import db from "../db";
 import { candidates as candidatesTable } from "../db/schema";
+import fs from "fs/promises";
+import path from "path";
 export const loginAssessor = async (
   data: LoginAssessor
 ): Promise<{ localToken: string; serverToken: string }> => {
@@ -17,6 +19,10 @@ export const loginAssessor = async (
     const localToken = jwt.sign(
       { _id: response.data.data.assessor._id },
       process.env.JWT_SECRET!
+    );
+    await fs.writeFile(
+      path.join(__dirname, "..", "..", "token.txt"),
+      response.data.data.token
     );
     return {
       localToken,
