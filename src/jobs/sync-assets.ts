@@ -3,6 +3,7 @@ import path from "path";
 import axios from "axios";
 import mime from "mime-types";
 import cron from "node-cron";
+import dns from "dns";
 
 require("dotenv").config();
 async function getTokenFromFile(tokenFilePath: string) {
@@ -618,7 +619,14 @@ async function syncAssets() {
 const startJob = async () => {
   cron.schedule("* * * * *", async () => {
     try {
-      await syncAssets();
+      dns.lookup("google.com", async (err) => {
+        if (err && err.code === "ENOTFOUND") {
+          console.log("no internet");
+        } else {
+          await syncAssets();
+        }
+      });
+
       console.log("syncing");
     } catch (error) {
       console.error("❌ Error during scheduled job:", error);
