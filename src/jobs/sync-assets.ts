@@ -32,6 +32,104 @@ async function getPhotoFileNames(folderPath: string) {
   );
   return photoFiles;
 }
+// check metadata file is present or not
+// async function isSomethingToUpload() {
+//   const baseDir = path.join(__dirname, "..", "..", "uploads", "batches");
+//   const batchDirs = await fs.promises.readdir(baseDir, {
+//     withFileTypes: true,
+//   });
+//   for (const batchDir of batchDirs) {
+//     if (batchDir.isDirectory()) {
+//       const batchId = batchDir.name;
+//       const candidatesDir = path.join(
+//         baseDir,
+//         batchId,
+//         "evidences",
+//         "candidates"
+//       );
+//       const candidateDirs = await fs.promises.readdir(candidatesDir, {
+//         withFileTypes: true,
+//       });
+//       for (const candidateDir of candidateDirs) {
+//         if (candidateDir.isDirectory()) {
+//           const candidateId = candidateDir.name;
+//           const theoryPhotosDir = path.join(
+//             candidatesDir,
+//             candidateId,
+//             "photos",
+//             "THEORY"
+//           );
+//           const theoryVideosDir = path.join(
+//             candidatesDir,
+//             candidateId,
+//             "videos",
+//             "THEORY"
+//           );
+//           const practicalPhotosDir = path.join(
+//             candidatesDir,
+//             candidateId,
+//             "photos",
+//             "PRACTICAL"
+//           );
+//           const practicalVideosDir = path.join(
+//             candidatesDir,
+//             candidateId,
+//             "videos",
+//             "PRACTICAL"
+//           );
+//           const vivaVideosDir = path.join(
+//             candidatesDir,
+//             candidateId,
+//             "videos",
+//             "VIVA"
+//           );
+//           const practicalOnboardingDir = path.join(
+//             __dirname,
+//             "..",
+//             "..",
+//             "uploads",
+//             "batches",
+//             batchId,
+//             "evidences",
+//             "candidates",
+//             candidateId,
+//             "practical-onboarding"
+//           );
+//           const pmkyChecklistDir = path.join(
+//             __dirname,
+//             "..",
+//             "..",
+//             "uploads",
+//             "batches",
+//             batchId,
+//             "evidences",
+//             "assessor",
+//             "pmky-checklist"
+//           );
+//           if (fs.existsSync(theoryPhotosDir)) {
+//             if (fs.existsSync(path.join(theoryPhotosDir, "meta.json"))) {
+//               const metadata = JSON.parse(
+//                 fs.readFileSync(
+//                   path.join(theoryPhotosDir, "meta.json"),
+//                   "utf-8"
+//                 )
+//               );
+//               const files = metadata.files;
+//               const fileNames =
+//                 typeof files === "object" ? Object.keys(files) : [];
+//               for (const fileName of fileNames) {
+//                 if (!files[fileName].isUploaded) {
+//                   return true;
+//                 }
+//               }
+//             }
+//           }
+//         }
+//       }
+//     }
+//   }
+//   return false;
+// }
 
 async function syncAssets() {
   try {
@@ -125,9 +223,43 @@ async function syncAssets() {
                     "utf-8"
                   )
                 );
+                const filesInFolder = await fs.promises.readdir(
+                  theoryPhotosDir
+                );
+
                 const files = metadata.files;
                 const fileNames =
                   typeof files === "object" ? Object.keys(files) : [];
+                let isNewFileUplaoded = false;
+                for (const fileName of filesInFolder) {
+                  if (fileName === "meta.json") {
+                    continue;
+                  }
+                  if (!files[fileName]) {
+                    isNewFileUplaoded = true;
+                    break;
+                  }
+                }
+                if (isNewFileUplaoded) {
+                  const updateMetadata = { ...metadata };
+                  for (const fileName of filesInFolder) {
+                    if (fileName === "meta.json") {
+                      continue;
+                    }
+                    if (!files[fileName]) {
+                      // @ts-ignore
+                      updateMetadata.files[fileName] = {
+                        isUploaded: false,
+                        fileName: fileName,
+                      };
+                    }
+                  }
+                  fs.writeFileSync(
+                    path.join(theoryPhotosDir, "meta.json"),
+                    JSON.stringify(updateMetadata, null, 2)
+                  );
+                  return;
+                }
                 for (const fileName of fileNames) {
                   if (files[fileName].isUploaded) {
                     continue;
@@ -188,6 +320,39 @@ async function syncAssets() {
                 const files = metadata.files;
                 const fileNames =
                   typeof files === "object" ? Object.keys(files) : [];
+                let isNewFileUplaoded = false;
+                const filesInFolder = await fs.promises.readdir(
+                  theoryVideosDir
+                );
+                for (const fileName of filesInFolder) {
+                  if (fileName === "meta.json") {
+                    continue;
+                  }
+                  if (!files[fileName]) {
+                    isNewFileUplaoded = true;
+                    break;
+                  }
+                }
+                if (isNewFileUplaoded) {
+                  const updateMetadata = { ...metadata };
+                  for (const fileName of filesInFolder) {
+                    if (fileName === "meta.json") {
+                      continue;
+                    }
+                    if (!files[fileName]) {
+                      // @ts-ignore
+                      updateMetadata.files[fileName] = {
+                        isUploaded: false,
+                        fileName: fileName,
+                      };
+                    }
+                  }
+                  fs.writeFileSync(
+                    path.join(theoryVideosDir, "meta.json"),
+                    JSON.stringify(updateMetadata, null, 2)
+                  );
+                  return;
+                }
                 for (const fileName of fileNames) {
                   if (files[fileName].isUploaded) {
                     continue;
@@ -248,6 +413,39 @@ async function syncAssets() {
                 const files = metadata.files;
                 const fileNames =
                   typeof files === "object" ? Object.keys(files) : [];
+                let isNewFileUplaoded = false;
+                const filesInFolder = await fs.promises.readdir(
+                  practicalPhotosDir
+                );
+                for (const fileName of filesInFolder) {
+                  if (fileName === "meta.json") {
+                    continue;
+                  }
+                  if (!files[fileName]) {
+                    isNewFileUplaoded = true;
+                    break;
+                  }
+                }
+                if (isNewFileUplaoded) {
+                  const updateMetadata = { ...metadata };
+                  for (const fileName of filesInFolder) {
+                    if (fileName === "meta.json") {
+                      continue;
+                    }
+                    if (!files[fileName]) {
+                      // @ts-ignore
+                      updateMetadata.files[fileName] = {
+                        isUploaded: false,
+                        fileName: fileName,
+                      };
+                    }
+                  }
+                  fs.writeFileSync(
+                    path.join(practicalPhotosDir, "meta.json"),
+                    JSON.stringify(updateMetadata, null, 2)
+                  );
+                  return;
+                }
                 for (const fileName of fileNames) {
                   if (files[fileName].isUploaded) {
                     continue;
@@ -308,6 +506,39 @@ async function syncAssets() {
                 const files = metadata.files;
                 const fileNames =
                   typeof files === "object" ? Object.keys(files) : [];
+                let isNewFileUplaoded = false;
+                const filesInFolder = await fs.promises.readdir(
+                  practicalVideosDir
+                );
+                for (const fileName of filesInFolder) {
+                  if (fileName === "meta.json") {
+                    continue;
+                  }
+                  if (!files[fileName]) {
+                    isNewFileUplaoded = true;
+                    break;
+                  }
+                }
+                if (isNewFileUplaoded) {
+                  const updateMetadata = { ...metadata };
+                  for (const fileName of filesInFolder) {
+                    if (fileName === "meta.json") {
+                      continue;
+                    }
+                    if (!files[fileName]) {
+                      // @ts-ignore
+                      updateMetadata.files[fileName] = {
+                        isUploaded: false,
+                        fileName: fileName,
+                      };
+                    }
+                  }
+                  fs.writeFileSync(
+                    path.join(practicalVideosDir, "meta.json"),
+                    JSON.stringify(updateMetadata, null, 2)
+                  );
+                  return;
+                }
                 for (const fileName of fileNames) {
                   if (files[fileName].isUploaded) {
                     continue;
@@ -368,6 +599,37 @@ async function syncAssets() {
                 const files = metadata.files;
                 const fileNames =
                   typeof files === "object" ? Object.keys(files) : [];
+                let isNewFileUplaoded = false;
+                const filesInFolder = await fs.promises.readdir(vivaVideosDir);
+                for (const fileName of filesInFolder) {
+                  if (fileName === "meta.json") {
+                    continue;
+                  }
+                  if (!files[fileName]) {
+                    isNewFileUplaoded = true;
+                    break;
+                  }
+                }
+                if (isNewFileUplaoded) {
+                  const updateMetadata = { ...metadata };
+                  for (const fileName of filesInFolder) {
+                    if (fileName === "meta.json") {
+                      continue;
+                    }
+                    if (!files[fileName]) {
+                      // @ts-ignore
+                      updateMetadata.files[fileName] = {
+                        isUploaded: false,
+                        fileName: fileName,
+                      };
+                    }
+                  }
+                  fs.writeFileSync(
+                    path.join(vivaVideosDir, "meta.json"),
+                    JSON.stringify(updateMetadata, null, 2)
+                  );
+                  return;
+                }
                 for (const fileName of fileNames) {
                   if (files[fileName].isUploaded) {
                     continue;
@@ -430,6 +692,39 @@ async function syncAssets() {
                 const files = metadata.files;
                 const fileNames =
                   typeof files === "object" ? Object.keys(files) : [];
+                let isNewFileUplaoded = false;
+                const filesInFolder = await fs.promises.readdir(
+                  practicalOnboardingDir
+                );
+                for (const fileName of filesInFolder) {
+                  if (fileName === "meta.json") {
+                    continue;
+                  }
+                  if (!files[fileName]) {
+                    isNewFileUplaoded = true;
+                    break;
+                  }
+                }
+                if (isNewFileUplaoded) {
+                  const updateMetadata = { ...metadata };
+                  for (const fileName of filesInFolder) {
+                    if (fileName === "meta.json") {
+                      continue;
+                    }
+                    if (!files[fileName]) {
+                      // @ts-ignore
+                      updateMetadata.files[fileName] = {
+                        isUploaded: false,
+                        fileName: fileName,
+                      };
+                    }
+                  }
+                  fs.writeFileSync(
+                    path.join(practicalOnboardingDir, "meta.json"),
+                    JSON.stringify(updateMetadata, null, 2)
+                  );
+                  return;
+                }
                 const response = await axios.get(
                   `${process.env.MAIN_SERVER_URL}/assessor/batches/${batchId}/candidates/${candidateId}/presigned-url-to-candidate-practical-onboarding-files`,
                   {
@@ -530,6 +825,45 @@ async function syncAssets() {
                   const files = metadata.files;
                   const fileNames =
                     typeof files === "object" ? Object.keys(files) : [];
+                  let isNewFileUplaoded = false;
+                  const filesInFolder = await fs.promises.readdir(
+                    path.join(pmkyChecklistDir, dir)
+                  );
+                  for (const fileName of filesInFolder) {
+                    if (fileName === "meta.json") {
+                      continue;
+                    }
+                    if (!files[fileName]) {
+                      isNewFileUplaoded = true;
+                      break;
+                    }
+                  }
+                  if (isNewFileUplaoded) {
+                    const updateMetadata = { ...metadata };
+                    for (const fileName of filesInFolder) {
+                      if (fileName === "meta.json") {
+                        continue;
+                      }
+                      if (!files[fileName]) {
+                        // @ts-ignore
+                        updateMetadata.files[fileName] = {
+                          isUploaded: false,
+                          fileName: fileName,
+                        };
+                      }
+                    }
+                    fs.writeFileSync(
+                      path.join(
+                        pmkyChecklistDir,
+                        // @ts-ignore
+                        dir.split("/").pop(),
+                        "meta.json"
+                      ),
+                      JSON.stringify(updateMetadata, null, 2)
+                    );
+                    return;
+                  }
+
                   for (const fileName of fileNames) {
                     if (files[fileName].isUploaded) {
                       continue;
@@ -617,13 +951,26 @@ async function syncAssets() {
 }
 
 const startJob = async () => {
+  let lock = false;
   cron.schedule("* * * * *", async () => {
     try {
       dns.lookup("google.com", async (err) => {
         if (err && err.code === "ENOTFOUND") {
           console.log("no internet");
         } else {
-          await syncAssets();
+          if (lock) {
+            console.log("Job is already running");
+            return;
+          }
+          lock = true;
+          await syncAssets()
+            .catch((error) => {
+              lock = false;
+            })
+            .finally(() => {
+              lock = false;
+            });
+          lock = false;
         }
       });
 

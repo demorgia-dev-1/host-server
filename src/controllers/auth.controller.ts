@@ -8,6 +8,7 @@ export const loginAssessor = async (
 ) => {
   try {
     const data = await authService.loginAssessor(req.body);
+    
     res.status(200).json(data);
     return;
   } catch (error) {
