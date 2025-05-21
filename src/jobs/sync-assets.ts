@@ -268,7 +268,7 @@ async function syncAssets() {
                     `${process.env.MAIN_SERVER_URL}/assessor/offline-batches/${batchId}/candidates/${candidateId}/sync-random-evidences?testType=theory&evidenceType=image&fileName=${fileName}`,
                     {
                       headers: {
-                        Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NzM0OTk0ZDBkNTdkZDMxNTY3YzYzNmEiLCJpYXQiOjE3NDc1NTMxMjF9.NY_HSBdxkdGWfB2FeCsxS0fkZqNHGZUnPnTgrUAWrVw`,
+                        Authorization: `Bearer ${token}`,
                       },
                     }
                   );
@@ -276,19 +276,22 @@ async function syncAssets() {
                   if (!url) {
                     continue;
                   }
+
                   const filePath = path.join(theoryPhotosDir, fileName);
-                  const buffer = fs.readFileSync(filePath);
-                  await axios.put(url, buffer, {
-                    headers: {
-                      "Content-Type":
-                        mime.lookup(fileName) || "application/octet-stream",
-                    },
-                  });
-                  metadata.files[fileName].isUploaded = true;
-                  fs.writeFileSync(
-                    path.join(theoryPhotosDir, "meta.json"),
-                    JSON.stringify(metadata, null, 2)
-                  );
+                  if (fs.existsSync(filePath)) {
+                    const buffer = fs.readFileSync(filePath);
+                    await axios.put(url, buffer, {
+                      headers: {
+                        "Content-Type":
+                          mime.lookup(fileName) || "application/octet-stream",
+                      },
+                    });
+                    metadata.files[fileName].isUploaded = true;
+                    fs.writeFileSync(
+                      path.join(theoryPhotosDir, "meta.json"),
+                      JSON.stringify(metadata, null, 2)
+                    );
+                  }
                 }
               } else {
                 const metadata = {
@@ -361,7 +364,7 @@ async function syncAssets() {
                     `${process.env.MAIN_SERVER_URL}/assessor/offline-batches/${batchId}/candidates/${candidateId}/sync-random-evidences?testType=theory&evidenceType=video&fileName=${fileName}`,
                     {
                       headers: {
-                        Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NzM0OTk0ZDBkNTdkZDMxNTY3YzYzNmEiLCJpYXQiOjE3NDc1NTMxMjF9.NY_HSBdxkdGWfB2FeCsxS0fkZqNHGZUnPnTgrUAWrVw`,
+                        Authorization: `Bearer ${token}`,
                       },
                     }
                   );
@@ -454,7 +457,7 @@ async function syncAssets() {
                     `${process.env.MAIN_SERVER_URL}/assessor/offline-batches/${batchId}/candidates/${candidateId}/sync-random-evidences?testType=practical&evidenceType=image&fileName=${fileName}`,
                     {
                       headers: {
-                        Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NzM0OTk0ZDBkNTdkZDMxNTY3YzYzNmEiLCJpYXQiOjE3NDc1NTMxMjF9.NY_HSBdxkdGWfB2FeCsxS0fkZqNHGZUnPnTgrUAWrVw`,
+                        Authorization: `Bearer ${token}`,
                       },
                     }
                   );
@@ -547,7 +550,7 @@ async function syncAssets() {
                     `${process.env.MAIN_SERVER_URL}/assessor/offline-batches/${batchId}/candidates/${candidateId}/sync-random-evidences?testType=practical&evidenceType=video&fileName=${fileName}`,
                     {
                       headers: {
-                        Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NzM0OTk0ZDBkNTdkZDMxNTY3YzYzNmEiLCJpYXQiOjE3NDc1NTMxMjF9.NY_HSBdxkdGWfB2FeCsxS0fkZqNHGZUnPnTgrUAWrVw`,
+                        Authorization: `Bearer ${token}`,
                       },
                     }
                   );
@@ -638,7 +641,7 @@ async function syncAssets() {
                     `${process.env.MAIN_SERVER_URL}/assessor/offline-batches/${batchId}/candidates/${candidateId}/sync-random-evidences?testType=practical&evidenceType=video&fileName=${fileName}`,
                     {
                       headers: {
-                        Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NzM0OTk0ZDBkNTdkZDMxNTY3YzYzNmEiLCJpYXQiOjE3NDc1NTMxMjF9.NY_HSBdxkdGWfB2FeCsxS0fkZqNHGZUnPnTgrUAWrVw`,
+                        Authorization: `Bearer ${token}`,
                       },
                     }
                   );
@@ -729,7 +732,7 @@ async function syncAssets() {
                   `${process.env.MAIN_SERVER_URL}/assessor/batches/${batchId}/candidates/${candidateId}/presigned-url-to-candidate-practical-onboarding-files`,
                   {
                     headers: {
-                      Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NzM0OTk0ZDBkNTdkZDMxNTY3YzYzNmEiLCJpYXQiOjE3NDc1NTMxMjF9.NY_HSBdxkdGWfB2FeCsxS0fkZqNHGZUnPnTgrUAWrVw`,
+                      Authorization: `Bearer ${token}`,
                     },
                   }
                 );
@@ -872,7 +875,7 @@ async function syncAssets() {
                       `${process.env.MAIN_SERVER_URL}/assessor/offline-batches/${batchId}/pmky-checklist-presigned-url?fileNames=${fileName}&questionId=${dir}`,
                       {
                         headers: {
-                          Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NzM0OTk0ZDBkNTdkZDMxNTY3YzYzNmEiLCJpYXQiOjE3NDc1NTMxMjF9.NY_HSBdxkdGWfB2FeCsxS0fkZqNHGZUnPnTgrUAWrVw`,
+                          Authorization: `Bearer ${token}`,
                         },
                       }
                     );
