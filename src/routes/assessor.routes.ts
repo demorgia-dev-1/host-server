@@ -125,6 +125,14 @@ router
     assessorController.syncCandidate
   );
 router
+  .route(
+    "/offline-batches/:batchId/candidates/:candidateId/upload-random-practical-photos"
+  )
+  .post(
+    authMiddleware.isAuthenticatedAssessor,
+    assessorController.uploadRandomPhotos
+  );
+router
   .route("/offline-batches/:batchId/candidates/:candidateId/submit-practical")
   .post(
     authMiddleware.isAuthenticatedAssessor,

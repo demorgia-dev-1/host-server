@@ -1258,22 +1258,24 @@ const syncCandidate = async (
     "THEORY"
   );
   try {
-    const isSyncedResponse = await axios.get(
-      `${process.env.MAIN_SERVER_URL}/assessor/batches/${batchId}/candidates/${candidateId}/is-synced`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-    if (isSyncedResponse.status !== 200) {
-      return;
-    }
+    // const isSyncedResponse = await axios.get(
+    //   `${process.env.MAIN_SERVER_URL}/assessor/batches/${batchId}/candidates/${candidateId}/is-synced`,
+    //   {
+    //     headers: {
+    //       Authorization: `Bearer ${token}`,
+    //     },
+    //   }
+    // );
+    // if (isSyncedResponse.status !== 200) {
+
+    //   return;
+    // }
 
     const batch = await db
       .select()
       .from(batchTable)
       .where(eq(batchTable.id, batchId));
+    // console.log("batch", batch);
 
     // if (batch[0].isPmkyCheckListRequired) {
     //   if (
@@ -1371,6 +1373,7 @@ const syncCandidate = async (
       .select()
       .from(candidateTable)
       .where(eq(candidateTable.id, candidateId));
+    // console.log("candidate", candidate);
     if (!candidate) {
       return;
     }
@@ -1521,100 +1524,6 @@ const syncCandidate = async (
       "videos",
       "THEORY"
     );
-    // if (fs.existsSync(path.join(randomVideos, "..", "PRACTICAL"))) {
-    //   const practicalVideos = await fs.promises.readdir(
-    //     path.join(randomVideos, "..", "PRACTICAL")
-    //   );
-    //   const signedUrlsToUploadPracticalVideos = await Promise.all(
-    //     practicalVideos.map((video) =>
-    //       axios.get(
-    //         `${process.env.MAIN_SERVER_URL}/assessor/offline-batches/${batchId}/candidates/${candidateId}/sync-random-evidences?testType=practical&evidenceType=video&fileName=${video}`,
-    //         { headers: { Authorization: `Bearer ${token}` } }
-    //       )
-    //     )
-    //   );
-    //   await Promise.all(
-    //     practicalVideos.map((video, index) => {
-    //       const filePath = path.join(randomVideos, "..", "PRACTICAL", video);
-    //       if (!fs.existsSync(filePath)) {
-    //         throw new AppError("File does not exist: " + filePath, 404);
-    //       }
-    //       const buffer = fs.readFileSync(filePath);
-    //       return axios.put(
-    //         signedUrlsToUploadPracticalVideos[index].data.data.url,
-    //         buffer,
-    //         {
-    //           headers: {
-    //             "Content-Type":
-    //               mime.lookup(video) || "application/octet-stream",
-    //           },
-    //         }
-    //       );
-    //     })
-    //   );
-    // }
-    // if (fs.existsSync(path.join(randomVideos, "..", "VIVA"))) {
-    //   const vivaVideos = await fs.promises.readdir(
-    //     path.join(randomVideos, "..", "VIVA")
-    //   );
-    //   const signedUrlsToUploadVivaVideos = await Promise.all(
-    //     vivaVideos.map((video) =>
-    //       axios.get(
-    //         `${process.env.MAIN_SERVER_URL}/assessor/offline-batches/${batchId}/candidates/${candidateId}/sync-random-evidences?testType=viva&evidenceType=video&fileName=${video}`,
-    //         { headers: { Authorization: `Bearer ${token}` } }
-    //       )
-    //     )
-    //   );
-    //   await Promise.all(
-    //     vivaVideos.map((video, index) => {
-    //       const filePath = path.join(randomVideos, "..", "VIVA", video);
-    //       if (!fs.existsSync(filePath)) {
-    //         throw new AppError("File does not exist: " + filePath, 404);
-    //       }
-    //       const buffer = fs.readFileSync(filePath);
-    //       return axios.put(
-    //         signedUrlsToUploadVivaVideos[index].data.data.url,
-    //         buffer,
-    //         {
-    //           headers: {
-    //             "Content-Type":
-    //               mime.lookup(video) || "application/octet-stream",
-    //           },
-    //         }
-    //       );
-    //     })
-    //   );
-    // }
-    // if (fs.existsSync(randomVideos)) {
-    //   const videos = await fs.promises.readdir(randomVideos);
-    //   const signedUrlsToUploadRandomVideos = await Promise.all(
-    //     videos.map((video) =>
-    //       axios.get(
-    //         `${process.env.MAIN_SERVER_URL}/assessor/offline-batches/${batchId}/candidates/${candidateId}/sync-random-evidences?testType=theory&evidenceType=video&fileName=${video}`,
-    //         { headers: { Authorization: `Bearer ${token}` } }
-    //       )
-    //     )
-    //   );
-
-    //   await Promise.all(
-    //     videos.map((video, index) => {
-    //       const filePath = path.join(randomVideos, video);
-    //       if (fs.existsSync(filePath)) {
-    //         const buffer = fs.readFileSync(filePath);
-    //         return axios.put(
-    //           signedUrlsToUploadRandomVideos[index].data.data.url,
-    //           buffer,
-    //           {
-    //             headers: {
-    //               "Content-Type":
-    //                 mime.lookup(video) || "application/octet-stream",
-    //             },
-    //           }
-    //         );
-    //       }
-    //     })
-    //   );
-    // }
 
     let adharName = "";
     let selfieName = "";
@@ -1720,7 +1629,8 @@ const syncCandidate = async (
     const feedback = await db
       .select()
       .from(candidateFeedback)
-      .where(eq(feedbackTable.candidateId, candidateId));
+      .where(eq(candidateFeedback.candidateId, candidateId));
+
     const feedbankQuestion = feedback[0].questions;
 
     const finalResponses = {
@@ -1759,6 +1669,7 @@ const syncCandidate = async (
       practical: [],
       viva: [],
     };
+
     const practicalComment = await db
       .select()
       .from(commentTable)
@@ -1926,7 +1837,6 @@ const syncCandidate = async (
           400
         );
       }
-      console.log("error ", error);
       throw error;
     }
   }

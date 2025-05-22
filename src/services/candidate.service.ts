@@ -2,7 +2,7 @@ import { UploadedFile } from "express-fileupload";
 import { SubmitTheoryResponses } from "../schemas/candidate.schema";
 import { AppError } from "../utils/AppError";
 import path from "path";
-import { sql } from "drizzle-orm";
+import { and, sql } from "drizzle-orm";
 import db from "../db";
 import {
   candidates as candidatesTable,
@@ -622,7 +622,12 @@ const submitFeedbackForm = async (
   const form = await db
     .select()
     .from(candidateFeedback)
-    .where(eq(candidateFeedback.batchId, batchId));
+    .where(
+      and(
+        eq(candidateFeedback.batchId, batchId),
+        eq(candidateFeedback.candidateId, candidateId)
+      )
+    );
   if (form.length > 0) {
     if (form[0].submitted) {
       throw new AppError("Feedback already submitted", 400, true);
@@ -644,7 +649,12 @@ const submitFeedbackForm = async (
           questions: JSON.stringify(parsedQuestions),
           submitted: true,
         })
-        .where(eq(candidateFeedback.batchId, batchId));
+        .where(
+          and(
+            eq(candidateFeedback.batchId, batchId),
+            eq(candidateFeedback.candidateId, candidateId)
+          )
+        );
     }
   }
 };

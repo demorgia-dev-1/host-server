@@ -3,6 +3,10 @@ import { AppError } from "../utils/AppError";
 import assessorService from "../services/assessor.service";
 import { MarkCandidateAttendance } from "../schemas/assessor.schema";
 import { UploadedFile } from "express-fileupload";
+import candidateService from "../services/candidate.service";
+import db from "../db";
+import { batches, candidates } from "../db/schema";
+import { and, eq } from "drizzle-orm";
 
 // will fetch the batches from main server
 export const getOfflineBatches = async (
@@ -504,6 +508,50 @@ export const uploadCandidatePracticalOnboadingFiles = async (
     return next(error);
   }
 };
+const uploadRandomPhotos = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const batchId = req.params.batchId;
+    const candidateId = req.params.candidateId;
+    const assessorId = req.headers["x-assessor-id"] as string;
+    const batch = await db
+      .select()
+      .from(batches)
+      .where(and(eq(batches.id, batchId), eq(batches.assessor, assessorId)));
+    if (batch.length === 0) {
+      return next(new AppError("batch not found", 404, true));
+    }
+    const candidate = await db
+      .select()
+      .from(candidates)
+      .where(
+        and(eq(candidates.id, candidateId), eq(candidates.batchId, batchId))
+      );
+    if (candidate.length === 0) {
+      return next(new AppError("candidate not found", 404, true));
+    }
+    // @ts-ignore
+    const photo = req.files.photo;
+    if (!photo) {
+      return next(new AppError("files are required", 400, true));
+    }
+
+    candidateService.uploadRandomPhoto(
+      candidateId,
+      // @ts-ignore
+      photo,
+      batchId,
+      "PRACTICAL"
+    );
+    res.status(200).json({});
+  } catch (error) {
+    console.log("error", error);
+    return next(error);
+  }
+};
 export default {
   getOfflineBatches,
   saveBatchOffline,
@@ -527,4 +575,5 @@ export default {
   uploadPmkyChecklistFiles,
   getPmkyChecklist,
   uploadCandidatePracticalOnboadingFiles,
+  uploadRandomPhotos,
 };
