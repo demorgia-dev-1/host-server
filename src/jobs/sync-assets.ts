@@ -144,6 +144,10 @@ async function syncAssets() {
     }
 
     const baseDir = path.join(__dirname, "..", "..", "uploads", "batches");
+    if (!fs.existsSync(baseDir)) {
+      console.error("❌ Base directory does not exist");
+      return;
+    }
     const batchDirs = await fs.promises.readdir(baseDir, {
       withFileTypes: true,
     });
@@ -381,21 +385,24 @@ async function syncAssets() {
                     continue;
                   }
                   const filePath = path.join(theoryVideosDir, fileName);
-                  const buffer = fs.readFileSync(filePath);
-                  console.log(
-                    "syncing file of batch ",
-                    batchId,
-                    " candidate ",
-                    candidateId,
-                    " file name ",
-                    fileName
-                  );
-                  await axios.put(url, buffer, {
-                    headers: {
-                      "Content-Type":
-                        mime.lookup(fileName) || "application/octet-stream",
-                    },
-                  });
+                  if (fs.existsSync(filePath)) {
+                    const buffer = fs.readFileSync(filePath);
+                    console.log(
+                      "syncing file of batch ",
+                      batchId,
+                      " candidate ",
+                      candidateId,
+                      " file name ",
+                      fileName
+                    );
+                    await axios.put(url, buffer, {
+                      headers: {
+                        "Content-Type":
+                          mime.lookup(fileName) || "application/octet-stream",
+                      },
+                    });
+                  }
+
                   metadata.files[fileName].isUploaded = true;
                   fs.writeFileSync(
                     path.join(theoryVideosDir, "meta.json"),
@@ -482,21 +489,23 @@ async function syncAssets() {
                     continue;
                   }
                   const filePath = path.join(practicalPhotosDir, fileName);
-                  const buffer = fs.readFileSync(filePath);
-                  console.log(
-                    "[PRACTICAL-PHOTOS]syncing file of batch ",
-                    batchId,
-                    " candidate ",
-                    candidateId,
-                    " file name ",
-                    fileName
-                  );
-                  await axios.put(url, buffer, {
-                    headers: {
-                      "Content-Type":
-                        mime.lookup(fileName) || "application/octet-stream",
-                    },
-                  });
+                  if (fs.existsSync(filePath)) {
+                    const buffer = fs.readFileSync(filePath);
+                    console.log(
+                      "[PRACTICAL-PHOTOS]syncing file of batch ",
+                      batchId,
+                      " candidate ",
+                      candidateId,
+                      " file name ",
+                      fileName
+                    );
+                    await axios.put(url, buffer, {
+                      headers: {
+                        "Content-Type":
+                          mime.lookup(fileName) || "application/octet-stream",
+                      },
+                    });
+                  }
                   metadata.files[fileName].isUploaded = true;
                   fs.writeFileSync(
                     path.join(practicalPhotosDir, "meta.json"),
@@ -583,21 +592,23 @@ async function syncAssets() {
                     continue;
                   }
                   const filePath = path.join(practicalVideosDir, fileName);
-                  const buffer = fs.readFileSync(filePath);
-                  console.log(
-                    "[PRACTICAL-VIDEOS]syncing file of batch ",
-                    batchId,
-                    " candidate ",
-                    candidateId,
-                    " file name ",
-                    fileName
-                  );
-                  await axios.put(url, buffer, {
-                    headers: {
-                      "Content-Type":
-                        mime.lookup(fileName) || "application/octet-stream",
-                    },
-                  });
+                  if (fs.existsSync(filePath)) {
+                    const buffer = fs.readFileSync(filePath);
+                    console.log(
+                      "[PRACTICAL-VIDEOS]syncing file of batch ",
+                      batchId,
+                      " candidate ",
+                      candidateId,
+                      " file name ",
+                      fileName
+                    );
+                    await axios.put(url, buffer, {
+                      headers: {
+                        "Content-Type":
+                          mime.lookup(fileName) || "application/octet-stream",
+                      },
+                    });
+                  }
                   metadata.files[fileName].isUploaded = true;
                   fs.writeFileSync(
                     path.join(practicalVideosDir, "meta.json"),
@@ -687,21 +698,24 @@ async function syncAssets() {
                     continue;
                   }
                   const filePath = path.join(vivaVideosDir, fileName);
-                  const buffer = fs.readFileSync(filePath);
-                  console.log(
-                    "[VIVA-VIDEOS]syncing file of batch ",
-                    batchId,
-                    " candidate ",
-                    candidateId,
-                    " file name ",
-                    fileName
-                  );
-                  await axios.put(url, buffer, {
-                    headers: {
-                      "Content-Type":
-                        mime.lookup(fileName) || "application/octet-stream",
-                    },
-                  });
+                  if (fs.existsSync(filePath)) {
+                    const buffer = fs.readFileSync(filePath);
+                    console.log(
+                      "[VIVA-VIDEOS]syncing file of batch ",
+                      batchId,
+                      " candidate ",
+                      candidateId,
+                      " file name ",
+                      fileName
+                    );
+                    await axios.put(url, buffer, {
+                      headers: {
+                        "Content-Type":
+                          mime.lookup(fileName) || "application/octet-stream",
+                      },
+                    });
+                  }
+
                   metadata.files[fileName].isUploaded = true;
                   fs.writeFileSync(
                     path.join(vivaVideosDir, "meta.json"),
@@ -789,32 +803,32 @@ async function syncAssets() {
                     continue;
                   }
                   const filePath = path.join(practicalOnboardingDir, fileName);
+
+                  let isExists = false;
+                  if (fs.existsSync(filePath)) {
+                    isExists = true;
+                  }
                   const buffer = fs.readFileSync(filePath);
                   const fileType = mime.lookup(fileName);
 
-                  if (fileName.startsWith("adhar")) {
+                  if (fileName.startsWith("adhar") && isExists) {
                     await axios.put(adhar, buffer, {
                       headers: {
                         "Content-Type": fileType || "application/octet-stream",
                       },
                     });
-                    metadata.files[fileName].isUploaded = true;
-                    fs.writeFileSync(
-                      path.join(practicalOnboardingDir, "meta.json"),
-                      JSON.stringify(metadata, null, 2)
-                    );
-                  } else if (fileName.startsWith("photo")) {
+                  } else if (fileName.startsWith("photo") && isExists) {
                     await axios.put(photo, buffer, {
                       headers: {
                         "Content-Type": fileType || "application/octet-stream",
                       },
                     });
-                    metadata.files[fileName].isUploaded = true;
-                    fs.writeFileSync(
-                      path.join(practicalOnboardingDir, "meta.json"),
-                      JSON.stringify(metadata, null, 2)
-                    );
                   }
+                  metadata.files[fileName].isUploaded = true;
+                  fs.writeFileSync(
+                    path.join(practicalOnboardingDir, "meta.json"),
+                    JSON.stringify(metadata, null, 2)
+                  );
                 }
               } else {
                 const metadata = {
@@ -936,14 +950,16 @@ async function syncAssets() {
                       dir.split("/").pop(),
                       fileName
                     );
-                    console.log("SYNCING PMKY CHECKLIST FILES");
-                    const buffer = fs.readFileSync(filePath);
-                    await axios.put(url, buffer, {
-                      headers: {
-                        "Content-Type":
-                          mime.lookup(fileName) || "application/octet-stream",
-                      },
-                    });
+                    if (fs.existsSync(filePath)) {
+                      console.log("SYNCING PMKY CHECKLIST FILES");
+                      const buffer = fs.readFileSync(filePath);
+                      await axios.put(url, buffer, {
+                        headers: {
+                          "Content-Type":
+                            mime.lookup(fileName) || "application/octet-stream",
+                        },
+                      });
+                    }
                     metadata.files[fileName].isUploaded = true;
                     fs.writeFileSync(
                       path.join(
