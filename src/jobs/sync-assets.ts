@@ -280,6 +280,14 @@ async function syncAssets() {
                   const filePath = path.join(theoryPhotosDir, fileName);
                   if (fs.existsSync(filePath)) {
                     const buffer = fs.readFileSync(filePath);
+                    console.log(
+                      "syncing file of batch ",
+                      batchId,
+                      " candidate ",
+                      candidateId,
+                      " file name ",
+                      fileName
+                    );
                     await axios.put(url, buffer, {
                       headers: {
                         "Content-Type":
@@ -374,6 +382,14 @@ async function syncAssets() {
                   }
                   const filePath = path.join(theoryVideosDir, fileName);
                   const buffer = fs.readFileSync(filePath);
+                  console.log(
+                    "syncing file of batch ",
+                    batchId,
+                    " candidate ",
+                    candidateId,
+                    " file name ",
+                    fileName
+                  );
                   await axios.put(url, buffer, {
                     headers: {
                       "Content-Type":
@@ -467,6 +483,14 @@ async function syncAssets() {
                   }
                   const filePath = path.join(practicalPhotosDir, fileName);
                   const buffer = fs.readFileSync(filePath);
+                  console.log(
+                    "[PRACTICAL-PHOTOS]syncing file of batch ",
+                    batchId,
+                    " candidate ",
+                    candidateId,
+                    " file name ",
+                    fileName
+                  );
                   await axios.put(url, buffer, {
                     headers: {
                       "Content-Type":
@@ -560,6 +584,14 @@ async function syncAssets() {
                   }
                   const filePath = path.join(practicalVideosDir, fileName);
                   const buffer = fs.readFileSync(filePath);
+                  console.log(
+                    "[PRACTICAL-VIDEOS]syncing file of batch ",
+                    batchId,
+                    " candidate ",
+                    candidateId,
+                    " file name ",
+                    fileName
+                  );
                   await axios.put(url, buffer, {
                     headers: {
                       "Content-Type":
@@ -656,6 +688,14 @@ async function syncAssets() {
                   }
                   const filePath = path.join(vivaVideosDir, fileName);
                   const buffer = fs.readFileSync(filePath);
+                  console.log(
+                    "[VIVA-VIDEOS]syncing file of batch ",
+                    batchId,
+                    " candidate ",
+                    candidateId,
+                    " file name ",
+                    fileName
+                  );
                   await axios.put(url, buffer, {
                     headers: {
                       "Content-Type":
@@ -743,6 +783,7 @@ async function syncAssets() {
                 );
                 const adhar = response.data.data.adhar;
                 const photo = response.data.data.photo;
+                console.log("SYNCING ADHAR AND PHOTO PRACTICAL ONBOARDING");
                 for (const fileName of fileNames) {
                   if (files[fileName].isUploaded) {
                     continue;
@@ -750,6 +791,7 @@ async function syncAssets() {
                   const filePath = path.join(practicalOnboardingDir, fileName);
                   const buffer = fs.readFileSync(filePath);
                   const fileType = mime.lookup(fileName);
+
                   if (fileName.startsWith("adhar")) {
                     await axios.put(adhar, buffer, {
                       headers: {
@@ -894,6 +936,7 @@ async function syncAssets() {
                       dir.split("/").pop(),
                       fileName
                     );
+                    console.log("SYNCING PMKY CHECKLIST FILES");
                     const buffer = fs.readFileSync(filePath);
                     await axios.put(url, buffer, {
                       headers: {
@@ -981,8 +1024,6 @@ const startJob = async () => {
           lock = false;
         }
       });
-
-      console.log("syncing");
     } catch (error) {
       console.error("❌ Error during scheduled job:", error);
     }
