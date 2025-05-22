@@ -392,7 +392,8 @@ const uploadRandomPhoto = async (
   candidateId: string,
   photo: UploadedFile,
   batchId: string,
-  testType: "THEORY" | "PRACTICAL" | "VIVA"
+  testType: "THEORY" | "PRACTICAL" | "VIVA",
+  isAssessor: boolean = false
 ) => {
   const batch = await db
     .select()
@@ -417,27 +418,31 @@ const uploadRandomPhoto = async (
   if (!candidate) {
     throw new AppError("Candidate not found", 404);
   }
-  if (testType === "THEORY" && !candidate[0].isPresentInTheory) {
-    throw new AppError("Your attendance is not marked in theory exam", 401);
+  if (!isAssessor) {
+    if (testType === "THEORY" && !candidate[0].isPresentInTheory) {
+      throw new AppError("Your attendance is not marked in theory exam", 401);
+    }
+    if (testType === "PRACTICAL" && !candidate[0].isPresentInPractical) {
+      throw new AppError(
+        "Your attendance is not marked in practical exam",
+        401
+      );
+    }
+    if (
+      testType === "THEORY" &&
+      (candidate[0].theoryExamStatus === "notStarted" ||
+        candidate[0].theoryExamStatus === "submitted")
+    ) {
+      throw new AppError("Your exam is not started or already submitted", 401);
+    }
+    if (
+      testType === "PRACTICAL" &&
+      (candidate[0].practicalExamStatus === "notStarted" ||
+        candidate[0].practicalExamStatus === "submitted")
+    ) {
+      throw new AppError("Your exam is not started or already submitted", 401);
+    }
   }
-  if (testType === "PRACTICAL" && !candidate[0].isPresentInPractical) {
-    throw new AppError("Your attendance is not marked in practical exam", 401);
-  }
-  if (
-    testType === "THEORY" &&
-    (candidate[0].theoryExamStatus === "notStarted" ||
-      candidate[0].theoryExamStatus === "submitted")
-  ) {
-    throw new AppError("Your exam is not started or already submitted", 401);
-  }
-  if (
-    testType === "PRACTICAL" &&
-    (candidate[0].practicalExamStatus === "notStarted" ||
-      candidate[0].practicalExamStatus === "submitted")
-  ) {
-    throw new AppError("Your exam is not started or already submitted", 401);
-  }
-
   const ext = path.extname(photo.name);
   const photoPath = path.join(
     __dirname,

@@ -539,12 +539,13 @@ const uploadRandomPhotos = async (
       return next(new AppError("files are required", 400, true));
     }
 
-    candidateService.uploadRandomPhoto(
+    await candidateService.uploadRandomPhoto(
       candidateId,
       // @ts-ignore
       photo,
       batchId,
-      "PRACTICAL"
+      "PRACTICAL",
+      true
     );
     res.status(200).json({});
   } catch (error) {
