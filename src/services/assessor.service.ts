@@ -270,51 +270,59 @@ const saveBatchOffline = async (token: string, batchId: string) => {
       practicalStartedAt: null,
       practicalSubmittedAt: null,
     }));
-    const preparedFeedbackForms = feedbackForms.map((form: any) => ({
-      id: form._id,
-      batchId: form.batch,
-      candidateId: form.candidate,
-      questions: JSON.stringify(form.questions),
-      submitted: form.submitted,
-    }));
+    const preparedFeedbackForms =
+      feedbackForms?.map((form: any) => ({
+        id: form._id,
+        batchId: form.batch,
+        candidateId: form.candidate,
+        questions: JSON.stringify(form.questions),
+        submitted: form.submitted,
+      })) || [];
     db.transaction((tx) => {
-      tx.insert(batchTable)
-        .values({
-          id: preparedBatch.id,
-          assessor: preparedBatch.assessor,
-          name: preparedBatch.name,
-          type: preparedBatch.type,
-          status: preparedBatch.status,
-          noOfCandidates: preparedBatch.noOfCandidates,
-          durationInMin: preparedBatch.durationInMin,
-          no: preparedBatch.no,
-          startDate: preparedBatch.startDate,
-          endDate: preparedBatch.endDate,
-          theoryQuestionBank: preparedBatch.theoryQuestionBank,
-          practicalQuestionBank: preparedBatch.practicalQuestionBank,
-          vivaQuestionBank: preparedBatch.vivaQuestionBank,
-          isAssessorReached: preparedBatch.isAssessorReached,
-          isCandidateVideoRequired: preparedBatch.isCandidateVideoRequired,
-          isCandidatePhotosRequired: preparedBatch.isCandidatePhotosRequired,
-          isCandidateLocationRequired:
-            preparedBatch.isCandidateLocationRequired,
-          isCandidateAdharRequired: preparedBatch.isCandidateAdharRequired,
-          isCandidateSelfieRequired: preparedBatch.isCandidateSelfieRequired,
-          isPracticalVisibleToCandidate:
-            preparedBatch.isPracticalVisibleToCandidate,
-          isSuspiciousActivityDetectionRequired:
-            preparedBatch.isSuspiciousActivityDetectionRequired,
-          isAssessorEvidenceRequired: preparedBatch.isAssessorEvidenceRequired,
-          assessorReachedAt: preparedBatch.assessorReachedAt,
-          assessorCoordinates: preparedBatch.assessorCoordinates,
-          assessorGroupPhoto: preparedBatch.assessorGroupPhoto,
-          isPmkyCheckListRequired: preparedBatch.isPmkyCheckListRequired,
-          sscLogo: preparedBatch.sscLogo,
-          pmkyChecklist: preparedBatch.pmkyChecklist,
-        })
-        .run();
-      tx.insert(candidateTable).values(preparedCandidates).run();
-      tx.insert(candidateFeedback).values(preparedFeedbackForms).run();
+      if (preparedBatch) {
+        tx.insert(batchTable)
+          .values({
+            id: preparedBatch.id,
+            assessor: preparedBatch.assessor,
+            name: preparedBatch.name,
+            type: preparedBatch.type,
+            status: preparedBatch.status,
+            noOfCandidates: preparedBatch.noOfCandidates,
+            durationInMin: preparedBatch.durationInMin,
+            no: preparedBatch.no,
+            startDate: preparedBatch.startDate,
+            endDate: preparedBatch.endDate,
+            theoryQuestionBank: preparedBatch.theoryQuestionBank,
+            practicalQuestionBank: preparedBatch.practicalQuestionBank,
+            vivaQuestionBank: preparedBatch.vivaQuestionBank,
+            isAssessorReached: preparedBatch.isAssessorReached,
+            isCandidateVideoRequired: preparedBatch.isCandidateVideoRequired,
+            isCandidatePhotosRequired: preparedBatch.isCandidatePhotosRequired,
+            isCandidateLocationRequired:
+              preparedBatch.isCandidateLocationRequired,
+            isCandidateAdharRequired: preparedBatch.isCandidateAdharRequired,
+            isCandidateSelfieRequired: preparedBatch.isCandidateSelfieRequired,
+            isPracticalVisibleToCandidate:
+              preparedBatch.isPracticalVisibleToCandidate,
+            isSuspiciousActivityDetectionRequired:
+              preparedBatch.isSuspiciousActivityDetectionRequired,
+            isAssessorEvidenceRequired:
+              preparedBatch.isAssessorEvidenceRequired,
+            assessorReachedAt: preparedBatch.assessorReachedAt,
+            assessorCoordinates: preparedBatch.assessorCoordinates,
+            assessorGroupPhoto: preparedBatch.assessorGroupPhoto,
+            isPmkyCheckListRequired: preparedBatch.isPmkyCheckListRequired,
+            sscLogo: preparedBatch.sscLogo,
+            pmkyChecklist: preparedBatch.pmkyChecklist,
+          })
+          .run();
+      }
+      if (preparedCandidates.length > 0) {
+        tx.insert(candidateTable).values(preparedCandidates).run();
+      }
+      if (preparedFeedbackForms?.length > 0) {
+        tx.insert(candidateFeedback).values(preparedFeedbackForms).run();
+      }
       return;
     });
   } catch (error) {

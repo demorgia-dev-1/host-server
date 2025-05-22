@@ -645,8 +645,13 @@ async function syncAssets() {
                       },
                     }
                   );
+                  if (response.status !== 200) {
+                    console.log("error in getting presigned url");
+                    continue;
+                  }
                   const url = response.data.data.url;
                   if (!url) {
+                    console.log("url not found");
                     continue;
                   }
                   const filePath = path.join(vivaVideosDir, fileName);
