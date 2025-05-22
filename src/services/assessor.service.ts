@@ -12,6 +12,7 @@ import {
   candidates as candidateTable,
   examResponses as examResponseTable,
   comments as commentTable,
+  candidateFeedback,
 } from "../db/schema";
 import { eq, and, or, inArray, is } from "drizzle-orm";
 import db from "../db";
@@ -61,6 +62,7 @@ const saveBatchOffline = async (token: string, batchId: string) => {
       vivaQuestionBank,
       sectorLogo,
       pmkyChecklist,
+      feedbackForms,
     } = response.data.data;
 
     let uploadLogoUrl = "";
@@ -268,6 +270,13 @@ const saveBatchOffline = async (token: string, batchId: string) => {
       practicalStartedAt: null,
       practicalSubmittedAt: null,
     }));
+    const preparedFeedbackForms = feedbackForms.map((form: any) => ({
+      id: form._id,
+      batchId: form.batch,
+      candidateId: form.candidate,
+      questions: JSON.stringify(form.questions),
+      submitted: form.submitted,
+    }));
     db.transaction((tx) => {
       tx.insert(batchTable)
         .values({
@@ -305,6 +314,7 @@ const saveBatchOffline = async (token: string, batchId: string) => {
         })
         .run();
       tx.insert(candidateTable).values(preparedCandidates).run();
+      tx.insert(candidateFeedback).values(preparedFeedbackForms).run();
       return;
     });
   } catch (error) {
@@ -1699,6 +1709,11 @@ const syncCandidate = async (
           eq(examResponseTable.type, "VIVA")
         )
       );
+    const feedback = await db
+      .select()
+      .from(candidateFeedback)
+      .where(eq(feedbackTable.candidateId, candidateId));
+    const feedbankQuestion = feedback[0].questions;
 
     const finalResponses = {
       assessorDetails: {},
@@ -1728,6 +1743,10 @@ const syncCandidate = async (
         candidateSelfie:
           signedUrlsToUploadAdharSelfie.data.data.selfie.location,
       },
+      feedback:
+        typeof feedbankQuestion === "string"
+          ? JSON.parse(feedbankQuestion)
+          : feedbankQuestion,
       theory: [],
       practical: [],
       viva: [],

@@ -171,6 +171,37 @@ const batchDetails = async (
     return next(error);
   }
 };
+const getFeedbackForm = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const candidateId = req.headers["x-candidate-id"] as string;
+    const feedback = await candidateService.getFeedbackForm(candidateId);
+    res.status(200).json(feedback);
+  } catch (error) {
+    return next(error);
+  }
+};
+export const submitFeedbackForm = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const candidateId = req.headers["x-candidate-id"] as string;
+    const batchId = req.headers["x-batch-id"] as string;
+    await candidateService.submitFeedbackForm(
+      candidateId,
+      batchId,
+      req.body.feedbacks
+    );
+    res.status(200).json({});
+  } catch (error) {
+    next(error);
+  }
+};
 export default {
   getMyTheoryTest,
   submitTheoryResponses,
@@ -182,4 +213,6 @@ export default {
   uploadRandomPhoto,
   getPracticalTest,
   batchDetails,
+  getFeedbackForm,
+  submitFeedbackForm,
 };

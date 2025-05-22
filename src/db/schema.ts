@@ -185,6 +185,25 @@ export const comments = sqliteTable(
     pk: primaryKey({ columns: [table.batchId, table.candidateId] }),
   })
 );
+
+export const candidateFeedback = sqliteTable("candidate_feedback", {
+  id: text("_id").primaryKey(),
+  batchId: text("batch")
+    .notNull()
+    .references(() => batches.id, {
+      onDelete: "cascade",
+      onUpdate: "cascade",
+    }),
+  candidateId: text("candidate")
+    .notNull()
+    .references(() => candidates.id, {
+      onDelete: "cascade",
+      onUpdate: "cascade",
+    }),
+  questions: text("questions").notNull(),
+  submitted: integer("submitted", { mode: "boolean" }).notNull().default(false),
+});
+
 // Relations
 export const candidateRelations = relations(candidates, ({ one, many }) => ({
   batch: one(batches, {
@@ -220,3 +239,17 @@ export const commentRelations = relations(comments, ({ one }) => ({
     references: [batches.id],
   }),
 }));
+
+export const candidateFeedbackRelations = relations(
+  candidateFeedback,
+  ({ one }) => ({
+    candidate: one(candidates, {
+      fields: [candidateFeedback.candidateId],
+      references: [candidates.id],
+    }),
+    batch: one(batches, {
+      fields: [candidateFeedback.batchId],
+      references: [batches.id],
+    }),
+  })
+);

@@ -7,6 +7,7 @@ import db from "../db";
 import {
   candidates as candidatesTable,
   batches as batchTable,
+  candidateFeedback,
 } from "../db/schema";
 import { eq } from "drizzle-orm";
 const uploadOnboardingEvidence = async (
@@ -563,6 +564,90 @@ const getBatchDetails = async (batchId: string) => {
   }
   return batch[0];
 };
+const getFeedbackForm = async (candidateId: string) => {
+  const candidate = await db
+    .select()
+    .from(candidatesTable)
+    .where(eq(candidatesTable.id, candidateId));
+  if (!candidate) {
+    throw new AppError("invalid credentials", 401, true);
+  }
+  if (!candidate[0].isPresentInTheory) {
+    throw new AppError(
+      "Your attendance is not marked in theory exam",
+      401,
+      true
+    );
+  }
+  if (candidate[0].theoryExamStatus !== "submitted") {
+    throw new AppError("Your exam is not submitted", 401, true);
+  }
+  const form = await db
+    .select()
+    .from(candidateFeedback)
+    .where(eq(candidateFeedback.batchId, candidate[0].batchId));
+  if (form.length > 0) {
+    const feedback = form[0].questions;
+    if (form[0].submitted) {
+      return { message: "Feedback already submitted" };
+    }
+    if (feedback) {
+      return JSON.parse(feedback);
+    }
+  }
+  return { message: "No feedback form found" };
+};
+const submitFeedbackForm = async (
+  candidateId: string,
+  batchId: string,
+  feedbacks: { questionId: string; response: string }[]
+) => {
+  const candidate = await db
+    .select()
+    .from(candidatesTable)
+    .where(eq(candidatesTable.id, candidateId));
+  if (!candidate) {
+    throw new AppError("invalid credentials", 401, true);
+  }
+  if (!candidate[0].isPresentInTheory) {
+    throw new AppError(
+      "Your attendance is not marked in theory exam",
+      401,
+      true
+    );
+  }
+  if (candidate[0].theoryExamStatus !== "submitted") {
+    throw new AppError("Your exam is not submitted", 401, true);
+  }
+  const form = await db
+    .select()
+    .from(candidateFeedback)
+    .where(eq(candidateFeedback.batchId, batchId));
+  if (form.length > 0) {
+    if (form[0].submitted) {
+      throw new AppError("Feedback already submitted", 400, true);
+    }
+    let questions = form[0].questions;
+    if (questions) {
+      const parsedQuestions = JSON.parse(questions) as any[];
+      parsedQuestions.forEach((q, index) => {
+        const feedback = feedbacks.find(
+          (feedback) => feedback.questionId === q._id
+        );
+        if (feedback) {
+          q.response = feedback.response;
+        }
+      });
+      await db
+        .update(candidateFeedback)
+        .set({
+          questions: JSON.stringify(parsedQuestions),
+          submitted: true,
+        })
+        .where(eq(candidateFeedback.batchId, batchId));
+    }
+  }
+};
 export default {
   getMyTheoryTest,
   submitTheoryResponses,
@@ -574,4 +659,6 @@ export default {
   submitPracticalTest,
   getMyPracticalTest,
   getBatchDetails,
+  getFeedbackForm,
+  submitFeedbackForm,
 };

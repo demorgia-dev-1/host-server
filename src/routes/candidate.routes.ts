@@ -3,7 +3,10 @@ const router = express.Router();
 import authMiddleware from "../middlewares/auth.middleware";
 import candidateController from "../controllers/candidate.controller";
 import validateRequest from "../middlewares/validateRequest";
-import { submitTheoryResponsesSchema } from "../schemas/candidate.schema";
+import {
+  submitFeedbackFormSchema,
+  submitTheoryResponsesSchema,
+} from "../schemas/candidate.schema";
 router
   .route("/batch-details")
   .get(
@@ -64,5 +67,19 @@ router
   .post(
     authMiddleware.isAuthenticatedCandidate,
     candidateController.uploadRandomPhoto
+  );
+
+router
+  .route("/get-feedback-form")
+  .get(
+    authMiddleware.isAuthenticatedCandidate,
+    candidateController.getFeedbackForm
+  );
+router
+  .route("/submit-feedback-form")
+  .post(
+    authMiddleware.isAuthenticatedCandidate,
+    validateRequest(submitFeedbackFormSchema),
+    candidateController.submitFeedbackForm
   );
 export default router;
