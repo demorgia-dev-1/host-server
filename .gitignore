@@ -6,3 +6,5 @@ public/assets
 # uploads/pos
 app
 build
+token.txt
+dev.db

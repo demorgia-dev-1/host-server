@@ -15,6 +15,6 @@ rm -rf dev.db
 rm  -rf public
 echo "Installing app dependencies..."
 npm install
-
+npx drizzle-kit push
 echo "Starting the app..."
 npm start
