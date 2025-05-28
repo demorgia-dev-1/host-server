@@ -51,6 +51,11 @@ const server = app.listen(9090, "0.0.0.0", () => {
             recursive: true,
         });
     }
+    if (!fs_1.default.existsSync(path_1.default.join(__dirname, "..", "uploads", "batches"))) {
+        fs_1.default.mkdirSync(path_1.default.join(__dirname, "..", "uploads", "batches"), {
+            recursive: true,
+        });
+    }
     if (typeof addressInfo === "object" && (addressInfo === null || addressInfo === void 0 ? void 0 : addressInfo.port)) {
         const localIp = ip_1.default.address();
         const url = `http://${localIp}:${addressInfo.port}`;

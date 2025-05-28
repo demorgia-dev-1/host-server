@@ -11,6 +11,20 @@
     "build": "rimraf ./build && tsc",
     "start": "npm run build && cross-env DATABASE_URL=file:./dev.db JWT_SECRET=secret MAIN_SERVER_URL=https://api.assessir.com/api/v1 node build/index.js"
   },
+  "bin": "build/index.js",
+  "pkg": {
+    "scripts": "dist/**/*.js",
+    "assets": [
+      "public/**/*",
+      "views/**/*",
+      "drizzle/**/*"
+    ],
+    "targets": [
+      "node18-macos-x64",
+      "node18-linux-x64",
+      "node18-win-x64"
+    ]
+  },
   "dependencies": {
     "axios": "^1.8.4",
     "better-sqlite3": "^11.10.0",

@@ -58,6 +58,7 @@ const server = app.listen(9090, "0.0.0.0", () => {
       recursive: true,
     });
   }
+
   if (typeof addressInfo === "object" && addressInfo?.port) {
     const localIp = ip.address();
     const url = `http://${localIp}:${addressInfo.port}`;
@@ -68,6 +69,6 @@ const server = app.listen(9090, "0.0.0.0", () => {
     qr.generate(url, { small: true });
     startJob();
   } else {
-    console.error("❌ Could not determine server address");
+    console.error("❌ Could not determine server address", addressInfo);
   }
 });
