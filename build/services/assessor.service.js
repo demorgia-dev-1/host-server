@@ -69,7 +69,7 @@ const saveBatchOffline = (token, batchId) => __awaiter(void 0, void 0, void 0, f
         }
         if (theoryQuestionBank) {
             const questionBank = theoryQuestionBank[0];
-            for (const question of questionBank.questions) {
+            for (const question of questionBank === null || questionBank === void 0 ? void 0 : questionBank.questions) {
                 const options = yield Promise.all(question.options.map((option) => {
                     return (0, mediaLocalizer_1.downloadMediaAndReplaceUrls)(option.option);
                 }));
@@ -97,7 +97,7 @@ const saveBatchOffline = (token, batchId) => __awaiter(void 0, void 0, void 0, f
         }
         if (practicalQuestionBank) {
             const questionBank = practicalQuestionBank[0];
-            for (const question of questionBank.questions) {
+            for (const question of questionBank === null || questionBank === void 0 ? void 0 : questionBank.questions) {
                 const options = yield Promise.all(question.options.map((option) => {
                     return (0, mediaLocalizer_1.downloadMediaAndReplaceUrls)(option.option);
                 }));
@@ -129,7 +129,7 @@ const saveBatchOffline = (token, batchId) => __awaiter(void 0, void 0, void 0, f
         }
         if (vivaQuestionBank) {
             const questionBank = vivaQuestionBank[0];
-            for (const question of questionBank.questions) {
+            for (const question of questionBank === null || questionBank === void 0 ? void 0 : questionBank.questions) {
                 const options = yield Promise.all(question.options.map((option) => {
                     return (0, mediaLocalizer_1.downloadMediaAndReplaceUrls)(option.option);
                 }));
@@ -896,14 +896,17 @@ const syncCandidate = (batchId, candidateId, token) => __awaiter(void 0, void 0,
     }
     const randomPhotos = path_1.default.join(__dirname, "..", "..", "uploads", "batches", batchId, "evidences", "candidates", candidateId, "photos", "THEORY");
     try {
-        const isSyncedResponse = yield axios_1.default.get(`${process.env.MAIN_SERVER_URL}/assessor/batches/${batchId}/candidates/${candidateId}/is-synced`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
-        if (isSyncedResponse.status !== 200) {
-            return;
-        }
+        // const isSyncedResponse = await axios.get(
+        //   `${process.env.MAIN_SERVER_URL}/assessor/batches/${batchId}/candidates/${candidateId}/is-synced`,
+        //   {
+        //     headers: {
+        //       Authorization: `Bearer ${token}`,
+        //     },
+        //   }
+        // );
+        // if (isSyncedResponse.status !== 200) {
+        //   return;
+        // }
         const batch = yield db_1.default
             .select()
             .from(schema_1.batches)

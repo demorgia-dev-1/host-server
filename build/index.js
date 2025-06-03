@@ -65,6 +65,6 @@ const server = app.listen(9090, "0.0.0.0", () => {
         (0, sync_assets_1.default)();
     }
     else {
-        console.error("❌ Could not determine server address");
+        console.error("❌ Could not determine server address", addressInfo);
     }
 });
