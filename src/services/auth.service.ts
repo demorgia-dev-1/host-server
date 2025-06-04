@@ -54,7 +54,11 @@ export const loginCandidate = async (data: LoginCandidate) => {
     //   throw new AppError("invalid  credentials", 401, true);
     // }
     const result = await db
-      .select({ id: candidatesTable.id, batchId: candidatesTable.batchId })
+      .select({
+        id: candidatesTable.id,
+        batchId: candidatesTable.batchId,
+        name: candidatesTable.name,
+      })
       .from(candidatesTable)
       .where(
         and(
@@ -79,7 +83,7 @@ export const loginCandidate = async (data: LoginCandidate) => {
         expiresIn: "1d",
       }
     );
-    return token;
+    return { token, name: foundCandidate.name };
   } catch (error) {
     if (error instanceof AppError) {
       throw error;
