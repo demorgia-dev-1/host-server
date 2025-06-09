@@ -655,6 +655,32 @@ const resetCandidatesPractical = async (
         inArray(candidateTable.id, candidateIds)
       )
     );
+  db.transaction((tx) => {
+    tx.update(candidateTable)
+      .set({
+        isPresentInPractical: false,
+        practicalExamStatus: "notStarted",
+        practicalStartedAt: null,
+        practicalSubmittedAt: null,
+      })
+      .where(
+        and(
+          eq(candidateTable.batchId, batchId),
+          inArray(candidateTable.id, candidateIds)
+        )
+      )
+      .run();
+    tx.delete(examResponseTable)
+      .where(
+        and(
+          inArray(examResponseTable.candidateId, candidateIds),
+          eq(examResponseTable.batchId, batchId),
+          eq(examResponseTable.type, "PRACTICAL")
+        )
+      )
+      .run();
+  });
+
   await Promise.all(
     deletePaths.map(async (targetPath) => {
       try {
@@ -1018,12 +1044,14 @@ const submitCandidatePracticalResponses = async (
       })
       .where(eq(candidateTable.id, candidateId))
       .run();
-    tx.insert(commentTable).values({
-      candidateId: candidateId,
-      batchId: batchId,
-      comment: comment,
-      type: "PRACTICAL",
-    });
+    tx.insert(commentTable)
+      .values({
+        candidateId: candidateId,
+        batchId: batchId,
+        comment: comment || "no-comment-mentioned",
+        testType: "PRACTICAL",
+      })
+      .run();
   });
 };
 const submitCandidateVivaResponses = async (
@@ -1111,12 +1139,14 @@ const submitCandidateVivaResponses = async (
   db.transaction((tx) => {
     // Insert exam responses
     if (comment) {
-      tx.insert(commentTable).values({
-        candidateId: candidateId,
-        batchId: batchId,
-        comment: comment,
-        type: "VIVA",
-      });
+      tx.insert(commentTable)
+        .values({
+          candidateId: candidateId,
+          batchId: batchId,
+          comment: comment,
+          testType: "VIVA",
+        })
+        .run();
     }
     tx.insert(examResponseTable)
       .values(
