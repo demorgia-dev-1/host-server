@@ -82,6 +82,7 @@ export const batches = sqliteTable("batches", {
     .notNull()
     .default(false),
   sscLogo: text("sscLogo"),
+  jobRole: text("jobRole"),
 });
 
 export const candidates = sqliteTable("candidates", {

@@ -235,6 +235,7 @@ const saveBatchOffline = async (token: string, batchId: string) => {
         });
       }
     }
+    // console.log("batch = ", batch);
 
     batch.assessorCoordinates = batch.assessorCoordinates
       ? JSON.stringify(batch.assessorCoordinates)
@@ -247,6 +248,7 @@ const saveBatchOffline = async (token: string, batchId: string) => {
       vivaQuestionBank: JSON.stringify(vivaQuestionBank),
       pmkyChecklist: JSON.stringify(pmkyChecklist),
       sscLogo: uploadLogoUrl,
+      jobRole: batch.jobRole,
     };
 
     const preparedCandidates = candidates.docs.map((candidate: any) => ({
@@ -329,6 +331,7 @@ const saveBatchOffline = async (token: string, batchId: string) => {
             isPmkyCheckListRequired: preparedBatch.isPmkyCheckListRequired,
             sscLogo: preparedBatch.sscLogo,
             pmkyChecklist: preparedBatch.pmkyChecklist,
+            jobRole: preparedBatch.jobRole,
           })
           .run();
       }
