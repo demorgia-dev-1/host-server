@@ -323,6 +323,7 @@ const uploadRandomVideo = async (
   batchId: string,
   testType: "THEORY" | "PRACTICAL" | "VIVA"
 ) => {
+  console.log("Uploading random video", candidateId);
   const batch = await db
     .select()
     .from(batchTable)
@@ -395,6 +396,7 @@ const uploadRandomPhoto = async (
   testType: "THEORY" | "PRACTICAL" | "VIVA",
   isAssessor: boolean = false
 ) => {
+  console.log("Uploading random photo for candidate:", candidateId);
   const batch = await db
     .select()
     .from(batchTable)
