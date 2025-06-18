@@ -1169,18 +1169,18 @@ const uploadPmkyChecklistFiles = (assessorId, batchId, data) => __awaiter(void 0
     if (fs_1.default.existsSync(path_1.default.join(__dirname, "..", "..", "uploads", "batches", batchId, "evidences", "assessor", "pmky-checklist", data.questionId))) {
         yield fs_1.default.promises.rm(path_1.default.join(__dirname, "..", "..", "uploads", "batches", batchId, "evidences", "assessor", "pmky-checklist", data.questionId), { recursive: true, force: true });
     }
-    yield Promise.all(data.files.map((file) => __awaiter(void 0, void 0, void 0, function* () {
+    yield Promise.all(data.files.map((file, i) => __awaiter(void 0, void 0, void 0, function* () {
         if (!file.mimetype.startsWith("image/")) {
             throw new AppError_1.AppError("Invalid file type", 400);
         }
         if (file.size > 50 * 1024 * 1024) {
-            throw new AppError_1.AppError("File size exceeds 2MB", 400);
+            throw new AppError_1.AppError("File size exceeds 50MB", 400);
         }
         const ext = file.name.split(".").pop();
         if (!ext) {
             throw new AppError_1.AppError("Invalid file name", 400);
         }
-        const uploadPath = path_1.default.join(__dirname, "..", "..", "uploads", "batches", batchId, "evidences", "assessor", "pmky-checklist", data.questionId, `${Date.now()}.${ext}`);
+        const uploadPath = path_1.default.join(__dirname, "..", "..", "uploads", "batches", batchId, "evidences", "assessor", "pmky-checklist", data.questionId, `${Date.now()}-${i + 1}.${ext}`);
         yield file.mv(uploadPath);
     })));
 });
