@@ -72,6 +72,7 @@ exports.batches = (0, sqlite_core_1.sqliteTable)("batches", {
         .notNull()
         .default(false),
     sscLogo: (0, sqlite_core_1.text)("sscLogo"),
+    jobRole: (0, sqlite_core_1.text)("jobRole"),
 });
 exports.candidates = (0, sqlite_core_1.sqliteTable)("candidates", {
     id: (0, sqlite_core_1.text)("_id").primaryKey(),

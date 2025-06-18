@@ -6,6 +6,7 @@ public/assets
 # uploads/pos
 app
 build
+build/
 token.txt
 dev.db
 .env

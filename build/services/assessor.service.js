@@ -69,105 +69,112 @@ const saveBatchOffline = (token, batchId) => __awaiter(void 0, void 0, void 0, f
         }
         if (theoryQuestionBank) {
             const questionBank = theoryQuestionBank[0];
-            for (const question of questionBank === null || questionBank === void 0 ? void 0 : questionBank.questions) {
-                const options = yield Promise.all(question.options.map((option) => {
-                    return (0, mediaLocalizer_1.downloadMediaAndReplaceUrls)(option.option);
+            if (questionBank && Array.isArray(questionBank === null || questionBank === void 0 ? void 0 : questionBank.question)) {
+                for (const question of questionBank === null || questionBank === void 0 ? void 0 : questionBank.questions) {
+                    const options = yield Promise.all(question.options.map((option) => {
+                        return (0, mediaLocalizer_1.downloadMediaAndReplaceUrls)(option.option);
+                    }));
+                    question.options.forEach((option, index) => {
+                        option.option = (0, mediaLocalizer_1.replaceMediaUrlsWithArray)(option.option, options[index]);
+                        if (option === null || option === void 0 ? void 0 : option.translations) {
+                            for (const [key, value] of Object.entries(option.translations)) {
+                                const replacement = (0, mediaLocalizer_1.replaceMediaUrlsWithArray)(option.translations[key], options[index]);
+                                option.translations[key] = replacement;
+                            }
+                        }
+                    });
+                }
+                const localizeQuestions = yield Promise.all(questionBank.questions.map((q) => {
+                    return (0, mediaLocalizer_1.downloadMediaAndReplaceUrls)(q.title);
                 }));
-                question.options.forEach((option, index) => {
-                    option.option = (0, mediaLocalizer_1.replaceMediaUrlsWithArray)(option.option, options[index]);
-                    if (option === null || option === void 0 ? void 0 : option.translations) {
-                        for (const [key, value] of Object.entries(option.translations)) {
-                            const replacement = (0, mediaLocalizer_1.replaceMediaUrlsWithArray)(option.translations[key], options[index]);
-                            option.translations[key] = replacement;
+                questionBank.questions.forEach((q, index) => {
+                    q.title = (0, mediaLocalizer_1.replaceMediaUrlsWithArray)(q.title, localizeQuestions[index]);
+                    if (q.translations) {
+                        for (const [key, value] of Object.entries(q === null || q === void 0 ? void 0 : q.translations)) {
+                            q.translations[key] = (0, mediaLocalizer_1.replaceMediaUrlsWithArray)(q.translations[key], localizeQuestions[index]);
                         }
                     }
                 });
             }
-            const localizeQuestions = yield Promise.all(questionBank.questions.map((q) => {
-                return (0, mediaLocalizer_1.downloadMediaAndReplaceUrls)(q.title);
-            }));
-            questionBank.questions.forEach((q, index) => {
-                q.title = (0, mediaLocalizer_1.replaceMediaUrlsWithArray)(q.title, localizeQuestions[index]);
-                if (q.translations) {
-                    for (const [key, value] of Object.entries(q === null || q === void 0 ? void 0 : q.translations)) {
-                        q.translations[key] = (0, mediaLocalizer_1.replaceMediaUrlsWithArray)(q.translations[key], localizeQuestions[index]);
-                    }
-                }
-            });
         }
         if (practicalQuestionBank) {
             const questionBank = practicalQuestionBank[0];
-            for (const question of questionBank === null || questionBank === void 0 ? void 0 : questionBank.questions) {
-                const options = yield Promise.all(question.options.map((option) => {
-                    return (0, mediaLocalizer_1.downloadMediaAndReplaceUrls)(option.option);
+            if (questionBank && Array.isArray(questionBank === null || questionBank === void 0 ? void 0 : questionBank.questions)) {
+                for (const question of questionBank === null || questionBank === void 0 ? void 0 : questionBank.questions) {
+                    const options = yield Promise.all(question.options.map((option) => {
+                        return (0, mediaLocalizer_1.downloadMediaAndReplaceUrls)(option.option);
+                    }));
+                    question.options.forEach((option, index) => {
+                        option.option = (0, mediaLocalizer_1.replaceMediaUrlsWithArray)(option.option, options[index]);
+                        if (option === null || option === void 0 ? void 0 : option.translations) {
+                            for (const [key, value] of Object.entries(option.translations)) {
+                                // option.translations[key] = options[index];
+                                const replacement = (0, mediaLocalizer_1.replaceMediaUrlsWithArray)(option.translations[key], options[index]);
+                                option.translations[key] = replacement;
+                            }
+                        }
+                    });
+                }
+                const localizeQuestions = yield Promise.all(questionBank.questions.map((q) => {
+                    return (0, mediaLocalizer_1.downloadMediaAndReplaceUrls)(q.title);
                 }));
-                question.options.forEach((option, index) => {
-                    option.option = (0, mediaLocalizer_1.replaceMediaUrlsWithArray)(option.option, options[index]);
-                    if (option === null || option === void 0 ? void 0 : option.translations) {
-                        for (const [key, value] of Object.entries(option.translations)) {
-                            // option.translations[key] = options[index];
-                            const replacement = (0, mediaLocalizer_1.replaceMediaUrlsWithArray)(option.translations[key], options[index]);
-                            option.translations[key] = replacement;
+                questionBank.questions.forEach((q, index) => {
+                    // q.title = localizeQuestions[index];
+                    q.title = (0, mediaLocalizer_1.replaceMediaUrlsWithArray)(q.title, localizeQuestions[index]);
+                    if (q.translations) {
+                        for (const [key, value] of Object.entries(q === null || q === void 0 ? void 0 : q.translations)) {
+                            // q.translations[key] = localizeQuestions[index];
+                            const replacement = (0, mediaLocalizer_1.replaceMediaUrlsWithArray)(q.translations[key], localizeQuestions[index]);
+                            q.translations[key] = replacement;
                         }
                     }
                 });
             }
-            const localizeQuestions = yield Promise.all(questionBank.questions.map((q) => {
-                return (0, mediaLocalizer_1.downloadMediaAndReplaceUrls)(q.title);
-            }));
-            questionBank.questions.forEach((q, index) => {
-                // q.title = localizeQuestions[index];
-                q.title = (0, mediaLocalizer_1.replaceMediaUrlsWithArray)(q.title, localizeQuestions[index]);
-                if (q.translations) {
-                    for (const [key, value] of Object.entries(q === null || q === void 0 ? void 0 : q.translations)) {
-                        // q.translations[key] = localizeQuestions[index];
-                        const replacement = (0, mediaLocalizer_1.replaceMediaUrlsWithArray)(q.translations[key], localizeQuestions[index]);
-                        q.translations[key] = replacement;
-                    }
-                }
-            });
         }
         if (vivaQuestionBank) {
             const questionBank = vivaQuestionBank[0];
-            for (const question of questionBank === null || questionBank === void 0 ? void 0 : questionBank.questions) {
-                const options = yield Promise.all(question.options.map((option) => {
-                    return (0, mediaLocalizer_1.downloadMediaAndReplaceUrls)(option.option);
+            if (questionBank && Array.isArray(questionBank === null || questionBank === void 0 ? void 0 : questionBank.questions)) {
+                for (const question of questionBank === null || questionBank === void 0 ? void 0 : questionBank.questions) {
+                    const options = yield Promise.all(question.options.map((option) => {
+                        return (0, mediaLocalizer_1.downloadMediaAndReplaceUrls)(option.option);
+                    }));
+                    question.options.forEach((option, index) => {
+                        // option.option = options[index];
+                        option.option = (0, mediaLocalizer_1.replaceMediaUrlsWithArray)(option.option, options[index]);
+                        if (question.translations) {
+                            for (const [key, value] of Object.entries(option === null || option === void 0 ? void 0 : option.translations)) {
+                                // option.translations[key] = options[index];
+                                const replacement = (0, mediaLocalizer_1.replaceMediaUrlsWithArray)(option.translations[key], options[index]);
+                                option.translations[key] = replacement;
+                            }
+                        }
+                    });
+                }
+                const localizeQuestions = yield Promise.all(questionBank.questions.map((q) => {
+                    return (0, mediaLocalizer_1.downloadMediaAndReplaceUrls)(q.title);
                 }));
-                question.options.forEach((option, index) => {
-                    // option.option = options[index];
-                    option.option = (0, mediaLocalizer_1.replaceMediaUrlsWithArray)(option.option, options[index]);
-                    if (question.translations) {
-                        for (const [key, value] of Object.entries(option === null || option === void 0 ? void 0 : option.translations)) {
-                            // option.translations[key] = options[index];
-                            const replacement = (0, mediaLocalizer_1.replaceMediaUrlsWithArray)(option.translations[key], options[index]);
-                            option.translations[key] = replacement;
+                questionBank.questions.forEach((q, index) => {
+                    // q.title = localizeQuestions[index];
+                    q.title = (0, mediaLocalizer_1.replaceMediaUrlsWithArray)(q.title, localizeQuestions[index]);
+                    if (q.translations) {
+                        for (const [key, value] of Object.entries(q === null || q === void 0 ? void 0 : q.translations)) {
+                            // q.translations[key] = localizeQuestions[index];
+                            const replacement = (0, mediaLocalizer_1.replaceMediaUrlsWithArray)(q.translations[key], localizeQuestions[index]);
                         }
                     }
+                    // if (q.translations) {
+                    //   for (const [key, value] of Object.entries(q?.translations)) {
+                    //     q.translations[key] = localizeQuestions[index];
+                    //   }
+                    // }
                 });
             }
-            const localizeQuestions = yield Promise.all(questionBank.questions.map((q) => {
-                return (0, mediaLocalizer_1.downloadMediaAndReplaceUrls)(q.title);
-            }));
-            questionBank.questions.forEach((q, index) => {
-                // q.title = localizeQuestions[index];
-                q.title = (0, mediaLocalizer_1.replaceMediaUrlsWithArray)(q.title, localizeQuestions[index]);
-                if (q.translations) {
-                    for (const [key, value] of Object.entries(q === null || q === void 0 ? void 0 : q.translations)) {
-                        // q.translations[key] = localizeQuestions[index];
-                        const replacement = (0, mediaLocalizer_1.replaceMediaUrlsWithArray)(q.translations[key], localizeQuestions[index]);
-                    }
-                }
-                // if (q.translations) {
-                //   for (const [key, value] of Object.entries(q?.translations)) {
-                //     q.translations[key] = localizeQuestions[index];
-                //   }
-                // }
-            });
         }
+        // console.log("batch = ", batch);
         batch.assessorCoordinates = batch.assessorCoordinates
             ? JSON.stringify(batch.assessorCoordinates)
             : null;
-        const preparedBatch = Object.assign(Object.assign({}, batch), { id: batch._id, theoryQuestionBank: JSON.stringify(theoryQuestionBank), practicalQuestionBank: JSON.stringify(practicalQuestionBank), vivaQuestionBank: JSON.stringify(vivaQuestionBank), pmkyChecklist: JSON.stringify(pmkyChecklist), sscLogo: uploadLogoUrl });
+        const preparedBatch = Object.assign(Object.assign({}, batch), { id: batch._id, theoryQuestionBank: JSON.stringify(theoryQuestionBank), practicalQuestionBank: JSON.stringify(practicalQuestionBank), vivaQuestionBank: JSON.stringify(vivaQuestionBank), pmkyChecklist: JSON.stringify(pmkyChecklist), sscLogo: uploadLogoUrl, jobRole: batch.jobRole });
         const preparedCandidates = candidates.docs.map((candidate) => ({
             id: candidate._id,
             name: candidate.name,
@@ -243,6 +250,7 @@ const saveBatchOffline = (token, batchId) => __awaiter(void 0, void 0, void 0, f
                     isPmkyCheckListRequired: preparedBatch.isPmkyCheckListRequired,
                     sscLogo: preparedBatch.sscLogo,
                     pmkyChecklist: preparedBatch.pmkyChecklist,
+                    jobRole: preparedBatch.jobRole,
                 })
                     .run();
             }
@@ -492,6 +500,20 @@ const resetCandidatesPractical = (candidateIds, batchId, assessorId) => __awaite
         practicalSubmittedAt: null,
     })
         .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.candidates.batchId, batchId), (0, drizzle_orm_1.inArray)(schema_1.candidates.id, candidateIds)));
+    db_1.default.transaction((tx) => {
+        tx.update(schema_1.candidates)
+            .set({
+            isPresentInPractical: false,
+            practicalExamStatus: "notStarted",
+            practicalStartedAt: null,
+            practicalSubmittedAt: null,
+        })
+            .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.candidates.batchId, batchId), (0, drizzle_orm_1.inArray)(schema_1.candidates.id, candidateIds)))
+            .run();
+        tx.delete(schema_1.examResponses)
+            .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.inArray)(schema_1.examResponses.candidateId, candidateIds), (0, drizzle_orm_1.eq)(schema_1.examResponses.batchId, batchId), (0, drizzle_orm_1.eq)(schema_1.examResponses.type, "PRACTICAL")))
+            .run();
+    });
     yield Promise.all(deletePaths.map((targetPath) => __awaiter(void 0, void 0, void 0, function* () {
         try {
             yield fs_1.default.promises.rm(targetPath, { recursive: true, force: true });
@@ -733,12 +755,14 @@ const submitCandidatePracticalResponses = (responses, candidateId, batchId, asse
         })
             .where((0, drizzle_orm_1.eq)(schema_1.candidates.id, candidateId))
             .run();
-        tx.insert(schema_1.comments).values({
+        tx.insert(schema_1.comments)
+            .values({
             candidateId: candidateId,
             batchId: batchId,
-            comment: comment,
-            type: "PRACTICAL",
-        });
+            comment: comment || "no-comment-mentioned",
+            testType: "PRACTICAL",
+        })
+            .run();
     });
 });
 const submitCandidateVivaResponses = (responses, candidateId, batchId, assessorId, evidence, comment) => __awaiter(void 0, void 0, void 0, function* () {
@@ -791,12 +815,14 @@ const submitCandidateVivaResponses = (responses, candidateId, batchId, assessorI
     db_1.default.transaction((tx) => {
         // Insert exam responses
         if (comment) {
-            tx.insert(schema_1.comments).values({
+            tx.insert(schema_1.comments)
+                .values({
                 candidateId: candidateId,
                 batchId: batchId,
                 comment: comment,
-                type: "VIVA",
-            });
+                testType: "VIVA",
+            })
+                .run();
         }
         tx.insert(schema_1.examResponses)
             .values(responses.map((response) => ({

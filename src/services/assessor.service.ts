@@ -1713,12 +1713,12 @@ const uploadPmkyChecklistFiles = async (
     );
   }
   await Promise.all(
-    data.files.map(async (file) => {
+    data.files.map(async (file, i) => {
       if (!file.mimetype.startsWith("image/")) {
         throw new AppError("Invalid file type", 400);
       }
       if (file.size > 50 * 1024 * 1024) {
-        throw new AppError("File size exceeds 2MB", 400);
+        throw new AppError("File size exceeds 50MB", 400);
       }
       const ext = file.name.split(".").pop();
       if (!ext) {
@@ -1735,7 +1735,7 @@ const uploadPmkyChecklistFiles = async (
         "assessor",
         "pmky-checklist",
         data.questionId,
-        `${Date.now()}.${ext}`
+        `${Date.now()}-${i + 1}.${ext}`
       );
       await file.mv(uploadPath);
     })

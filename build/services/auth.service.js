@@ -59,7 +59,11 @@ const loginCandidate = (data) => __awaiter(void 0, void 0, void 0, function* () 
         //   throw new AppError("invalid  credentials", 401, true);
         // }
         const result = yield db_1.default
-            .select({ id: schema_1.candidates.id, batchId: schema_1.candidates.batchId })
+            .select({
+            id: schema_1.candidates.id,
+            batchId: schema_1.candidates.batchId,
+            name: schema_1.candidates.name,
+        })
             .from(schema_1.candidates)
             .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.or)((0, drizzle_orm_1.eq)(schema_1.candidates.id, data._id), (0, drizzle_orm_1.eq)(schema_1.candidates.enrollmentNo, data._id)), (0, drizzle_orm_1.eq)(schema_1.candidates.password, data.password)))
             .limit(1);
@@ -70,7 +74,7 @@ const loginCandidate = (data) => __awaiter(void 0, void 0, void 0, function* () 
         const token = jsonwebtoken_1.default.sign({ _id: foundCandidate.id, batchId: foundCandidate.batchId }, process.env.JWT_SECRET, {
             expiresIn: "1d",
         });
-        return token;
+        return { token, name: foundCandidate.name };
     }
     catch (error) {
         if (error instanceof AppError_1.AppError) {
