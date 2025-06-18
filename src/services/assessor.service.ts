@@ -846,6 +846,12 @@ const startBatch = async (batchId: string, assessorId: string) => {
   if (!batch[0].isAssessorReached) {
     throw new AppError("mark yourself as reached", 400);
   }
+  if (batch[0].isPmkyCheckListRequired) {
+    batch[0].pmkyChecklist = JSON.parse(batch[0].pmkyChecklist || "{}");
+    if (batch[0].pmkyChecklist.submitted) {
+      throw new AppError("PMKY checklist already submitted", 400);
+    }
+  }
   await db
     .update(batchTable)
     .set({
