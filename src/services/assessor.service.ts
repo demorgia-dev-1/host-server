@@ -433,6 +433,12 @@ const markAttendanceInTheory = async (
     if (!batch[0].isAssessorReached) {
       throw new AppError("mark yourself as reached", 400);
     }
+    if (batch[0].isPmkyCheckListRequired) {
+      batch[0].pmkyChecklist = JSON.parse(batch[0].pmkyChecklist || "{}");
+      if (!batch[0].pmkyChecklist.submitted) {
+        throw new AppError("PMKVY checklist not submitted", 400);
+      }
+    }
     const updatedCandidates = await db
       .update(candidateTable)
       .set({ isPresentInTheory: true })
@@ -476,6 +482,12 @@ const markAttendanceInPractical = async (
   if (!batch[0].isAssessorReached) {
     throw new AppError("mark yourself as reached", 400);
   }
+  if (batch[0].isPmkyCheckListRequired) {
+    batch[0].pmkyChecklist = JSON.parse(batch[0].pmkyChecklist || "{}");
+    if (!batch[0].pmkyChecklist.submitted) {
+      throw new AppError("PMKVY checklist not submitted", 400);
+    }
+  }
   const updatedCandidates = await db
     .update(candidateTable)
     .set({ isPresentInPractical: true })
@@ -511,6 +523,12 @@ const markAttendanceInViva = async (
   }
   if (!batch[0].isAssessorReached) {
     throw new AppError("mark yourself as reached", 400);
+  }
+  if (batch[0].isPmkyCheckListRequired) {
+    batch[0].pmkyChecklist = JSON.parse(batch[0].pmkyChecklist || "{}");
+    if (!batch[0].pmkyChecklist.submitted) {
+      throw new AppError("PMKVY checklist not submitted", 400);
+    }
   }
   const updatedCandidates = await db
     .update(candidateTable)
@@ -926,6 +944,12 @@ const submitCandidatePracticalResponses = async (
     throw new AppError("Mark yourself as reached", 400);
   }
 
+  if (batch[0].isPmkyCheckListRequired) {
+    batch[0].pmkyChecklist = JSON.parse(batch[0].pmkyChecklist || "{}");
+    if (!batch[0].pmkyChecklist.submitted) {
+      throw new AppError("PMKVY checklist not submitted", 400);
+    }
+  }
   // Fetch candidate details
   const candidate = await db
     .select()
@@ -1085,6 +1109,12 @@ const submitCandidateVivaResponses = async (
 
   if (!batch[0].isAssessorReached) {
     throw new AppError("Mark yourself as reached", 400);
+  }
+  if (batch[0].isPmkyCheckListRequired) {
+    batch[0].pmkyChecklist = JSON.parse(batch[0].pmkyChecklist || "{}");
+    if (!batch[0].pmkyChecklist.submitted) {
+      throw new AppError("PMKVY checklist not submitted", 400);
+    }
   }
 
   // Fetch candidate details
