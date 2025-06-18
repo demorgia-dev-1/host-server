@@ -36,7 +36,6 @@ if (cluster.isPrimary) {
   app.use(express.urlencoded({ extended: true }));
   console.log(path.join(__dirname, "..", "public"));
   app.use("/static", express.static(path.join(__dirname, "..", "public")));
-
   app.use("/auth", authRoutes);
   app.use("/assessor", assessorRoutes);
   app.use("/candidate", candidateRoutes);
