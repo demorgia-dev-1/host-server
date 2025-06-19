@@ -480,7 +480,10 @@ export const submitCandidatePracticalResponses = async (
       return next(new AppError("responses should be an array", 400, true));
     }
     // @ts-ignore
-    const video: UploadedFile = req?.files?.video;
+    let videos: UploadedFile[] = req?.files?.videos;
+    if (!videos || !Array.isArray(videos)) {
+      videos = videos ? [videos] : [];
+    }
     const responses = req.body.responses.map(
       (response: Record<string, any>) => {
         if (
@@ -515,7 +518,7 @@ export const submitCandidatePracticalResponses = async (
       candidateId,
       batchId,
       assessorId,
-      video,
+      videos,
       req.body.comment
     );
     res.status(200).json({});

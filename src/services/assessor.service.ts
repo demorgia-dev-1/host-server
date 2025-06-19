@@ -913,7 +913,7 @@ const submitCandidatePracticalResponses = async (
   candidateId: string,
   batchId: string,
   assessorId: string,
-  evidence?: UploadedFile,
+  evidences?: UploadedFile[],
   comment?: string,
   candidatePhoto?: UploadedFile,
   document?: UploadedFile
@@ -979,29 +979,31 @@ const submitCandidatePracticalResponses = async (
   }
 
   // Handle evidence upload if provided
-  if (evidence) {
-    if (!evidence.mimetype.startsWith("video/")) {
-      throw new AppError("Invalid file type", 400);
-    }
-    if (evidence.size > 100 * 1024 * 1024) {
-      throw new AppError("File size exceeds 100MB", 400);
-    }
-    const ext = evidence.name.split(".").pop();
-    const uploadPath = path.join(
-      __dirname,
-      "..",
-      "..",
-      "uploads",
-      "batches",
-      batchId,
-      "evidences",
-      "candidates",
-      candidateId,
-      "videos",
-      "PRACTICAL",
-      `evidence.${ext}`
-    );
-    await evidence.mv(uploadPath);
+  if (evidences && evidences.length > 0) {
+    evidences.forEach(async (evidence) => {
+      if (!evidence.mimetype.startsWith("video/")) {
+        throw new AppError("Invalid file type", 400);
+      }
+      if (evidence.size > 100 * 1024 * 1024) {
+        throw new AppError("File size exceeds 100MB", 400);
+      }
+      const ext = evidence.name.split(".").pop();
+      const uploadPath = path.join(
+        __dirname,
+        "..",
+        "..",
+        "uploads",
+        "batches",
+        batchId,
+        "evidences",
+        "candidates",
+        candidateId,
+        "videos",
+        "PRACTICAL",
+        `evidence.${ext}`
+      );
+      await evidence.mv(uploadPath);
+    });
   }
   if (candidatePhoto) {
     if (!candidatePhoto.mimetype.startsWith("image/")) {
