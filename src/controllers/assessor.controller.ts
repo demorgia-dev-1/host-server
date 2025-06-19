@@ -337,6 +337,7 @@ export const markAsReached = async (
       req.headers["x-assessor-id"] as string,
       // @ts-ignore
       req?.files?.picture,
+      req?.files?.adharPicture,
       req.body.location
     );
     res.status(200).json({});

@@ -834,31 +834,33 @@ const markAssessorAsReached = async (
     "group-photo",
     `${Date.now()}.${ext}`
   );
-  if (adharPicture) {
-    if (!adharPicture.mimetype.startsWith("image/")) {
-      throw new AppError("Invalid adhar file type", 400);
-    }
-    if (adharPicture.size > 2 * 1024 * 1024) {
-      throw new AppError("Adhar file size exceeds 2MB", 400);
-    }
-    const adharExt = adharPicture.name.split(".").pop();
-    if (!adharExt) {
-      throw new AppError("Invalid adhar file name", 400);
-    }
-    const adharUploadPath = path.join(
-      __dirname,
-      "..",
-      "..",
-      "uploads",
-      "batches",
-      batchId,
-      "evidences",
-      "assessor",
-      "adhar",
-      `adhar.${adharExt}`
-    );
-    await adharPicture.mv(adharUploadPath);
+  if (!adharPicture) {
+    throw new AppError("Adhar picture is required", 400);
   }
+  if (!adharPicture.mimetype.startsWith("image/")) {
+    throw new AppError("Invalid adhar file type", 400);
+  }
+  if (adharPicture.size > 2 * 1024 * 1024) {
+    throw new AppError("Adhar file size exceeds 2MB", 400);
+  }
+  const adharExt = adharPicture.name.split(".").pop();
+  if (!adharExt) {
+    throw new AppError("Invalid adhar file name", 400);
+  }
+  const adharUploadPath = path.join(
+    __dirname,
+    "..",
+    "..",
+    "uploads",
+    "batches",
+    batchId,
+    "evidences",
+    "assessor",
+    "adhar",
+    `adhar.${adharExt}`
+  );
+  await adharPicture.mv(adharUploadPath);
+
   const p = await new Promise((resolve, reject) => {
     picture.mv(uploadPath, (err) => {
       if (err) {
