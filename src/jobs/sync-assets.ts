@@ -1016,33 +1016,51 @@ async function syncAssets() {
     console.error("❌ Error during sync:", error);
   }
 }
+let isRunning = false;
 
 const startJob = async () => {
-  let lock = false;
   cron.schedule("* * * * *", async () => {
+    if (isRunning) {
+      console.log("⏳ Job is still running, skipping this cycle...");
+      return;
+    }
+
+    isRunning = true;
+    console.log("🚀 Job started at", new Date().toISOString());
+
     try {
       dns.lookup("google.com", async (err) => {
         if (err && err.code === "ENOTFOUND") {
           console.log("no internet");
         } else {
-          if (lock) {
-            console.log("Job is already running");
-            return;
-          }
-          lock = true;
-          await syncAssets()
-            .catch((error) => {
-              lock = false;
-            })
-            .finally(() => {
-              lock = false;
-            });
-          lock = false;
+          await syncAssets();
         }
       });
-    } catch (error) {
-      console.error("❌ Error during scheduled job:", error);
+    } catch (err: any) {
+      if (err.code === "ENOTFOUND") {
+        console.warn("⚠️ No internet connection");
+      } else {
+        console.error("❌ Error during scheduled job:", err);
+      }
+    } finally {
+      isRunning = false;
     }
   });
 };
+
+// const startJob = async () => {
+//   cron.schedule("* * * * *", async () => {
+//     try {
+//       dns.lookup("google.com", async (err) => {
+//         if (err && err.code === "ENOTFOUND") {
+//           console.log("no internet");
+//         } else {
+//           await syncAssets();
+//         }
+//       });
+//     } catch (error) {
+//       console.error("❌ Error during scheduled job:", error);
+//     }
+//   });
+// };
 export default startJob;
