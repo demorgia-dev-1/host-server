@@ -1012,8 +1012,8 @@ const submitCandidatePracticalResponses = async (
       if (!evidence.mimetype.startsWith("video/")) {
         throw new AppError("Invalid file type", 400);
       }
-      if (evidence.size > 100 * 1024 * 1024) {
-        throw new AppError("File size exceeds 100MB", 400);
+      if (evidence.size > 150 * 1024 * 1024) {
+        throw new AppError("File size exceeds 150MB", 400);
       }
       const ext = evidence.name.split(".").pop();
       const uploadPath = path.join(
