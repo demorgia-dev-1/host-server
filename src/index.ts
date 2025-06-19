@@ -1,4 +1,4 @@
-import express from "express";
+import express, { NextFunction, Request, Response } from "express";
 import ip from "ip";
 import qr from "qrcode-terminal";
 import dotenv from "dotenv";
@@ -11,9 +11,17 @@ import fs from "fs";
 import cors from "cors";
 import path from "path";
 import startJob from "./jobs/sync-assets";
+import { v4 as uuidv4 } from "uuid";
 
 dotenv.config();
 const app = express();
+app.use((req: Request, res: Response, next: NextFunction) => {
+  // @ts-ignore
+  req.requestId = uuidv4();
+  // @ts-ignore
+  res.setHeader("X-Request-Id", req.requestId);
+  next();
+});
 app.use(cors());
 app.use(
   fileUpload({

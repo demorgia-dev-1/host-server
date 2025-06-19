@@ -344,6 +344,12 @@ const markAttendanceInTheory = (candidates, batchId, assessorId) => __awaiter(vo
         if (!batch[0].isAssessorReached) {
             throw new AppError_1.AppError("mark yourself as reached", 400);
         }
+        if (batch[0].isPmkyCheckListRequired) {
+            batch[0].pmkyChecklist = JSON.parse(batch[0].pmkyChecklist || "{}");
+            if (!batch[0].pmkyChecklist.submitted) {
+                throw new AppError_1.AppError("PMKVY checklist not submitted", 400);
+            }
+        }
         const updatedCandidates = yield db_1.default
             .update(schema_1.candidates)
             .set({ isPresentInTheory: true })
@@ -377,6 +383,12 @@ const markAttendanceInPractical = (candidates, batchId, assessorId) => __awaiter
     if (!batch[0].isAssessorReached) {
         throw new AppError_1.AppError("mark yourself as reached", 400);
     }
+    if (batch[0].isPmkyCheckListRequired) {
+        batch[0].pmkyChecklist = JSON.parse(batch[0].pmkyChecklist || "{}");
+        if (!batch[0].pmkyChecklist.submitted) {
+            throw new AppError_1.AppError("PMKVY checklist not submitted", 400);
+        }
+    }
     const updatedCandidates = yield db_1.default
         .update(schema_1.candidates)
         .set({ isPresentInPractical: true })
@@ -403,6 +415,12 @@ const markAttendanceInViva = (candidates, batchId, assessorId) => __awaiter(void
     }
     if (!batch[0].isAssessorReached) {
         throw new AppError_1.AppError("mark yourself as reached", 400);
+    }
+    if (batch[0].isPmkyCheckListRequired) {
+        batch[0].pmkyChecklist = JSON.parse(batch[0].pmkyChecklist || "{}");
+        if (!batch[0].pmkyChecklist.submitted) {
+            throw new AppError_1.AppError("PMKVY checklist not submitted", 400);
+        }
     }
     const updatedCandidates = yield db_1.default
         .update(schema_1.candidates)
@@ -637,6 +655,12 @@ const startBatch = (batchId, assessorId) => __awaiter(void 0, void 0, void 0, fu
     if (!batch[0].isAssessorReached) {
         throw new AppError_1.AppError("mark yourself as reached", 400);
     }
+    if (batch[0].isPmkyCheckListRequired) {
+        batch[0].pmkyChecklist = JSON.parse(batch[0].pmkyChecklist || "{}");
+        if (!batch[0].pmkyChecklist.submitted) {
+            throw new AppError_1.AppError("PMKVY checklist not submitted", 400);
+        }
+    }
     yield db_1.default
         .update(schema_1.batches)
         .set({
@@ -680,6 +704,12 @@ const submitCandidatePracticalResponses = (responses, candidateId, batchId, asse
     }
     if (!batch[0].isAssessorReached) {
         throw new AppError_1.AppError("Mark yourself as reached", 400);
+    }
+    if (batch[0].isPmkyCheckListRequired) {
+        batch[0].pmkyChecklist = JSON.parse(batch[0].pmkyChecklist || "{}");
+        if (!batch[0].pmkyChecklist.submitted) {
+            throw new AppError_1.AppError("PMKVY checklist not submitted", 400);
+        }
     }
     // Fetch candidate details
     const candidate = yield db_1.default
@@ -780,6 +810,12 @@ const submitCandidateVivaResponses = (responses, candidateId, batchId, assessorI
     }
     if (!batch[0].isAssessorReached) {
         throw new AppError_1.AppError("Mark yourself as reached", 400);
+    }
+    if (batch[0].isPmkyCheckListRequired) {
+        batch[0].pmkyChecklist = JSON.parse(batch[0].pmkyChecklist || "{}");
+        if (!batch[0].pmkyChecklist.submitted) {
+            throw new AppError_1.AppError("PMKVY checklist not submitted", 400);
+        }
     }
     // Fetch candidate details
     const candidate = yield db_1.default

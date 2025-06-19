@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import candidateService from "../services/candidate.service";
 import { AppError } from "../utils/AppError";
+import logger from "../utils/logger";
 const getMyTheoryTest = async (
   req: Request,
   res: Response,
@@ -9,8 +10,26 @@ const getMyTheoryTest = async (
   try {
     const candidateId = req.headers["x-candidate-id"] as string;
     const questionBank = await candidateService.getMyTheoryTest(candidateId);
+    logger.log("info", "Fetched theory test for candidate", {
+      layer: "candidate.controller.getMyTheoryTest",
+      method: req.method,
+      url: req.originalUrl,
+      headers: req.headers,
+      candidateId,
+      // @ts-ignore
+      requestId: req.requestId,
+    });
     res.status(200).json(questionBank);
   } catch (error) {
+    logger.log("error", "Error fetching theory test for candidate", {
+      layer: "candidate.controller.getMyTheoryTest",
+      method: req.method,
+      url: req.originalUrl,
+      headers: req.headers,
+      error: error instanceof Error ? error.message : "Unknown error",
+      // @ts-ignore
+      requestId: req.requestId,
+    });
     next(error);
   }
 };
@@ -27,8 +46,27 @@ const submitTheoryResponses = async (
       candidateId,
       batchId
     );
+    logger.log("info", "Theory responses submitted successfully", {
+      layer: "candidate.controller.submitTheoryResponses",
+      method: req.method,
+      url: req.originalUrl,
+      headers: req.headers,
+      candidateId,
+      batchId,
+      // @ts-ignore
+      requestId: req.requestId,
+    });
     res.status(200).json({});
   } catch (error) {
+    logger.log("error", "Error submitting theory responses", {
+      layer: "candidate.controller.submitTheoryResponses",
+      method: req.method,
+      url: req.originalUrl,
+      headers: req.headers,
+      error: error instanceof Error ? error.message : "Unknown error",
+      // @ts-ignore
+      requestId: req.requestId,
+    });
     next(error);
   }
 };
@@ -41,8 +79,25 @@ const getPracticalTest = async (
     const test = await candidateService.getMyPracticalTest(
       req.headers["x-candidate-id"] as string
     );
+    logger.log("info", "Fetched practical test for candidate", {
+      layer: "candidate.controller.getPracticalTest",
+      method: req.method,
+      url: req.originalUrl,
+      headers: req.headers,
+      // @ts-ignore
+      requestId: req.requestId,
+    });
     res.status(200).json(test);
   } catch (error) {
+    logger.log("error", "Error fetching practical test for candidate", {
+      layer: "candidate.controller.getPracticalTest",
+      method: req.method,
+      url: req.originalUrl,
+      headers: req.headers,
+      error: error instanceof Error ? error.message : "Unknown error",
+      // @ts-ignore
+      requestId: req.requestId,
+    });
     return next(error);
   }
 };
@@ -55,8 +110,27 @@ const submitTheoryTest = async (
     const candidateId = req.headers["x-candidate-id"] as string;
     const batchId = req.headers["x-batch-id"] as string;
     await candidateService.submitTheoryTest(candidateId, batchId);
+    logger.log("info", "Theory test submitted successfully", {
+      layer: "candidate.controller.submitTheoryTest",
+      method: req.method,
+      url: req.originalUrl,
+      headers: req.headers,
+      candidateId,
+      batchId,
+      // @ts-ignore
+      requestId: req.requestId,
+    });
     res.status(200).json({});
   } catch (error) {
+    logger.log("error", "Error submitting theory test", {
+      layer: "candidate.controller.submitTheoryTest",
+      method: req.method,
+      url: req.originalUrl,
+      headers: req.headers,
+      error: error instanceof Error ? error.message : "Unknown error",
+      // @ts-ignore
+      requestId: req.requestId,
+    });
     next(error);
   }
 };
@@ -73,8 +147,27 @@ const submitPracticalResponses = async (
       candidateId,
       batchId
     );
+    logger.log("info", "Practical responses submitted successfully", {
+      layer: "candidate.controller.submitPracticalResponses",
+      method: req.method,
+      url: req.originalUrl,
+      headers: req.headers,
+      candidateId,
+      batchId,
+      // @ts-ignore
+      requestId: req.requestId,
+    });
     res.status(200).json({});
   } catch (error) {
+    logger.log("error", "Error submitting practical responses", {
+      layer: "candidate.controller.submitPracticalResponses",
+      method: req.method,
+      url: req.originalUrl,
+      headers: req.headers,
+      error: error instanceof Error ? error.message : "Unknown error",
+      // @ts-ignore
+      requestId: req.requestId,
+    });
     next(error);
   }
 };
@@ -87,8 +180,27 @@ const submitPracticalTest = async (
     const candidateId = req.headers["x-candidate-id"] as string;
     const batchId = req.headers["x-batch-id"] as string;
     await candidateService.submitPracticalTest(candidateId, batchId);
+    logger.log("info", "Practical test submitted successfully", {
+      layer: "candidate.controller.submitPracticalTest",
+      method: req.method,
+      url: req.originalUrl,
+      headers: req.headers,
+      candidateId,
+      batchId,
+      // @ts-ignore
+      requestId: req.requestId,
+    });
     res.status(200).json({});
   } catch (error) {
+    logger.log("error", "Error submitting practical test", {
+      layer: "candidate.controller.submitPracticalTest",
+      method: req.method,
+      url: req.originalUrl,
+      headers: req.headers,
+      error: error instanceof Error ? error.message : "Unknown error",
+      // @ts-ignore
+      requestId: req.requestId,
+    });
     next(error);
   }
 };
@@ -107,8 +219,26 @@ const uploadOnboardingEvidences = async (
       // @ts-ignore
       req?.files?.selfie
     );
+    logger.log("info", "Onboarding evidences uploaded successfully", {
+      layer: "candidate.controller.uploadOnboardingEvidences",
+      method: req.method,
+      url: req.originalUrl,
+      headers: req.headers,
+      candidateId,
+      // @ts-ignore
+      requestId: req.requestId,
+    });
     res.status(200).json({});
   } catch (error) {
+    logger.log("error", "Error uploading onboarding evidences", {
+      layer: "candidate.controller.uploadOnboardingEvidences",
+      method: req.method,
+      url: req.originalUrl,
+      headers: req.headers,
+      error: error instanceof Error ? error.message : "Unknown error",
+      // @ts-ignore
+      requestId: req.requestId,
+    });
     next(error);
   }
 };
@@ -130,8 +260,27 @@ const uploadRandomVideo = async (
       batchId,
       req.body.testType
     );
+    logger.log("info", "Random video uploaded successfully", {
+      layer: "candidate.controller.uploadRandomVideo",
+      method: req.method,
+      url: req.originalUrl,
+      headers: req.headers,
+      candidateId,
+      batchId,
+      // @ts-ignore
+      requestId: req.requestId,
+    });
     res.status(200).json({});
   } catch (error) {
+    logger.log("error", "Error uploading random video", {
+      layer: "candidate.controller.uploadRandomVideo",
+      method: req.method,
+      url: req.originalUrl,
+      headers: req.headers,
+      error: error instanceof Error ? error.message : "Unknown error",
+      // @ts-ignore
+      requestId: req.requestId,
+    });
     next(error);
   }
 };
@@ -142,6 +291,12 @@ const uploadRandomPhoto = async (
 ) => {
   try {
     if (!req.body?.testType) {
+      logger.log("error", "Test type is required for photo upload", {
+        layer: "candidate.controller.uploadRandomPhoto",
+        method: req.method,
+        url: req.originalUrl,
+        headers: req.headers,
+      });
       throw new AppError("Test type is required,(THEORY/PRATICAL)", 400);
     }
     const candidateId = req.headers["x-candidate-id"] as string;
@@ -153,8 +308,27 @@ const uploadRandomPhoto = async (
       batchId,
       req.body.testType
     );
+    logger.log("info", "Random photo uploaded successfully", {
+      layer: "candidate.controller.uploadRandomPhoto",
+      method: req.method,
+      url: req.originalUrl,
+      headers: req.headers,
+      candidateId,
+      batchId,
+      // @ts-ignore
+      requestId: req.requestId,
+    });
     res.status(200).json({});
   } catch (error) {
+    logger.log("error", "Error uploading random photo", {
+      layer: "candidate.controller.uploadRandomPhoto",
+      method: req.method,
+      url: req.originalUrl,
+      headers: req.headers,
+      error: error instanceof Error ? error.message : "Unknown error",
+      // @ts-ignore
+      requestId: req.requestId,
+    });
     next(error);
   }
 };
@@ -166,8 +340,26 @@ const batchDetails = async (
   try {
     const batchId = req.headers["x-batch-id"] as string;
     const batch = await candidateService.getBatchDetails(batchId);
+    logger.log("info", "Fetched batch details", {
+      layer: "candidate.controller.batchDetails",
+      method: req.method,
+      url: req.originalUrl,
+      headers: req.headers,
+      batchId,
+      // @ts-ignore
+      requestId: req.requestId,
+    });
     res.status(200).json(batch);
   } catch (error) {
+    logger.log("error", "Error fetching batch details", {
+      layer: "candidate.controller.batchDetails",
+      method: req.method,
+      url: req.originalUrl,
+      headers: req.headers,
+      error: error instanceof Error ? error.message : "Unknown error",
+      // @ts-ignore
+      requestId: req.requestId,
+    });
     return next(error);
   }
 };
@@ -179,8 +371,26 @@ const getFeedbackForm = async (
   try {
     const candidateId = req.headers["x-candidate-id"] as string;
     const feedback = await candidateService.getFeedbackForm(candidateId);
+    logger.log("info", "Fetched feedback form for candidate", {
+      layer: "candidate.controller.getFeedbackForm",
+      method: req.method,
+      url: req.originalUrl,
+      headers: req.headers,
+      candidateId,
+      // @ts-ignore
+      requestId: req.requestId,
+    });
     res.status(200).json(feedback);
   } catch (error) {
+    logger.log("error", "Error fetching feedback form for candidate", {
+      layer: "candidate.controller.getFeedbackForm",
+      method: req.method,
+      url: req.originalUrl,
+      headers: req.headers,
+      error: error instanceof Error ? error.message : "Unknown error",
+      // @ts-ignore
+      requestId: req.requestId,
+    });
     return next(error);
   }
 };
@@ -197,8 +407,27 @@ export const submitFeedbackForm = async (
       batchId,
       req.body.feedbacks
     );
+    logger.log("info", "Feedback form submitted successfully", {
+      layer: "candidate.controller.submitFeedbackForm",
+      method: req.method,
+      url: req.originalUrl,
+      headers: req.headers,
+      candidateId,
+      batchId,
+      // @ts-ignore
+      requestId: req.requestId,
+    });
     res.status(200).json({});
   } catch (error) {
+    logger.log("error", "Error submitting feedback form", {
+      layer: "candidate.controller.submitFeedbackForm",
+      method: req.method,
+      url: req.originalUrl,
+      headers: req.headers,
+      error: error instanceof Error ? error.message : "Unknown error",
+      // @ts-ignore
+      requestId: req.requestId,
+    });
     next(error);
   }
 };

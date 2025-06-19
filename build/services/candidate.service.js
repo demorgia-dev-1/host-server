@@ -257,6 +257,7 @@ const submitTheoryTest = (candidateId, batchId) => __awaiter(void 0, void 0, voi
         .where((0, drizzle_orm_2.eq)(schema_1.candidates.id, candidateId));
 });
 const uploadRandomVideo = (candidateId, video, batchId, testType) => __awaiter(void 0, void 0, void 0, function* () {
+    console.log("Uploading random video", candidateId);
     const batch = yield db_1.default
         .select()
         .from(schema_1.batches)
@@ -304,6 +305,7 @@ const uploadRandomVideo = (candidateId, video, batchId, testType) => __awaiter(v
     yield video.mv(videoPath);
 });
 const uploadRandomPhoto = (candidateId_1, photo_1, batchId_1, testType_1, ...args_1) => __awaiter(void 0, [candidateId_1, photo_1, batchId_1, testType_1, ...args_1], void 0, function* (candidateId, photo, batchId, testType, isAssessor = false) {
+    console.log("Uploading random photo for candidate:", candidateId);
     const batch = yield db_1.default
         .select()
         .from(schema_1.batches)

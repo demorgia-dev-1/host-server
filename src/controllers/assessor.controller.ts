@@ -7,6 +7,7 @@ import candidateService from "../services/candidate.service";
 import db from "../db";
 import { batches, candidates } from "../db/schema";
 import { and, eq } from "drizzle-orm";
+import logger from "../utils/logger";
 
 // will fetch the batches from main server
 export const getOfflineBatches = async (
@@ -17,21 +18,62 @@ export const getOfflineBatches = async (
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
+      logger.log("error", `Authorization header is missing`, {
+        //  @ts-ignore
+        requestId: req.requestId,
+        layer: "assessor.controller.getOfflineBatches",
+        method: "getOfflineBatches",
+        url: req.originalUrl,
+        headers: req.headers,
+      });
       next(new AppError("Authorization header is missing", 401, true));
       return;
     }
     const token = authHeader.split(" ")[1];
     if (!token) {
+      logger.log("error", `Token is missing`, {
+        //  @ts-ignore
+        requestId: req.requestId,
+        layer: "assessor.controller.getOfflineBatches",
+        method: "getOfflineBatches",
+        url: req.originalUrl,
+        headers: req.headers,
+      });
       next(new AppError("Token is missing", 401, true));
       return;
     }
     if (typeof token !== "string") {
+      logger.log("error", `Token is not a string`, {
+        //  @ts-ignore
+        requestId: req.requestId,
+        layer: "assessor.controller.getOfflineBatches",
+        method: "getOfflineBatches",
+        url: req.originalUrl,
+        headers: req.headers,
+      });
       next(new AppError("Token is not a string", 401, true));
       return;
     }
     const batches = await assessorService.getAssignedBatches(token);
+    logger.log("info", `Fetched offline batches`, {
+      //  @ts-ignore
+      requestId: req.requestId,
+      layer: "assessor.controller.getOfflineBatches",
+      method: "getOfflineBatches",
+      url: req.originalUrl,
+      headers: req.headers,
+      count: batches.length,
+    });
     res.status(200).json(batches);
   } catch (error) {
+    logger.log("error", `Failed to fetch offline`, {
+      //  @ts-ignore
+      requestId: req.requestId,
+      layer: "assessor.controller.getOfflineBatches",
+      method: "getOfflineBatches",
+      url: req.originalUrl,
+      headers: req.headers,
+    });
     next(error);
   }
 };
@@ -43,22 +85,55 @@ export const saveBatchOffline = async (
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
+      logger.log("error", `Authorization header is missing`, {
+        //  @ts-ignore
+        requestId: req.requestId,
+        layer: "assessor.controller.saveBatchOffline",
+        method: "saveBatchOffline",
+        url: req.originalUrl,
+        headers: req.headers,
+      });
       next(new AppError("Authorization header is missing", 401, true));
       return;
     }
     const token = authHeader.split(" ")[1];
     if (!token) {
+      logger.log("error", `Token is missing`, {
+        //  @ts-ignore
+        requestId: req.requestId,
+        layer: "assessor.controller.saveBatchOffline",
+        method: "saveBatchOffline",
+        url: req.originalUrl,
+        headers: req.headers,
+      });
       next(new AppError("Token is missing", 401, true));
       return;
     }
     if (typeof token !== "string") {
+      logger.log("error", `Token is not a string`, {
+        //  @ts-ignore
+        requestId: req.requestId,
+        layer: "assessor.controller.saveBatchOffline",
+        method: "saveBatchOffline",
+        url: req.originalUrl,
+        headers: req.headers,
+      });
       next(new AppError("Token is not a string", 401, true));
       return;
     }
     const batchId = req.params.batchId;
     await assessorService.saveBatchOffline(token, batchId);
+    // @ts-ignore
     res.status(200).json({});
   } catch (error) {
+    logger.log("error", `Failed to save batch offline`, {
+      //  @ts-ignore
+      requestId: req.requestId,
+      layer: "assessor.controller.saveBatchOffline",
+      method: "saveBatchOffline",
+      url: req.originalUrl,
+      headers: req.headers,
+    });
     next(error);
   }
 };
@@ -75,6 +150,14 @@ export const getLoadedBatches = async (
     );
     res.status(200).json(batches);
   } catch (error) {
+    logger.log("error", `Failed to fetch loaded batches`, {
+      //  @ts-ignore
+      requestId: req.requestId,
+      layer: "assessor.controller.getLoadedBatches",
+      method: "getLoadedBatches",
+      url: req.originalUrl,
+      headers: req.headers,
+    });
     next(error);
   }
 };
@@ -105,8 +188,17 @@ export const resetCandidates = async (
       req.params.batchId,
       req.headers["x-assessor-id"] as string
     );
+
     res.status(200).json({});
   } catch (error) {
+    logger.log("error", `Failed to reset candidates`, {
+      //  @ts-ignore
+      requestId: req.requestId,
+      layer: "assessor.controller.resetCandidates",
+      method: "resetCandidates",
+      url: req.originalUrl,
+      headers: req.headers,
+    });
     next(error);
   }
 };
@@ -124,6 +216,14 @@ export const resetCandidatesPractical = async (
     );
     res.status(200).json({});
   } catch (error) {
+    logger.log("error", `Failed to reset candidates practical`, {
+      //  @ts-ignore
+      requestId: req.requestId,
+      layer: "assessor.controller.resetCandidatesPractical",
+      method: "resetCandidatesPractical",
+      url: req.originalUrl,
+      headers: req.headers,
+    });
     next(error);
   }
 };
@@ -140,6 +240,14 @@ export const resetCandidatesViva = async (
     );
     res.status(200).json({});
   } catch (error) {
+    logger.log("error", `Failed to reset candidates viva`, {
+      //  @ts-ignore
+      requestId: req.requestId,
+      layer: "assessor.controller.resetCandidatesViva",
+      method: "resetCandidatesViva",
+      url: req.originalUrl,
+      headers: req.headers,
+    });
     return next(error);
   }
 };
@@ -154,8 +262,17 @@ export const markAttendanceInTheory = async (
       req.params.batchId,
       req.headers["x-assessor-id"] as string
     );
+
     res.status(200).json({});
   } catch (error) {
+    logger.log("error", `Failed to mark attendance in theory`, {
+      //  @ts-ignore
+      requestId: req.requestId,
+      layer: "assessor.controller.markAttendanceInTheory",
+      method: "markAttendanceInTheory",
+      url: req.originalUrl,
+      headers: req.headers,
+    });
     next(error);
   }
 };
@@ -175,6 +292,14 @@ export const markAttendanceInPractical = async (
     );
     res.status(200).json({});
   } catch (error) {
+    logger.log("error", `Failed to mark attendance in practical`, {
+      //  @ts-ignore
+      requestId: req.requestId,
+      layer: "assessor.controller.markAttendanceInPractical",
+      method: "markAttendanceInPractical",
+      url: req.originalUrl,
+      headers: req.headers,
+    });
     next(error);
   }
 };
@@ -190,6 +315,14 @@ export const markAttendanceInViva = async (
     await assessorService.markAttendanceInViva(candidates, batchId, assessorId);
     res.status(200).json({});
   } catch (error) {
+    logger.log("error", `Failed to mark attendance in viva`, {
+      //  @ts-ignore
+      requestId: req.requestId,
+      layer: "assessor.controller.markAttendanceInViva",
+      method: "markAttendanceInViva",
+      url: req.originalUrl,
+      headers: req.headers,
+    });
     next(error);
   }
 };
@@ -208,6 +341,14 @@ export const markAsReached = async (
     );
     res.status(200).json({});
   } catch (error) {
+    logger.log("error", `Failed to mark assessor as reached`, {
+      //  @ts-ignore
+      requestId: req.requestId,
+      layer: "assessor.controller.markAsReached",
+      method: "markAsReached",
+      url: req.originalUrl,
+      headers: req.headers,
+    });
     next(error);
   }
 };
@@ -222,6 +363,14 @@ export const startBatch = async (
     await assessorService.startBatch(batchId, assessorId);
     res.status(200).json({});
   } catch (error) {
+    logger.log("error", `Failed to start batch`, {
+      //  @ts-ignore
+      requestId: req.requestId,
+      layer: "assessor.controller.startBatch",
+      method: "startBatch",
+      url: req.originalUrl,
+      headers: req.headers,
+    });
     next(error);
   }
 };
@@ -238,6 +387,15 @@ export const deleteBatches = async (
     );
     res.status(200).json({});
   } catch (error) {
+    logger.log("error", `Failed to delete batches`, {
+      //  @ts-ignore
+      requestId: req.requestId,
+      layer: "assessor.controller.deleteBatches",
+      method: "deleteBatches",
+      url: req.originalUrl,
+      headers: req.headers,
+      body: req.body,
+    });
     next(error);
   }
 };
@@ -253,6 +411,15 @@ export const getPracticalQuestionBank = async (
     );
     res.status(200).json(questionBank);
   } catch (error) {
+    logger.log("error", `Failed to fetch practical question bank`, {
+      //  @ts-ignore
+      requestId: req.requestId,
+      layer: "assessor.controller.getPracticalQuestionBank",
+      method: "getPracticalQuestionBank",
+      url: req.originalUrl,
+      headers: req.headers,
+      params: req.params,
+    });
     next(error);
   }
 };
@@ -268,6 +435,15 @@ export const getVivaQuestionBank = async (
     );
     res.status(200).json(questionBank);
   } catch (error) {
+    logger.log("error", `Failed to fetch viva question bank`, {
+      //  @ts-ignore
+      requestId: req.requestId,
+      layer: "assessor.controller.getVivaQuestionBank",
+      method: "getVivaQuestionBank",
+      url: req.originalUrl,
+      headers: req.headers,
+      params: req.params,
+    });
     next(error);
   }
 };
@@ -281,10 +457,26 @@ export const submitCandidatePracticalResponses = async (
     const candidateId = req.params.candidateId;
     const assessorId = req.headers["x-assessor-id"] as string;
     if (!req.body?.responses) {
+      logger.log("error", `Responses are required`, {
+        //  @ts-ignore
+        requestId: req.requestId,
+        layer: "assessor.controller.submitCandidatePracticalResponses",
+        method: "submitCandidatePracticalResponses",
+        url: req.originalUrl,
+        headers: req.headers,
+      });
       return next(new AppError("responses are required", 400, true));
     }
     req.body.responses = JSON.parse(req.body.responses);
     if (!Array.isArray(req.body.responses)) {
+      logger.log("error", `Responses should be an array`, {
+        //  @ts-ignore
+        requestId: req.requestId,
+        layer: "assessor.controller.submitCandidatePracticalResponses",
+        method: "submitCandidatePracticalResponses",
+        url: req.originalUrl,
+        headers: req.headers,
+      });
       return next(new AppError("responses should be an array", 400, true));
     }
     // @ts-ignore
@@ -297,6 +489,14 @@ export const submitCandidatePracticalResponses = async (
           response.marksObtained === null ||
           response.marksObtained < 0
         ) {
+          logger.log("error", `questionId and marksObtained are required`, {
+            //  @ts-ignore
+            requestId: req.requestId,
+            layer: "assessor.controller.submitCandidatePracticalResponses",
+            method: "submitCandidatePracticalResponses",
+            url: req.originalUrl,
+            headers: req.headers,
+          });
           throw new AppError(
             "questionId and marksObtained are required",
             400,
@@ -320,6 +520,15 @@ export const submitCandidatePracticalResponses = async (
     );
     res.status(200).json({});
   } catch (error) {
+    logger.log("error", `Failed to submit candidate practical responses`, {
+      //  @ts-ignore
+      requestId: req.requestId,
+      layer: "assessor.controller.submitCandidatePracticalResponses",
+      method: "submitCandidatePracticalResponses",
+      url: req.originalUrl,
+      headers: req.headers,
+      body: req.body,
+    });
     next(error);
   }
 };
@@ -333,10 +542,26 @@ export const submitCandidateVivaResponses = async (
     const candidateId = req.params.candidateId;
     const assessorId = req.headers["x-assessor-id"] as string;
     if (!req.body?.responses) {
+      logger.log("error", `Responses are required`, {
+        //  @ts-ignore
+        requestId: req.requestId,
+        layer: "assessor.controller.submitCandidateVivaResponses",
+        method: "submitCandidateVivaResponses",
+        url: req.originalUrl,
+        headers: req.headers,
+      });
       return next(new AppError("responses are required", 400, true));
     }
     req.body.responses = JSON.parse(req.body.responses);
     if (!Array.isArray(req.body.responses)) {
+      logger.log("error", `Responses should be an array`, {
+        //  @ts-ignore
+        requestId: req.requestId,
+        layer: "assessor.controller.submitCandidateVivaResponses",
+        method: "submitCandidateVivaResponses",
+        url: req.originalUrl,
+        headers: req.headers,
+      });
       return next(new AppError("responses should be an array", 400, true));
     }
     const responses = req.body.responses.map(
@@ -347,6 +572,14 @@ export const submitCandidateVivaResponses = async (
           response.marksObtained === null ||
           response.marksObtained < 0
         ) {
+          logger.log("error", `questionId and marksObtained are required`, {
+            //  @ts-ignore
+            requestId: req.requestId,
+            layer: "assessor.controller.submitCandidateVivaResponses",
+            method: "submitCandidateVivaResponses",
+            url: req.originalUrl,
+            headers: req.headers,
+          });
           throw new AppError(
             "questionId and marksObtained are required",
             400,
@@ -371,6 +604,15 @@ export const submitCandidateVivaResponses = async (
     );
     res.status(200).json({});
   } catch (error) {
+    logger.log("error", `Failed to submit candidate viva responses`, {
+      //  @ts-ignore
+      requestId: req.requestId,
+      layer: "assessor.controller.submitCandidateVivaResponses",
+      method: "submitCandidateVivaResponses",
+      url: req.originalUrl,
+      headers: req.headers,
+      body: req.body,
+    });
     next(error);
   }
 };
@@ -383,6 +625,14 @@ export const syncCandidate = async (
     const batchId = req.params.batchId;
     const candidateId = req.params.candidateId;
     if (!batchId || !candidateId) {
+      logger.log("error", `batchId and candidateId are required`, {
+        //  @ts-ignore
+        requestId: req.requestId,
+        layer: "assessor.controller.syncCandidate",
+        method: "syncCandidate",
+        url: req.originalUrl,
+        headers: req.headers,
+      });
       return next(new AppError("batchId and candidateId are required", 400));
     }
     await assessorService.syncCandidate(
@@ -392,7 +642,15 @@ export const syncCandidate = async (
     );
     res.status(200).json({});
   } catch (error) {
-    console.log("error", error);
+    logger.log("error", `Failed to sync candidate`, {
+      //  @ts-ignore
+      requestId: req.requestId,
+      layer: "assessor.controller.syncCandidate",
+      method: "syncCandidate",
+      url: req.originalUrl,
+      headers: req.headers,
+      params: req.params,
+    });
     next(error);
   }
 };
@@ -409,6 +667,15 @@ export const getCandidateListFromMainServer = async (
     );
     res.status(200).json(list);
   } catch (error) {
+    logger.log("error", `Failed to fetch candidate list from main server`, {
+      //  @ts-ignore
+      requestId: req.requestId,
+      layer: "assessor.controller.getCandidateListFromMainServer",
+      method: "getCandidateListFromMainServer",
+      url: req.originalUrl,
+      headers: req.headers,
+      params: req.params,
+    });
     return next(error);
   }
 };
@@ -420,6 +687,14 @@ export const uploadPmkyChecklistFiles = async (
   try {
     let files: any = req?.files;
     if (!files) {
+      logger.log("error", `Files are required`, {
+        //  @ts-ignore
+        requestId: req.requestId,
+        layer: "assessor.controller.uploadPmkyChecklistFiles",
+        method: "uploadPmkyChecklistFiles",
+        url: req.originalUrl,
+        headers: req.headers,
+      });
       return next(new AppError("files are required", 400, true));
     }
     const data = Object.keys(files).map((key) => {
@@ -429,9 +704,25 @@ export const uploadPmkyChecklistFiles = async (
       };
     });
     if (data.length === 0) {
+      logger.log("error", `Files are required`, {
+        //  @ts-ignore
+        requestId: req.requestId,
+        layer: "assessor.controller.uploadPmkyChecklistFiles",
+        method: "uploadPmkyChecklistFiles",
+        url: req.originalUrl,
+        headers: req.headers,
+      });
       return next(new AppError("files are required", 400, true));
     }
     if (data.length > 1) {
+      logger.log("error", `Only one file is allowed`, {
+        //  @ts-ignore
+        requestId: req.requestId,
+        layer: "assessor.controller.uploadPmkyChecklistFiles",
+        method: "uploadPmkyChecklistFiles",
+        url: req.originalUrl,
+        headers: req.headers,
+      });
       return next(new AppError("only one file is allowed", 400, true));
     }
     await assessorService.uploadPmkyChecklistFiles(
@@ -442,7 +733,15 @@ export const uploadPmkyChecklistFiles = async (
     );
     res.status(200).json({});
   } catch (error) {
-    console.log("error", error);
+    logger.log("error", `Failed to upload PMKY checklist files`, {
+      //  @ts-ignore
+      requestId: req.requestId,
+      layer: "assessor.controller.uploadPmkyChecklistFiles",
+      method: "uploadPmkyChecklistFiles",
+      url: req.originalUrl,
+      headers: req.headers,
+      params: req.params,
+    });
     return next(error);
   }
 };
@@ -460,7 +759,15 @@ export const getPmkyChecklist = async (
     );
     res.status(200).json(pmkyChecklist);
   } catch (error) {
-    console.log("error", error);
+    logger.log("error", `Failed to fetch PMKY checklist`, {
+      //  @ts-ignore
+      requestId: req.requestId,
+      layer: "assessor.controller.getPmkyChecklist",
+      method: "getPmkyChecklist",
+      url: req.originalUrl,
+      headers: req.headers,
+      params: req.params,
+    });
     return next(error);
   }
 };
@@ -479,7 +786,15 @@ export const submitPmkyChecklist = async (
     );
     res.status(200).json({});
   } catch (error) {
-    console.log("error", error);
+    logger.log("error", `Failed to submit PMKY checklist`, {
+      //  @ts-ignore
+      requestId: req.requestId,
+      layer: "assessor.controller.submitPmkyChecklist",
+      method: "submitPmkyChecklist",
+      url: req.originalUrl,
+      headers: req.headers,
+      params: req.params,
+    });
     return next(error);
   }
 };
@@ -504,7 +819,19 @@ export const uploadCandidatePracticalOnboadingFiles = async (
     );
     res.status(200).json({});
   } catch (error) {
-    console.log("error", error);
+    logger.log(
+      "error",
+      `Failed to upload candidate practical onboarding files`,
+      {
+        //  @ts-ignore
+        requestId: req.requestId,
+        layer: "assessor.controller.uploadCandidatePracticalOnboadingFiles",
+        method: "uploadCandidatePracticalOnboadingFiles",
+        url: req.originalUrl,
+        headers: req.headers,
+        params: req.params,
+      }
+    );
     return next(error);
   }
 };
@@ -522,6 +849,14 @@ const uploadRandomPhotos = async (
       .from(batches)
       .where(and(eq(batches.id, batchId), eq(batches.assessor, assessorId)));
     if (batch.length === 0) {
+      logger.log("error", `Batch not found`, {
+        //  @ts-ignore
+        requestId: req.requestId,
+        layer: "assessor.controller.uploadRandomPhotos",
+        method: "uploadRandomPhotos",
+        url: req.originalUrl,
+        headers: req.headers,
+      });
       return next(new AppError("batch not found", 404, true));
     }
     const candidate = await db
@@ -531,11 +866,27 @@ const uploadRandomPhotos = async (
         and(eq(candidates.id, candidateId), eq(candidates.batchId, batchId))
       );
     if (candidate.length === 0) {
+      logger.log("error", `Candidate not found`, {
+        //  @ts-ignore
+        requestId: req.requestId,
+        layer: "assessor.controller.uploadRandomPhotos",
+        method: "uploadRandomPhotos",
+        url: req.originalUrl,
+        headers: req.headers,
+      });
       return next(new AppError("candidate not found", 404, true));
     }
     // @ts-ignore
     const photo = req.files.photo;
     if (!photo) {
+      logger.log("error", `Files are required`, {
+        //  @ts-ignore
+        requestId: req.requestId,
+        layer: "assessor.controller.uploadRandomPhotos",
+        method: "uploadRandomPhotos",
+        url: req.originalUrl,
+        headers: req.headers,
+      });
       return next(new AppError("files are required", 400, true));
     }
 
@@ -549,7 +900,15 @@ const uploadRandomPhotos = async (
     );
     res.status(200).json({});
   } catch (error) {
-    console.log("error", error);
+    logger.log("error", `Failed to upload random photos`, {
+      //  @ts-ignore
+      requestId: req.requestId,
+      layer: "assessor.controller.uploadRandomPhotos",
+      method: "uploadRandomPhotos",
+      url: req.originalUrl,
+      headers: req.headers,
+      params: req.params,
+    });
     return next(error);
   }
 };
