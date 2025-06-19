@@ -163,6 +163,109 @@ async function syncAssets() {
         const candidateDirs = await fs.promises.readdir(candidatesDir, {
           withFileTypes: true,
         });
+        if (
+          fs.existsSync(path.join(candidatesDir, "..", "assessor", "adhar"))
+        ) {
+          const adharDir = path.join(candidatesDir, "..", "assessor", "adhar");
+          if (fs.existsSync(path.join(adharDir, "meta.json"))) {
+            const metadata = JSON.parse(
+              fs.readFileSync(path.join(adharDir, "meta.json"), "utf-8")
+            );
+            const files = metadata.files;
+            const fileNames =
+              typeof files === "object" ? Object.keys(files) : [];
+            let isNewFileUplaoded = false;
+            const filesInFolder = await fs.promises.readdir(adharDir);
+            for (const fileName of filesInFolder) {
+              if (fileName === "meta.json") {
+                continue;
+              }
+              if (!files[fileName]) {
+                isNewFileUplaoded = true;
+                break;
+              }
+            }
+            if (isNewFileUplaoded) {
+              const updateMetadata = { ...metadata };
+              for (const fileName of filesInFolder) {
+                if (fileName === "meta.json") {
+                  continue;
+                }
+                if (!files[fileName]) {
+                  // @ts-ignore
+                  updateMetadata.files[fileName] = {
+                    isUploaded: false,
+                    fileName: fileName,
+                  };
+                }
+              }
+              fs.writeFileSync(
+                path.join(adharDir, "meta.json"),
+                JSON.stringify(updateMetadata, null, 2)
+              );
+              return;
+            }
+            for (const fileName of fileNames) {
+              if (files[fileName].isUploaded) {
+                continue;
+              }
+              const response = await axios.get(
+                `${
+                  process.env.MAIN_SERVER_URL
+                }/assessor/offline-batches/${batchId}/sync-assessor-adhar?fileName=${fileName}&contentType=${mime.lookup(
+                  fileName
+                )}`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                  },
+                }
+              );
+              const url = response.data.data.url;
+              if (!url) {
+                continue;
+              }
+              const filePath = path.join(adharDir, fileName);
+              if (fs.existsSync(filePath)) {
+                const buffer = fs.readFileSync(filePath);
+                console.log(
+                  "syncing adhar file of batch ",
+                  batchId,
+                  " file name ",
+                  fileName
+                );
+                await axios.put(url, buffer, {
+                  headers: {
+                    "Content-Type":
+                      mime.lookup(fileName) || "application/octet-stream",
+                  },
+                });
+                metadata.files[fileName].isUploaded = true;
+                fs.writeFileSync(
+                  path.join(adharDir, "meta.json"),
+                  JSON.stringify(metadata, null, 2)
+                );
+              }
+            }
+          } else {
+            const metadata = {
+              files: {},
+              isFolderSynced: false,
+            };
+            const files = await getPhotoFileNames(adharDir);
+            for (const file of files) {
+              // @ts-ignore
+              metadata.files[file] = {
+                isUploaded: false,
+                fileName: file,
+              };
+            }
+            fs.writeFileSync(
+              path.join(adharDir, "meta.json"),
+              JSON.stringify(metadata, null, 2)
+            );
+          }
+        }
         for (const candidateDir of candidateDirs) {
           if (candidateDir.isDirectory()) {
             const candidateId = candidateDir.name;
