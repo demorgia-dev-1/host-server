@@ -1087,8 +1087,8 @@ const submitCandidatePracticalResponses = async (
       .values(
         responses.map((response: any) => ({
           questionId: response.questionId,
-          answerId: "no-answer-mentioned-practical-submitted-by-assessor",
-          marksObtained: response.marksObtained,
+          answerId: response.partialMarks || JSON.stringify([]),
+          marksObtained: 0,
           candidateId: candidateId,
           batchId: batchId,
           startedAt: new Date().toISOString(),
