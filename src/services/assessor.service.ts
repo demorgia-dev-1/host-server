@@ -659,20 +659,6 @@ const resetCandidatesPractical = async (
     return examFolders.map((addOn) => path.join(basePath, ...addOn));
   });
 
-  await db
-    .update(candidateTable)
-    .set({
-      isPresentInPractical: false,
-      practicalExamStatus: "notStarted",
-      practicalStartedAt: null,
-      practicalSubmittedAt: null,
-    })
-    .where(
-      and(
-        eq(candidateTable.batchId, batchId),
-        inArray(candidateTable.id, candidateIds)
-      )
-    );
   db.transaction((tx) => {
     tx.update(candidateTable)
       .set({
