@@ -491,12 +491,12 @@ export const submitCandidatePracticalResponses = async (
           !response.questionId ||
           response.partialMarks === undefined ||
           !Array.isArray(response.partialMarks) ||
-          response.partialMarks.length === 0 ||
           response.partialMarks.some(
             (partialMark: any) =>
               partialMark.marksObtained === undefined ||
               partialMark.marksObtained === null ||
               partialMark.marksObtained < 0 ||
+              partialMark.marksObtained > 100 ||
               !partialMark.answerId ||
               partialMark.answerId === undefined ||
               partialMark.answerId === null
