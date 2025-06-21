@@ -489,11 +489,18 @@ export const submitCandidatePracticalResponses = async (
       (response: Record<string, any>) => {
         if (
           !response.questionId ||
-          response.marksObtained === undefined ||
-          response.marksObtained === null ||
-          response.marksObtained < 0
+          response.partialMarks === undefined ||
+          !Array.isArray(response.partialMarks) ||
+          response.partialMarks.length === 0 ||
+          response.partialMarks.some(
+            (partialMark: any) =>
+              partialMark.marksObtained === undefined ||
+              partialMark.marksObtained === null ||
+              partialMark.marksObtained < 0 ||
+              partialMark.answerId === undefined
+          )
         ) {
-          logger.log("error", `questionId and marksObtained are required`, {
+          logger.log("error", `invalid request body`, {
             //  @ts-ignore
             requestId: req.requestId,
             layer: "assessor.controller.submitCandidatePracticalResponses",
@@ -501,15 +508,11 @@ export const submitCandidatePracticalResponses = async (
             url: req.originalUrl,
             headers: req.headers,
           });
-          throw new AppError(
-            "questionId and marksObtained are required",
-            400,
-            true
-          );
+          throw new AppError("invalid request body", 400, true);
         }
         return {
           questionId: response.questionId,
-          marksObtained: response.marksObtained,
+          partialMarks: JSON.stringify(response.partialMarks),
         };
       }
     );
