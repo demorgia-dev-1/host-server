@@ -497,7 +497,9 @@ export const submitCandidatePracticalResponses = async (
               partialMark.marksObtained === undefined ||
               partialMark.marksObtained === null ||
               partialMark.marksObtained < 0 ||
-              partialMark.answerId === undefined
+              !partialMark.answerId ||
+              partialMark.answerId === undefined ||
+              partialMark.answerId === null
           )
         ) {
           logger.log("error", `invalid request body`, {
