@@ -683,6 +683,9 @@ const resetCandidatesPractical = async (
         )
       )
       .run();
+    tx.delete(commentTable)
+      .where(and(inArray(commentTable.candidateId, candidateIds)))
+      .run();
   });
 
   await Promise.all(
@@ -750,6 +753,9 @@ const resetCandidatesViva = async (
           eq(examResponseTable.type, "VIVA")
         )
       )
+      .run();
+    tx.delete(commentTable)
+      .where(and(inArray(commentTable.candidateId, candidateIds)))
       .run();
   });
   await Promise.all(

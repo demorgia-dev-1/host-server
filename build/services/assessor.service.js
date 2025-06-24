@@ -476,6 +476,9 @@ const resetCandidates = (candidateIds, batchId, assessorId) => __awaiter(void 0,
         tx.delete(schema_1.examResponses)
             .where((0, drizzle_orm_1.inArray)(schema_1.examResponses.candidateId, candidateIds))
             .run();
+        tx.delete(schema_1.comments)
+            .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.inArray)(schema_1.examResponses.candidateId, candidateIds), (0, drizzle_orm_1.eq)(schema_1.examResponses.batchId, batchId)))
+            .run();
     });
     yield Promise.all(deletePaths.map((targetPath) => __awaiter(void 0, void 0, void 0, function* () {
         try {
@@ -509,15 +512,6 @@ const resetCandidatesPractical = (candidateIds, batchId, assessorId) => __awaite
         const basePath = path_1.default.join(__dirname, "..", "..", "uploads", "batches", batchId, "evidences", "candidates", candidateId);
         return examFolders.map((addOn) => path_1.default.join(basePath, ...addOn));
     });
-    yield db_1.default
-        .update(schema_1.candidates)
-        .set({
-        isPresentInPractical: false,
-        practicalExamStatus: "notStarted",
-        practicalStartedAt: null,
-        practicalSubmittedAt: null,
-    })
-        .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.candidates.batchId, batchId), (0, drizzle_orm_1.inArray)(schema_1.candidates.id, candidateIds)));
     db_1.default.transaction((tx) => {
         tx.update(schema_1.candidates)
             .set({
@@ -530,6 +524,9 @@ const resetCandidatesPractical = (candidateIds, batchId, assessorId) => __awaite
             .run();
         tx.delete(schema_1.examResponses)
             .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.inArray)(schema_1.examResponses.candidateId, candidateIds), (0, drizzle_orm_1.eq)(schema_1.examResponses.batchId, batchId), (0, drizzle_orm_1.eq)(schema_1.examResponses.type, "PRACTICAL")))
+            .run();
+        tx.delete(schema_1.comments)
+            .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.inArray)(schema_1.examResponses.candidateId, candidateIds), (0, drizzle_orm_1.eq)(schema_1.examResponses.batchId, batchId)))
             .run();
     });
     yield Promise.all(deletePaths.map((targetPath) => __awaiter(void 0, void 0, void 0, function* () {
@@ -572,6 +569,9 @@ const resetCandidatesViva = (candidateIds, batchId, assessorId) => __awaiter(voi
         tx.delete(schema_1.examResponses)
             .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.inArray)(schema_1.examResponses.candidateId, candidateIds), (0, drizzle_orm_1.eq)(schema_1.examResponses.batchId, batchId), (0, drizzle_orm_1.eq)(schema_1.examResponses.type, "VIVA")))
             .run();
+        tx.delete(schema_1.comments)
+            .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.inArray)(schema_1.examResponses.candidateId, candidateIds), (0, drizzle_orm_1.eq)(schema_1.examResponses.batchId, batchId)))
+            .run();
     });
     yield Promise.all(deletePaths.map((targetPath) => __awaiter(void 0, void 0, void 0, function* () {
         try {
@@ -582,7 +582,7 @@ const resetCandidatesViva = (candidateIds, batchId, assessorId) => __awaiter(voi
         }
     })));
 });
-const markAssessorAsReached = (batchId, assessorId, picture, location) => __awaiter(void 0, void 0, void 0, function* () {
+const markAssessorAsReached = (batchId, assessorId, picture, adharPicture, location) => __awaiter(void 0, void 0, void 0, function* () {
     const batch = yield db_1.default
         .select()
         .from(schema_1.batches)
@@ -623,6 +623,21 @@ const markAssessorAsReached = (batchId, assessorId, picture, location) => __awai
         throw new AppError_1.AppError("Invalid file name", 400);
     }
     const uploadPath = path_1.default.join(__dirname, "..", "..", "uploads", "batches", batchId, "evidences", "assessor", "group-photo", `${Date.now()}.${ext}`);
+    if (!adharPicture) {
+        throw new AppError_1.AppError("Adhar picture is required", 400);
+    }
+    if (!adharPicture.mimetype.startsWith("image/")) {
+        throw new AppError_1.AppError("Invalid adhar file type", 400);
+    }
+    if (adharPicture.size > 2 * 1024 * 1024) {
+        throw new AppError_1.AppError("Adhar file size exceeds 2MB", 400);
+    }
+    const adharExt = adharPicture.name.split(".").pop();
+    if (!adharExt) {
+        throw new AppError_1.AppError("Invalid adhar file name", 400);
+    }
+    const adharUploadPath = path_1.default.join(__dirname, "..", "..", "uploads", "batches", batchId, "evidences", "assessor", "adhar", `adhar.${adharExt}`);
+    yield adharPicture.mv(adharUploadPath);
     const p = yield new Promise((resolve, reject) => {
         picture.mv(uploadPath, (err) => {
             if (err) {
@@ -686,7 +701,7 @@ const deleteBatches = (ids, assessorId) => __awaiter(void 0, void 0, void 0, fun
         }
     }));
 });
-const submitCandidatePracticalResponses = (responses, candidateId, batchId, assessorId, evidence, comment, candidatePhoto, document) => __awaiter(void 0, void 0, void 0, function* () {
+const submitCandidatePracticalResponses = (responses, candidateId, batchId, assessorId, evidences, comment, candidatePhoto, document) => __awaiter(void 0, void 0, void 0, function* () {
     // Fetch batch details
     const batch = yield db_1.default
         .select()
@@ -730,16 +745,18 @@ const submitCandidatePracticalResponses = (responses, candidateId, batchId, asse
         return; // Early exit if no responses
     }
     // Handle evidence upload if provided
-    if (evidence) {
-        if (!evidence.mimetype.startsWith("video/")) {
-            throw new AppError_1.AppError("Invalid file type", 400);
-        }
-        if (evidence.size > 100 * 1024 * 1024) {
-            throw new AppError_1.AppError("File size exceeds 100MB", 400);
-        }
-        const ext = evidence.name.split(".").pop();
-        const uploadPath = path_1.default.join(__dirname, "..", "..", "uploads", "batches", batchId, "evidences", "candidates", candidateId, "videos", "PRACTICAL", `evidence.${ext}`);
-        yield evidence.mv(uploadPath);
+    if (evidences && evidences.length > 0) {
+        evidences.forEach((evidence) => __awaiter(void 0, void 0, void 0, function* () {
+            if (!evidence.mimetype.startsWith("video/")) {
+                throw new AppError_1.AppError("Invalid file type", 400);
+            }
+            if (evidence.size > 150 * 1024 * 1024) {
+                throw new AppError_1.AppError("File size exceeds 150MB", 400);
+            }
+            const ext = evidence.name.split(".").pop();
+            const uploadPath = path_1.default.join(__dirname, "..", "..", "uploads", "batches", batchId, "evidences", "candidates", candidateId, "videos", "PRACTICAL", `${(0, uuid_1.v4)()}.${ext}`);
+            yield evidence.mv(uploadPath);
+        }));
     }
     if (candidatePhoto) {
         if (!candidatePhoto.mimetype.startsWith("image/")) {
@@ -769,8 +786,8 @@ const submitCandidatePracticalResponses = (responses, candidateId, batchId, asse
         tx.insert(schema_1.examResponses)
             .values(responses.map((response) => ({
             questionId: response.questionId,
-            answerId: "no-answer-mentioned-practical-submitted-by-assessor",
-            marksObtained: response.marksObtained,
+            answerId: response.partialMarks || JSON.stringify([]),
+            marksObtained: 0,
             candidateId: candidateId,
             batchId: batchId,
             startedAt: new Date().toISOString(),

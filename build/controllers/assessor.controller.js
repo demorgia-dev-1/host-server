@@ -291,11 +291,11 @@ const markAttendanceInViva = (req, res, next) => __awaiter(void 0, void 0, void 
 });
 exports.markAttendanceInViva = markAttendanceInViva;
 const markAsReached = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
+    var _a, _b;
     try {
         yield assessor_service_1.default.markAssessorAsReached(req.params.batchId, req.headers["x-assessor-id"], 
         // @ts-ignore
-        (_a = req === null || req === void 0 ? void 0 : req.files) === null || _a === void 0 ? void 0 : _a.picture, req.body.location);
+        (_a = req === null || req === void 0 ? void 0 : req.files) === null || _a === void 0 ? void 0 : _a.picture, (_b = req === null || req === void 0 ? void 0 : req.files) === null || _b === void 0 ? void 0 : _b.adharPicture, req.body.location);
         res.status(200).json({});
     }
     catch (error) {
@@ -419,13 +419,22 @@ const submitCandidatePracticalResponses = (req, res, next) => __awaiter(void 0, 
             return next(new AppError_1.AppError("responses should be an array", 400, true));
         }
         // @ts-ignore
-        const video = (_b = req === null || req === void 0 ? void 0 : req.files) === null || _b === void 0 ? void 0 : _b.video;
+        let videos = (_b = req === null || req === void 0 ? void 0 : req.files) === null || _b === void 0 ? void 0 : _b.videos;
+        if (!videos || !Array.isArray(videos)) {
+            videos = videos ? [videos] : [];
+        }
         const responses = req.body.responses.map((response) => {
             if (!response.questionId ||
-                response.marksObtained === undefined ||
-                response.marksObtained === null ||
-                response.marksObtained < 0) {
-                logger_1.default.log("error", `questionId and marksObtained are required`, {
+                response.partialMarks === undefined ||
+                !Array.isArray(response.partialMarks) ||
+                response.partialMarks.some((partialMark) => partialMark.marksObtained === undefined ||
+                    partialMark.marksObtained === null ||
+                    partialMark.marksObtained < 0 ||
+                    partialMark.marksObtained > 100 ||
+                    !partialMark.answerId ||
+                    partialMark.answerId === undefined ||
+                    partialMark.answerId === null)) {
+                logger_1.default.log("error", `invalid request body`, {
                     //  @ts-ignore
                     requestId: req.requestId,
                     layer: "assessor.controller.submitCandidatePracticalResponses",
@@ -433,17 +442,18 @@ const submitCandidatePracticalResponses = (req, res, next) => __awaiter(void 0, 
                     url: req.originalUrl,
                     headers: req.headers,
                 });
-                throw new AppError_1.AppError("questionId and marksObtained are required", 400, true);
+                throw new AppError_1.AppError("invalid request body", 400, true);
             }
             return {
                 questionId: response.questionId,
-                marksObtained: response.marksObtained,
+                partialMarks: JSON.stringify(response.partialMarks),
             };
         });
-        yield assessor_service_1.default.submitCandidatePracticalResponses(responses, candidateId, batchId, assessorId, video, req.body.comment);
+        yield assessor_service_1.default.submitCandidatePracticalResponses(responses, candidateId, batchId, assessorId, videos, req.body.comment);
         res.status(200).json({});
     }
     catch (error) {
+        console.log("error ", error);
         logger_1.default.log("error", `Failed to submit candidate practical responses`, {
             //  @ts-ignore
             requestId: req.requestId,

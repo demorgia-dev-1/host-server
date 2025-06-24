@@ -169,6 +169,83 @@ function syncAssets() {
                     const candidateDirs = yield fs_1.default.promises.readdir(candidatesDir, {
                         withFileTypes: true,
                     });
+                    if (fs_1.default.existsSync(path_1.default.join(candidatesDir, "..", "assessor", "adhar"))) {
+                        const adharDir = path_1.default.join(candidatesDir, "..", "assessor", "adhar");
+                        if (fs_1.default.existsSync(path_1.default.join(adharDir, "meta.json"))) {
+                            const metadata = JSON.parse(fs_1.default.readFileSync(path_1.default.join(adharDir, "meta.json"), "utf-8"));
+                            const files = metadata.files;
+                            const fileNames = typeof files === "object" ? Object.keys(files) : [];
+                            let isNewFileUplaoded = false;
+                            const filesInFolder = yield fs_1.default.promises.readdir(adharDir);
+                            for (const fileName of filesInFolder) {
+                                if (fileName === "meta.json") {
+                                    continue;
+                                }
+                                if (!files[fileName]) {
+                                    isNewFileUplaoded = true;
+                                    break;
+                                }
+                            }
+                            if (isNewFileUplaoded) {
+                                const updateMetadata = Object.assign({}, metadata);
+                                for (const fileName of filesInFolder) {
+                                    if (fileName === "meta.json") {
+                                        continue;
+                                    }
+                                    if (!files[fileName]) {
+                                        // @ts-ignore
+                                        updateMetadata.files[fileName] = {
+                                            isUploaded: false,
+                                            fileName: fileName,
+                                        };
+                                    }
+                                }
+                                fs_1.default.writeFileSync(path_1.default.join(adharDir, "meta.json"), JSON.stringify(updateMetadata, null, 2));
+                                return;
+                            }
+                            for (const fileName of fileNames) {
+                                if (files[fileName].isUploaded) {
+                                    continue;
+                                }
+                                const response = yield axios_1.default.get(`${process.env.MAIN_SERVER_URL}/assessor/offline-batches/${batchId}/sync-assessor-adhar?fileName=${fileName}&contentType=${mime_types_1.default.lookup(fileName)}`, {
+                                    headers: {
+                                        Authorization: `Bearer ${token}`,
+                                    },
+                                });
+                                const url = response.data.data.url;
+                                if (!url) {
+                                    continue;
+                                }
+                                const filePath = path_1.default.join(adharDir, fileName);
+                                if (fs_1.default.existsSync(filePath)) {
+                                    const buffer = fs_1.default.readFileSync(filePath);
+                                    console.log("syncing adhar file of batch ", batchId, " file name ", fileName);
+                                    yield axios_1.default.put(url, buffer, {
+                                        headers: {
+                                            "Content-Type": mime_types_1.default.lookup(fileName) || "application/octet-stream",
+                                        },
+                                    });
+                                    metadata.files[fileName].isUploaded = true;
+                                    fs_1.default.writeFileSync(path_1.default.join(adharDir, "meta.json"), JSON.stringify(metadata, null, 2));
+                                }
+                            }
+                        }
+                        else {
+                            const metadata = {
+                                files: {},
+                                isFolderSynced: false,
+                            };
+                            const files = yield getPhotoFileNames(adharDir);
+                            for (const file of files) {
+                                // @ts-ignore
+                                metadata.files[file] = {
+                                    isUploaded: false,
+                                    fileName: file,
+                                };
+                            }
+                            fs_1.default.writeFileSync(path_1.default.join(adharDir, "meta.json"), JSON.stringify(metadata, null, 2));
+                        }
+                    }
                     for (const candidateDir of candidateDirs) {
                         if (candidateDir.isDirectory()) {
                             const candidateId = candidateDir.name;
@@ -772,34 +849,51 @@ function syncAssets() {
         }
     });
 }
+let isRunning = false;
 const startJob = () => __awaiter(void 0, void 0, void 0, function* () {
-    let lock = false;
     node_cron_1.default.schedule("* * * * *", () => __awaiter(void 0, void 0, void 0, function* () {
+        if (isRunning) {
+            console.log("⏳ Job is still running, skipping this cycle...");
+            return;
+        }
+        isRunning = true;
+        console.log("🚀 Job started at", new Date().toISOString());
         try {
             dns_1.default.lookup("google.com", (err) => __awaiter(void 0, void 0, void 0, function* () {
                 if (err && err.code === "ENOTFOUND") {
                     console.log("no internet");
                 }
                 else {
-                    if (lock) {
-                        console.log("Job is already running");
-                        return;
-                    }
-                    lock = true;
-                    yield syncAssets()
-                        .catch((error) => {
-                        lock = false;
-                    })
-                        .finally(() => {
-                        lock = false;
-                    });
-                    lock = false;
+                    yield syncAssets();
                 }
             }));
         }
-        catch (error) {
-            console.error("❌ Error during scheduled job:", error);
+        catch (err) {
+            if (err.code === "ENOTFOUND") {
+                console.warn("⚠️ No internet connection");
+            }
+            else {
+                console.error("❌ Error during scheduled job:", err);
+            }
+        }
+        finally {
+            isRunning = false;
         }
     }));
 });
+// const startJob = async () => {
+//   cron.schedule("* * * * *", async () => {
+//     try {
+//       dns.lookup("google.com", async (err) => {
+//         if (err && err.code === "ENOTFOUND") {
+//           console.log("no internet");
+//         } else {
+//           await syncAssets();
+//         }
+//       });
+//     } catch (error) {
+//       console.error("❌ Error during scheduled job:", error);
+//     }
+//   });
+// };
 exports.default = startJob;
