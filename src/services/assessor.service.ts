@@ -609,7 +609,8 @@ const resetCandidates = async (
     tx.delete(examResponseTable)
       .where(inArray(examResponseTable.candidateId, candidateIds))
       .run();
-    tx.delete(candidateFeedback)
+    tx.update(candidateFeedback)
+      .set({ submitted: false })
       .where(inArray(candidateFeedback.candidateId, candidateIds))
       .run();
   });

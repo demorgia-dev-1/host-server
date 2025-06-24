@@ -380,6 +380,7 @@ const getFeedbackForm = async (
       // @ts-ignore
       requestId: req.requestId,
     });
+    console.log("feedback", feedback);
     res.status(200).json(feedback);
   } catch (error) {
     logger.log("error", "Error fetching feedback form for candidate", {

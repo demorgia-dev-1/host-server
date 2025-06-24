@@ -323,7 +323,6 @@ const uploadRandomVideo = async (
   batchId: string,
   testType: "THEORY" | "PRACTICAL" | "VIVA"
 ) => {
-  console.log("Uploading random video", candidateId);
   const batch = await db
     .select()
     .from(batchTable)
@@ -396,7 +395,6 @@ const uploadRandomPhoto = async (
   testType: "THEORY" | "PRACTICAL" | "VIVA",
   isAssessor: boolean = false
 ) => {
-  console.log("Uploading random photo for candidate:", candidateId);
   const batch = await db
     .select()
     .from(batchTable)
@@ -592,7 +590,7 @@ const getFeedbackForm = async (candidateId: string) => {
   const form = await db
     .select()
     .from(candidateFeedback)
-    .where(eq(candidateFeedback.batchId, candidate[0].batchId));
+    .where(eq(candidateFeedback.candidateId, candidateId));
   if (form.length > 0) {
     const feedback = form[0].questions;
     if (form[0].submitted) {
