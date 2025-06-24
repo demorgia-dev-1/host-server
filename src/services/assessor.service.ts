@@ -609,6 +609,9 @@ const resetCandidates = async (
     tx.delete(examResponseTable)
       .where(inArray(examResponseTable.candidateId, candidateIds))
       .run();
+    tx.delete(candidateFeedback)
+      .where(inArray(candidateFeedback.candidateId, candidateIds))
+      .run();
   });
   await Promise.all(
     deletePaths.map(async (targetPath) => {
@@ -687,7 +690,6 @@ const resetCandidatesPractical = async (
       .where(and(inArray(commentTable.candidateId, candidateIds)))
       .run();
   });
-
   await Promise.all(
     deletePaths.map(async (targetPath) => {
       try {
