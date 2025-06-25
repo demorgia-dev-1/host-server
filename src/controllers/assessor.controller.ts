@@ -364,6 +364,7 @@ export const startBatch = async (
     await assessorService.startBatch(batchId, assessorId);
     res.status(200).json({});
   } catch (error) {
+    console.log(error);
     logger.log("error", `Failed to start batch`, {
       //  @ts-ignore
       requestId: req.requestId,

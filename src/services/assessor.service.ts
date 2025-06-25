@@ -1585,6 +1585,7 @@ const syncCandidate = async (
         endedAt: response.endedAt,
       });
     });
+    // console.log("Practical Responses:", practicalResponses);
     practicalResponses.forEach((response: any) => {
       const obj = {
         questionId: response.questionId,
@@ -1601,6 +1602,9 @@ const syncCandidate = async (
       } else {
         // @ts-ignore
         obj["marksObtained"] = response.marksObtained || 0;
+        obj["partialMarks"] = response.answerId
+          ? JSON.parse(response.answerId)
+          : [];
       }
       // @ts-ignore
       finalResponses.practical.push(obj);
