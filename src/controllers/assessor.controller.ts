@@ -516,6 +516,12 @@ export const submitCandidatePracticalResponses = async (
         return {
           questionId: response.questionId,
           partialMarks: JSON.stringify(response.partialMarks),
+          startedAt: response.startedAt
+            ? new Date(response.startedAt).toISOString()
+            : null,
+          endedAt: response.endedAt
+            ? new Date(response.endedAt).toISOString()
+            : null,
         };
       }
     );

@@ -319,6 +319,7 @@ const startBatch = (req, res, next) => __awaiter(void 0, void 0, void 0, functio
         res.status(200).json({});
     }
     catch (error) {
+        console.log(error);
         logger_1.default.log("error", `Failed to start batch`, {
             //  @ts-ignore
             requestId: req.requestId,
@@ -453,7 +454,6 @@ const submitCandidatePracticalResponses = (req, res, next) => __awaiter(void 0, 
         res.status(200).json({});
     }
     catch (error) {
-        console.log("error ", error);
         logger_1.default.log("error", `Failed to submit candidate practical responses`, {
             //  @ts-ignore
             requestId: req.requestId,

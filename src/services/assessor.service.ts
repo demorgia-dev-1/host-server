@@ -1086,8 +1086,8 @@ const submitCandidatePracticalResponses = async (
           marksObtained: 0,
           candidateId: candidateId,
           batchId: batchId,
-          startedAt: new Date().toISOString(),
-          endedAt: new Date().toISOString(),
+          startedAt: response.startedAt || new Date().toISOString(),
+          endedAt: response.endedAt || new Date().toISOString(),
           type: "PRACTICAL",
         }))
       )
@@ -1605,6 +1605,8 @@ const syncCandidate = async (
         obj["partialMarks"] = response.answerId
           ? JSON.parse(response.answerId)
           : [];
+        obj["startedAt"] = response.startedAt || new Date().toISOString();
+        obj["endedAt"] = response.endedAt || new Date().toISOString();
       }
       // @ts-ignore
       finalResponses.practical.push(obj);

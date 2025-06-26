@@ -476,8 +476,9 @@ const resetCandidates = (candidateIds, batchId, assessorId) => __awaiter(void 0,
         tx.delete(schema_1.examResponses)
             .where((0, drizzle_orm_1.inArray)(schema_1.examResponses.candidateId, candidateIds))
             .run();
-        tx.delete(schema_1.comments)
-            .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.inArray)(schema_1.examResponses.candidateId, candidateIds), (0, drizzle_orm_1.eq)(schema_1.examResponses.batchId, batchId)))
+        tx.update(schema_1.candidateFeedback)
+            .set({ submitted: false })
+            .where((0, drizzle_orm_1.inArray)(schema_1.candidateFeedback.candidateId, candidateIds))
             .run();
     });
     yield Promise.all(deletePaths.map((targetPath) => __awaiter(void 0, void 0, void 0, function* () {
@@ -526,7 +527,7 @@ const resetCandidatesPractical = (candidateIds, batchId, assessorId) => __awaite
             .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.inArray)(schema_1.examResponses.candidateId, candidateIds), (0, drizzle_orm_1.eq)(schema_1.examResponses.batchId, batchId), (0, drizzle_orm_1.eq)(schema_1.examResponses.type, "PRACTICAL")))
             .run();
         tx.delete(schema_1.comments)
-            .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.inArray)(schema_1.examResponses.candidateId, candidateIds), (0, drizzle_orm_1.eq)(schema_1.examResponses.batchId, batchId)))
+            .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.inArray)(schema_1.comments.candidateId, candidateIds)))
             .run();
     });
     yield Promise.all(deletePaths.map((targetPath) => __awaiter(void 0, void 0, void 0, function* () {
@@ -570,7 +571,7 @@ const resetCandidatesViva = (candidateIds, batchId, assessorId) => __awaiter(voi
             .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.inArray)(schema_1.examResponses.candidateId, candidateIds), (0, drizzle_orm_1.eq)(schema_1.examResponses.batchId, batchId), (0, drizzle_orm_1.eq)(schema_1.examResponses.type, "VIVA")))
             .run();
         tx.delete(schema_1.comments)
-            .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.inArray)(schema_1.examResponses.candidateId, candidateIds), (0, drizzle_orm_1.eq)(schema_1.examResponses.batchId, batchId)))
+            .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.inArray)(schema_1.comments.candidateId, candidateIds)))
             .run();
     });
     yield Promise.all(deletePaths.map((targetPath) => __awaiter(void 0, void 0, void 0, function* () {
@@ -1120,6 +1121,7 @@ const syncCandidate = (batchId, candidateId, token) => __awaiter(void 0, void 0,
                 endedAt: response.endedAt,
             });
         });
+        // console.log("Practical Responses:", practicalResponses);
         practicalResponses.forEach((response) => {
             var _a;
             const obj = {
@@ -1137,6 +1139,9 @@ const syncCandidate = (batchId, candidateId, token) => __awaiter(void 0, void 0,
             else {
                 // @ts-ignore
                 obj["marksObtained"] = response.marksObtained || 0;
+                obj["partialMarks"] = response.answerId
+                    ? JSON.parse(response.answerId)
+                    : [];
             }
             // @ts-ignore
             finalResponses.practical.push(obj);

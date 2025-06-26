@@ -342,6 +342,7 @@ const getFeedbackForm = (req, res, next) => __awaiter(void 0, void 0, void 0, fu
             // @ts-ignore
             requestId: req.requestId,
         });
+        console.log("feedback", feedback);
         res.status(200).json(feedback);
     }
     catch (error) {
