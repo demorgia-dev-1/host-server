@@ -25,6 +25,8 @@ function downloadMediaAndReplaceUrls(content) {
     return __awaiter(this, void 0, void 0, function* () {
         const urlRegex = /https:\/\/s3\.ap-south-1\.amazonaws\.com\/[^"]+\.(jpg|jpeg|png|gif|mp4|webm|pdf)/gi;
         const matches = content.match(urlRegex);
+        console.log("content :", content);
+        console.log("Found URLs:", matches);
         if (!matches)
             return [];
         const localUrls = [];

@@ -71,6 +71,7 @@ const saveBatchOffline = (token, batchId) => __awaiter(void 0, void 0, void 0, f
             const questionBank = theoryQuestionBank[0];
             if (questionBank && Array.isArray(questionBank === null || questionBank === void 0 ? void 0 : questionBank.question)) {
                 for (const question of questionBank === null || questionBank === void 0 ? void 0 : questionBank.questions) {
+                    console.log("q.title = ", question.title);
                     const options = yield Promise.all(question.options.map((option) => {
                         return (0, mediaLocalizer_1.downloadMediaAndReplaceUrls)(option.option);
                     }));
@@ -791,8 +792,8 @@ const submitCandidatePracticalResponses = (responses, candidateId, batchId, asse
             marksObtained: 0,
             candidateId: candidateId,
             batchId: batchId,
-            startedAt: new Date().toISOString(),
-            endedAt: new Date().toISOString(),
+            startedAt: response.startedAt || new Date().toISOString(),
+            endedAt: response.endedAt || new Date().toISOString(),
             type: "PRACTICAL",
         })))
             .run();
@@ -1142,6 +1143,8 @@ const syncCandidate = (batchId, candidateId, token) => __awaiter(void 0, void 0,
                 obj["partialMarks"] = response.answerId
                     ? JSON.parse(response.answerId)
                     : [];
+                obj["startedAt"] = response.startedAt || new Date().toISOString();
+                obj["endedAt"] = response.endedAt || new Date().toISOString();
             }
             // @ts-ignore
             finalResponses.practical.push(obj);

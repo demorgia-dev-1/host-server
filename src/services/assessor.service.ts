@@ -84,7 +84,7 @@ const saveBatchOffline = async (token: string, batchId: string) => {
 
     if (theoryQuestionBank) {
       const questionBank = theoryQuestionBank[0];
-      if (questionBank && Array.isArray(questionBank?.question)) {
+      if (questionBank && Array.isArray(questionBank?.questions)) {
         for (const question of questionBank?.questions) {
           const options = await Promise.all(
             question.options.map((option: any) => {

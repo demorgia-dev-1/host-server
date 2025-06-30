@@ -448,6 +448,12 @@ const submitCandidatePracticalResponses = (req, res, next) => __awaiter(void 0, 
             return {
                 questionId: response.questionId,
                 partialMarks: JSON.stringify(response.partialMarks),
+                startedAt: response.startedAt
+                    ? new Date(response.startedAt).toISOString()
+                    : null,
+                endedAt: response.endedAt
+                    ? new Date(response.endedAt).toISOString()
+                    : null,
             };
         });
         yield assessor_service_1.default.submitCandidatePracticalResponses(responses, candidateId, batchId, assessorId, videos, req.body.comment);

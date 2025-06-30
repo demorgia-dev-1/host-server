@@ -106,7 +106,7 @@ function syncAssets() {
                                 if (files[fileName].isUploaded) {
                                     continue;
                                 }
-                                console.log(`${process.env.MAIN_SERVER_URL}/assessor/offline-batches/${batchId}/sync-assessor-adhar?fileName=${fileName}&contentType=${mime_types_1.default.lookup(fileName)}`);
+                                console.log("syncing assessor adhar file of batch ", batchId, " file name ", fileName);
                                 let response = null;
                                 let url = null;
                                 try {
