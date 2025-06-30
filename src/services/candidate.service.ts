@@ -35,6 +35,14 @@ const uploadOnboardingEvidence = async (
       true
     );
   }
+  if (candidate[0].theoryExamStatus !== "notStarted") {
+    const msg =
+      candidate[0].theoryExamStatus === "submitted"
+        ? "theory exam is submitted"
+        : "theory exam is ongoing";
+    throw new AppError(msg, 400);
+  }
+
   const updatedCandidateData: any = {
     isEvidenceUploaded: true,
   };
